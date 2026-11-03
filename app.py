@@ -52,8 +52,9 @@ logger = logging.getLogger('study.api')
 PROJECT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = PROJECT_DIR / 'static'
 MAX_CONCURRENT_LLM = int(os.getenv('MAX_CONCURRENT_LLM', '2'))
-MAX_BATCH_FILES = int(os.getenv('MAX_BATCH_FILES', '20'))
-MAX_BATCH_BYTES = int(os.getenv('MAX_BATCH_BYTES', str(100 * 1024 * 1024)))
+from upload_limits import WORKSPACE_FILES, WORKSPACE_BYTES
+MAX_BATCH_FILES = int(os.getenv('MAX_BATCH_FILES', str(WORKSPACE_FILES)))
+MAX_BATCH_BYTES = int(os.getenv('MAX_BATCH_BYTES', str(WORKSPACE_BYTES)))
 MAX_USER_STORAGE_BYTES = int(os.getenv('MAX_USER_STORAGE_BYTES', str(5 * 1024 * 1024 * 1024)))
 OWNER_STORAGE_LIMIT_BYTES = int(os.getenv('OWNER_STORAGE_LIMIT_BYTES', str(100 * 1024 * 1024 * 1024)))
 DOC_TYPES = {'syllabus', 'past_paper', 'marking_scheme', 'exam_report', 'notes', 'exercise'}
@@ -191,7 +192,7 @@ class AskRequest(MathRequest):
 
 class AskQuestionRequest(BaseModel):
     client_request_id: str = Field(default='', max_length=64, pattern='^[A-Za-z0-9_-]*$')
-    question: str = Field(min_length=5, max_length=MAX_ASSIGNMENT_CHARS)
+    question: str = Field(default='', max_length=MAX_ASSIGNMENT_CHARS)
     attachment_text: str = Field(default='', max_length=MAX_ASSIGNMENT_CHARS)
     attachment_name: str = Field(default='', max_length=140)
     doc_types: list[str] = Field(default_factory=list)
@@ -826,6 +827,8 @@ async def ask_my_question(req: AskQuestionRequest, request: Request, user: dict[
         combined = f"{question}\n\n--- Attached question material ({sanitize_text(req.attachment_name, max_chars=140) or 'upload'}) ---\n{attachment}"
     if len(combined) > MAX_ASSIGNMENT_CHARS:
         raise HTTPException(status_code=413, detail='Question text is too long.')
+    if len(combined.strip())<5:
+        raise HTTPException(422,'Enter a question or attach readable question text.')
     from security import scan_untrusted_text
     if scan_untrusted_text(combined):
         raise HTTPException(status_code=400, detail='The question contains instruction-like text that could hijack the tutor.')
@@ -860,9 +863,10 @@ async def ask_my_question(req: AskQuestionRequest, request: Request, user: dict[
 @app.post('/api/extract', response_model=ExtractResponse, tags=['tutor'])
 async def extract_question_file(request: Request, file: UploadFile=File(...), user: dict[str, Any]=Depends(require_user)) -> ExtractResponse:
     enforce_rate_limit(request, EXTRACT_LIMIT, 'extract', user_id=user['id'])
-    data = await _read_upload(file, MAX_UPLOAD_BYTES)
+    from upload_limits import QUESTION_FILE_BYTES
+    data = await _read_upload(file, QUESTION_FILE_BYTES)
     try:
-        result = await asyncio.to_thread(extract_assignment_file, file.filename or 'question', data)
+        result = await app.state.attachment_extractor.extract(user['id'],file.filename or 'question',data)
     except HTTPException:
         raise
     except Exception as exc:
@@ -1054,6 +1058,8 @@ def _document_preview_payload(document: dict[str, Any], file_url: str) -> dict[s
     payload: dict[str, Any] = {'filename': document['filename'], 'size': document['size'], 'file_url': file_url}
     if suffix == '.pdf':
         payload.update({'mode': 'pdf', 'content': ''})
+    elif suffix in __import__('upload_limits').IMAGE_EXTENSIONS:
+        payload.update({'mode':'image','content':''})
     elif suffix in {'.md', '.markdown'}:
         text = target.read_text(encoding='utf-8', errors='replace')
         payload.update({'mode': 'markdown', 'content': MARKDOWN_PREVIEW.render(text)})
@@ -1189,25 +1195,29 @@ async def upload_workspace_files(request: Request, course_id: str=Form(...), doc
     if not course:
         raise HTTPException(status_code=404, detail='Unknown course.')
     _assert_course_editable(user, course)
-    max_files = 100 if local_owner_upload else MAX_BATCH_FILES
-    max_batch = OWNER_STORAGE_LIMIT_BYTES if local_owner_upload else MAX_BATCH_BYTES
+    max_files = MAX_BATCH_FILES
+    max_batch = MAX_BATCH_BYTES
     if not files or len(files) > max_files:
         raise HTTPException(status_code=400, detail=f'Upload between 1 and {max_files} files.')
     prepared: list[tuple[str, bytes, dict[str, Any]]] = []
     total = 0
     batch_names: set[str] = set()
+    batch_digests: set[str] = set()
     for file in files:
-        data = await _read_upload(file, max_batch)
+        data = await _read_upload(file, min(MAX_UPLOAD_BYTES,max_batch))
         total += len(data)
         if total > max_batch:
             raise HTTPException(status_code=413, detail='Batch upload is too large.')
-        validated = await asyncio.to_thread(validate_upload, file.filename or 'upload', data, corpus=True, max_bytes=max_batch)
+        validated = await asyncio.to_thread(validate_upload, file.filename or 'upload', data, corpus=True, max_bytes=min(MAX_UPLOAD_BYTES,max_batch))
         name = validated['filename']
         if validated.get('active_content'):
             logger.warning('Accepted PDF with active/embedded content: %s', name)
         if name in batch_names:
             raise HTTPException(status_code=400, detail=f"The batch contains the same filename twice: '{name}'.")
         batch_names.add(name)
+        if validated['sha256'] in batch_digests:
+            raise HTTPException(409,'The same file content was selected twice. Remove the duplicate before uploading.')
+        batch_digests.add(validated['sha256'])
         prepared.append((name, data, validated))
     storage_limit = _storage_limit(user)
     if db.user_storage_bytes(user['id']) + total > storage_limit:
@@ -1494,3 +1504,5 @@ app.add_middleware(LocalBoundary)
 import compliance
 compliance.install(app)
 app.add_middleware(compliance.DataUseBoundary)
+import attachment_batch
+attachment_batch.install(app,globals())

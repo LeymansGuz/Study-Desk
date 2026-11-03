@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.5-beta.1).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.6-beta.1).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -151,3 +151,10 @@ Native update authority stays in Rust. The UI can request only check/download/
 install. Private control endpoints require the per-launch secret; webview input
 cannot override the feed, signing key or download path. Updates make no DeepSeek
 calls and send no course content to GitHub.
+
+Windows installers use supported NSIS LZMA archive compression. It reduces the
+download size while unpacking the same application files; build/installation can
+take longer. Runtime libraries and OCR capabilities remain bundled. macOS/Linux
+packaging retains its existing supported compression. HTML drag/drop is enabled
+inside the native window; clipboard-button availability depends on the WebView,
+with standard keyboard paste available as the fallback.

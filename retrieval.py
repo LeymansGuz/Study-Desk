@@ -576,7 +576,8 @@ def corpus_documents(user_id: str, course_ids: list[str] | None=None) -> list[di
 
 def _files_in_course(directory: Path) -> list[Path]:
     root = directory.resolve()
-    suffixes = {'.pdf', '.md', '.txt', '.markdown', '.doc', '.docx'}
+    from upload_limits import IMAGE_EXTENSIONS
+    suffixes = {'.pdf', '.md', '.txt', '.markdown', '.doc', '.docx'} | IMAGE_EXTENSIONS
     files = []
     for path in directory.rglob('*'):
         try:
@@ -616,6 +617,23 @@ def _chunks_for_file(path: Path, user_id: str, course_id: str, course_name: str,
     return chunks
 
 def _read_pages(path: Path, manifest: dict[str, Any] | None=None) -> list[tuple[int, str]]:
+    from upload_limits import IMAGE_EXTENSIONS
+    if path.suffix.lower() in IMAGE_EXTENSIONS:
+        import index_cache
+        from security import validate_upload
+        from document_ocr import ocr_layout
+        from PIL import Image
+        document,user,signature=_EXTRACTION_CONTEXT.get()
+        cached=index_cache.load(document,'ocr',signature)
+        result=cached.get(1)
+        if result is None:
+            validate_upload(path.name,path.read_bytes())
+            with Image.open(path) as image:result=ocr_layout(image)
+            result={k:result[k] for k in ['text','confidence','needs_review']}
+            index_cache.save_many(document,user,'ocr',signature,[(1,result)])
+        if manifest is not None:
+            manifest.update(page_count=1,pages=[{'page':1,'status':'needs_review' if result.get('needs_review') else 'ocr'}],visual_coverage='text_and_ocr_only')
+        return [(1,result['text'])]
     if path.suffix.lower() == '.pdf':
         reader = PdfReader(str(path))
         if len(reader.pages) > MAX_PDF_PAGES:

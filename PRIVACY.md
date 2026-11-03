@@ -1,6 +1,6 @@
 # Study Desk data-use notice
 
-Version: 2026-11-03. This notice describes the local desktop and source editions maintained by [LeymansGuz](https://github.com/LeymansGuz/Study-Desk).
+Version: 2026-11-04. This notice describes the local desktop and source editions maintained by [LeymansGuz](https://github.com/LeymansGuz/Study-Desk).
 
 ## On your computer
 
@@ -9,6 +9,8 @@ Documents, extracted text, embeddings, questions, attempts, session history and 
 The desktop edition stores your DeepSeek key in the operating system credential store. The source edition reads your private `.env`. Keys are used by the local backend, never returned to the study interface or included in backups. Remove the desktop key using your operating system credential manager (service `StudyDesk.DeepSeek`, account `api-key`). Do not share keys or diagnostic exports publicly.
 
 ## External services
+
+Clipboard images are accessed only when you paste or choose Paste screenshot. The app does not monitor your clipboard. Attachment text/OCR is processed locally; reading an attachment makes no AI request. A bounded, temporary in-memory text cache reuses extraction for retries. Starting tutoring sends the reviewed question text to the provider after the AI data-use acknowledgement.
 
 When you request AI generation, explanations, answers or hints, the backend sends relevant course excerpts, your topic/question, relevant attempts/history and generated content to DeepSeek. Verification and repairs may send this content again. These requests use your provider account and can incur charges. Avoid uploading personal, confidential or sensitive information. Local processing does not mean AI requests stay on your computer.
 

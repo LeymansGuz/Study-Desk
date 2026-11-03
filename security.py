@@ -28,12 +28,13 @@ PROJECT_DIR = Path(__file__).resolve().parent
 for _env_path in (Path(__file__).resolve().parent / '.env',):
     if _env_path.is_file():
         load_dotenv(_env_path, override=False)
-MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(100 * 1024 * 1024)))
+from upload_limits import DOCUMENT_BYTES, IMAGE_BYTES, IMAGE_PIXELS, IMAGE_EXTENSIONS
+MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(DOCUMENT_BYTES)))
 MAX_PDF_PAGES = int(os.getenv('MAX_PDF_PAGES', '300'))
 MAX_UPLOAD_TEXT_CHARS = int(os.getenv('MAX_UPLOAD_TEXT_CHARS', '2000000'))
 MAX_ASSIGNMENT_CHARS = int(os.getenv('MAX_ASSIGNMENT_CHARS', '30000'))
-ALLOWED_CORPUS_EXTENSIONS = {'.pdf', '.md', '.txt', '.doc', '.docx'}
-ALLOWED_ASSIGNMENT_EXTENSIONS = {'.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg', '.webp'}
+ALLOWED_CORPUS_EXTENSIONS = {'.pdf', '.md', '.txt', '.doc', '.docx'} | IMAGE_EXTENSIONS
+ALLOWED_ASSIGNMENT_EXTENSIONS = ALLOWED_CORPUS_EXTENSIONS.copy()
 ACTIVE_PDF_MARKERS = (b'/JavaScript', b'/EmbeddedFile', b'/Launch', b'/RichMedia')
 INJECTION_PATTERNS = [re.compile('\\bignore\\s+(?:all\\s+)?(?:previous|above|prior)\\s+instructions?\\b', re.I), re.compile('\\b(?:system|developer)\\s+(?:prompt|message)\\b', re.I), re.compile('\\breveal\\s+(?:the\\s+)?(?:system|hidden|secret)\\s+(?:prompt|instructions?|key)\\b', re.I), re.compile('\\byou\\s+are\\s+now\\s+(?:a|an|the)\\b', re.I), re.compile('\\b(?:tool|function)\\s*call\\b', re.I), re.compile('<\\s*script\\b', re.I), re.compile('\\b(?:exfiltrate|send\\s+the\\s+key|print\\s+the\\s+key)\\b', re.I)]
 
@@ -151,7 +152,7 @@ def extract_office_text(data: bytes) -> str:
         log.warning('Extractous Word extraction failed: %s', type(exc).__name__)
     return max(candidates, key=len) if candidates else ''
 
-def validate_upload(filename: str, data: bytes, *, corpus: bool=True, max_bytes: int | None=None) -> dict[str, Any]:
+def validate_upload(filename: str, data: bytes, *, corpus: bool=True, max_bytes: int | None=None, max_pages: int | None=None) -> dict[str, Any]:
     """Validate an uploaded course document before it can enter the index."""
     allowed = ALLOWED_CORPUS_EXTENSIONS if corpus else ALLOWED_ASSIGNMENT_EXTENSIONS
     name = sanitize_filename(filename, allowed)
@@ -159,6 +160,7 @@ def validate_upload(filename: str, data: bytes, *, corpus: bool=True, max_bytes:
     if not data:
         raise HTTPException(status_code=400, detail='Empty file.')
     byte_limit = MAX_UPLOAD_BYTES if max_bytes is None else max_bytes
+    if extension in IMAGE_EXTENSIONS: byte_limit = min(byte_limit, IMAGE_BYTES)
     if len(data) > byte_limit:
         raise HTTPException(status_code=413, detail=f'File exceeds the {byte_limit // (1024 * 1024)} MB limit.')
     page_count = 0
@@ -189,8 +191,9 @@ def validate_upload(filename: str, data: bytes, *, corpus: bool=True, max_bytes:
             if '/AA' in root or '/JavaScript' in names or '/XFA' in acroform or unsafe_open_action:
                 active_content = True
             page_count = len(reader.pages)
-            if page_count > MAX_PDF_PAGES:
-                raise HTTPException(status_code=413, detail=f'PDF has {page_count} pages; the limit is {MAX_PDF_PAGES}.')
+            page_limit = min(MAX_PDF_PAGES,max_pages) if max_pages is not None else MAX_PDF_PAGES
+            if page_count > page_limit:
+                raise HTTPException(status_code=413, detail=f'PDF has {page_count} pages; the limit is {page_limit}. Use only the relevant pages.')
             from pdf_text import extract_page
             pdf_pages = [(index, extract_page(page)) for index, page in enumerate(reader.pages, 1)]
             extracted_text = '\n'.join((text for _, text in pdf_pages))[:MAX_UPLOAD_TEXT_CHARS]
@@ -238,6 +241,19 @@ def validate_upload(filename: str, data: bytes, *, corpus: bool=True, max_bytes:
         if not extracted_text.strip():
             raise HTTPException(status_code=400, detail='No readable text was found in this Word document.')
         page_count = 1
+    elif extension in IMAGE_EXTENSIONS:
+        from PIL import Image,UnidentifiedImageError
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                expected={'.png':'PNG','.jpg':'JPEG','.jpeg':'JPEG','.webp':'WEBP'}[extension]
+                if image.format!=expected:raise HTTPException(415,'Image content does not match its filename extension.')
+                if image.width*image.height>IMAGE_PIXELS:raise HTTPException(413,'Image exceeds the 16 megapixel limit. Crop the relevant question or notes.')
+                if getattr(image,'n_frames',1)!=1:raise HTTPException(415,'Use a still screenshot rather than an animated image.')
+                image.verify()
+            page_count=1
+        except HTTPException:raise
+        except (UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
+            raise HTTPException(415,'Unsupported, oversized or corrupt image.') from exc
     elif len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail='Image is too large.')
     flags = scan_untrusted_text(extracted_text)
@@ -253,7 +269,7 @@ def security_headers(_request: Request, response: Any) -> None:
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     if _request.url.scheme == 'https':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 
 class SlidingWindowLimiter:

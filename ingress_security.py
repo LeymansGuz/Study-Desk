@@ -56,7 +56,7 @@ class IngressSecurity:
         if method in {'POST', 'PUT', 'PATCH', 'DELETE'} and request.headers.get('sec-fetch-site') == 'cross-site':
             return await deny(403, 'Cross-site changes are not allowed.')
         limit = 2000000
-        upload = path in {'/workspace/files', '/workspace/files/local', '/api/extract', '/admin/restore'} or path.endswith('/import-zip')
+        upload = path in {'/workspace/files', '/workspace/files/local', '/api/extract', '/api/extract/batch', '/admin/restore'} or path.endswith('/import-zip')
         if upload and method in {'POST', 'PUT', 'PATCH'}:
             user = auth.maybe_user(request)
             if not user or not user.get('is_verified'):
@@ -68,9 +68,10 @@ class IngressSecurity:
             elif path == '/workspace/files/local':
                 if not self.services['_is_trusted_local_owner'](request, user):
                     return await deny(404, 'Not found.')
-                limit = self.services['OWNER_STORAGE_LIMIT_BYTES'] + 10000000
-            elif path == '/api/extract':
-                limit = self.services['MAX_UPLOAD_BYTES'] + 1000000
+                limit = self.services['MAX_BATCH_BYTES'] + 2000000
+            elif path in {'/api/extract','/api/extract/batch'}:
+                from upload_limits import QUESTION_BYTES,QUESTION_FILE_BYTES
+                limit = (QUESTION_BYTES if path.endswith('/batch') else QUESTION_FILE_BYTES)+1000000
             else:
                 limit = self.services['MAX_BATCH_BYTES'] + 2000000
         elif path.startswith('/workspace/uploads/') and method == 'PUT':

@@ -1,10 +1,10 @@
 Study Desk desktop beta — use your own funded DeepSeek API key in Settings.
 
-This beta includes signed full-package updates in Settings, an idle-workspace
-and verified-backup check before installation, a versioned AI data-use notice,
-upload-rights confirmation and bundled dependency notices. Install this first
-updater-enabled version manually; subsequent updates can be installed in-app.
-Update signing is separate from OS code signing/notarization.
+This beta includes drag/drop and screenshot paste, visible file queues, bounded
+larger Workspace batches, multi-attachment questions, local OCR review/cache,
+and signed in-app updates. Windows uses stronger installer archive compression;
+the installed runtime remains complete. AI context budgets remain bounded and
+attachment reading makes no paid model request. See README for exact limits.
 
 Download the installer for your computer:
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import Depends, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 import db
+from upload_limits import WORKSPACE_FILES, IMAGE_BYTES, IMAGE_EXTENSIONS
 from security import sanitize_filename, ALLOWED_CORPUS_EXTENSIONS
 CHUNK_BYTES = 5 * 1024 * 1024
 TTL = 3600
@@ -25,7 +26,7 @@ class BatchSpec(BaseModel):
     course_id: str = Field(min_length=1, max_length=100)
     doc_type: str = 'notes'
     request_key: str = Field(default_factory=lambda: uuid.uuid4().hex, pattern='^[0-9a-f]{32}$')
-    files: list[FileSpec] = Field(min_length=1, max_length=20)
+    files: list[FileSpec] = Field(min_length=1, max_length=WORKSPACE_FILES)
 
 def root():
     return db.DB_PATH.parent / 'upload-staging'
@@ -202,7 +203,9 @@ def install(app, services):
             raise HTTPException(400, 'The batch contains the same filename twice.')
         total = sum((item.size for item in spec.files))
         if total > services['MAX_BATCH_BYTES'] or any((item.size > services['MAX_UPLOAD_BYTES'] for item in spec.files)):
-            raise HTTPException(413, 'Keep uploads within 20 files and 100 MB total.')
+            raise HTTPException(413, 'Keep uploads within 50 files and 500 MB total, with at most 200 MB per document.')
+        if any(Path(item.name).suffix.lower() in IMAGE_EXTENSIONS and item.size>IMAGE_BYTES for item in spec.files):
+            raise HTTPException(413,'Keep each screenshot within 20 MB.')
         __import__('growth_limits').disk(total)
         async with _gate:
             await asyncio.to_thread(cleanup)

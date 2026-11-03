@@ -58,6 +58,7 @@ fn main() {
         updates::start(app.handle().clone(), state.clone());
         let external=app.handle().clone();
         let window=tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::App("index.html".into()))
+          .disable_drag_drop_handler()
           .title("Study Desk").inner_size(1280.0,860.0).min_inner_size(800.0,620.0)
           .on_navigation(move |url| {
               if url.scheme()=="https" && url.username().is_empty() && url.password().is_none() && (url.host_str()==Some("cdn.deepseek.com") || (url.host_str()==Some("github.com") && (url.path()=="/LeymansGuz/Study-Desk" || url.path().starts_with("/LeymansGuz/Study-Desk/")))) {

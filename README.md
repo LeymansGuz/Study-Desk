@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.5-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.5-beta.1).
+The current published beta is [v0.2.6-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.6-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/Study-Desk_0.2.6_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/Study-Desk_0.2.6_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/Study-Desk_0.2.6_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/Study-Desk_0.2.6_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/Study-Desk_0.2.6_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.6-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.5_amd64.deb
+sudo apt install ./Study-Desk_0.2.6_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.5_amd64.AppImage
-./Study-Desk_0.2.5_amd64.AppImage
+chmod +x ./Study-Desk_0.2.6_amd64.AppImage
+./Study-Desk_0.2.6_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -135,6 +135,41 @@ been live-tested in this release. The commands below are the supported path.
 Documents define the permitted methods. Insane adds one meaningful reasoning
 extension without unlimited subparts or arithmetic. The independent checks
 increase confidence; they cannot guarantee every generated answer is correct.
+
+## Files, screenshots and local reading
+
+Workspace and Ask a question accept file-picker selections, drag/drop and pasted
+screenshots. Paste into the attachment area or form, or choose **Paste screenshot**.
+Normal text paste still works. If the system WebView cannot read the clipboard
+through that button, focus the attachment area and use Ctrl+V (Windows/Linux) or
+Command+V (Mac). Clipboard access is user-initiated; it is not monitored.
+
+Selected files show names, types, sizes and screenshot previews. Remove files
+individually or clear the selection. Workspace selections are paged in groups of
+ten. Selections survive tab switching and failed requests within the open app.
+
+| Upload destination | Limits |
+|---|---|
+| Workspace | 50 files / 500 MB total per batch; 200 MB per document |
+| Workspace screenshots | PNG/JPEG/WebP, 20 MB and 16 megapixels per image |
+| Ask a question | 5 attachments for one question, 50 MB total, 20 MB per file |
+| Question reading | 20 relevant pages across all attachments; 30,000 characters for the combined question/context |
+
+Workspace also accepts PDF, TXT, Markdown and Word documents. The existing
+300-page PDF safety limit remains. Larger batches queue background work; more
+scanned pages naturally take longer. Text PDF pages use their existing text layer;
+screenshots/scanned pages use local OCR. Unchanged workspace-image extraction is
+checkpointed and can be reused on subsequent indexing.
+
+In Ask a question, **Read attachments locally** shows editable extracted text and
+per-file progress. Attachment-only questions are supported. OCR warnings require
+confirmation that symbols and essential diagram facts have been checked before
+tutoring. OCR reads text; it does not interpret graph/diagram relationships.
+Reading attachments makes no DeepSeek call. Successful extraction is reused for
+retries; the server text cache is bounded and expires for reuse after 30 minutes.
+The normal Solver/Verifier pipeline runs once for the combined question. Context
+limits are unchanged, and excess text is rejected rather than silently cut off.
+Future AI requests still require the current data-use acknowledgement.
 
 ## Concept mastery and bank exams
 

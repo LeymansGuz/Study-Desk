@@ -15,6 +15,7 @@ from PIL import Image, UnidentifiedImageError
 from pypdf import PdfReader
 from security import MAX_ASSIGNMENT_CHARS, MAX_PDF_PAGES, extract_office_text, scan_untrusted_text, validate_upload
 from document_ocr import MAX_OCR_PAGES, ocr_layout
+from upload_limits import QUESTION_FILE_BYTES, QUESTION_PAGES, IMAGE_PIXELS
 _QUALITY = ContextVar('assignment_quality', default=None)
 
 def ocr_image(image):
@@ -24,12 +25,12 @@ def ocr_image(image):
         quality.append('Some text was recognised with low confidence. Check symbols, numbers and labels against the original.')
     return result['text']
 logger = logging.getLogger(__name__)
-MAX_IMAGE_PIXELS = 16000000
+MAX_IMAGE_PIXELS = IMAGE_PIXELS
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 def extract_assignment_file(filename: str, data: bytes) -> dict[str, Any]:
     """Validate and extract text from a question PDF or screenshot."""
-    validated = validate_upload(filename, data, corpus=False)
+    validated = validate_upload(filename, data, corpus=False, max_bytes=QUESTION_FILE_BYTES, max_pages=QUESTION_PAGES)
     if validated.get('active_content'):
         logger.warning('Accepted assignment PDF with active/embedded content: %s', validated['filename'])
     extension = validated['extension']
@@ -51,6 +52,8 @@ def _extract_validated(filename, data, validated, quality):
     elif extension in {'.doc', '.docx'}:
         text = extract_office_text(data)
         page_count = 1
+    elif extension in {'.txt','.md'}:
+        text=validated['text'];page_count=1
     else:
         text = _extract_image(data)
         ocr_used = True
@@ -75,7 +78,7 @@ def _extract_pdf(data: bytes, validated_pages=None) -> tuple[str, bool, int]:
                 raise HTTPException(status_code=400, detail='Encrypted PDFs are not supported.')
             validated_pages = [(index, (page.extract_text() or '').strip()) for index, page in enumerate(reader.pages, 1)]
         page_count = len(validated_pages)
-        if page_count > min(MAX_PDF_PAGES, 20):
+        if page_count > min(MAX_PDF_PAGES, QUESTION_PAGES):
             raise HTTPException(status_code=413, detail=f'This question PDF has {page_count} pages. Upload at most 20 relevant question/working pages; course documents belong in Workspace.')
         text_pages = [text.strip() for _, text in validated_pages]
     except HTTPException:
@@ -93,7 +96,9 @@ def _extract_pdf(data: bytes, validated_pages=None) -> tuple[str, bool, int]:
                 if len(page_text) >= 30:
                     continue
                 page = document[index]
-                image = page.render(scale=2.0).to_pil()
+                width,height=page.get_size()
+                scale=min(2.0,(MAX_IMAGE_PIXELS/max(1,width*height))**.5)
+                image = page.render(scale=scale).to_pil()
                 try:
                     recognized = ocr_image(image)
                 finally:
@@ -104,8 +109,9 @@ def _extract_pdf(data: bytes, validated_pages=None) -> tuple[str, bool, int]:
                     ocr_used = True
                 ocr_budget -= 1
             document.close()
-        except Exception:
+        except Exception as exc:
             logger.exception('OCR fallback failed for PDF')
+            raise HTTPException(422,'Could not read the scanned question pages completely. Use clearer or cropped pages, or enter the question text.') from exc
     return ('\n\n'.join(text_pages), ocr_used, page_count)
 
 def _extract_image(data: bytes) -> str:

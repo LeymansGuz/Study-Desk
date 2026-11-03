@@ -82,7 +82,8 @@ def install(app):
                     with db.connect() as connection:
                         indexing=connection.execute("SELECT COUNT(*) FROM index_jobs WHERE status IN ('queued','running')").fetchone()[0]
                         uploads=connection.execute("SELECT COUNT(*) FROM upload_batches WHERE status IN ('receiving','processing')").fetchone()[0]
-                    if bridge.active or indexing or uploads:
+                    extractor=getattr(app.state,'attachment_extractor',None)
+                    if bridge.active or indexing or uploads or (extractor and extractor.busy()):
                         raise HTTPException(409,'Finish your current request, uploads and indexing before installing the update.')
                     bridge.status.update(state='installing',message='Creating and verifying a study-data backup…')
                     archive=await asyncio.to_thread(backup.create_backup,backup.backup_directory())
