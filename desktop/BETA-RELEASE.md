@@ -1,4 +1,4 @@
-Study Desk desktop beta — use your own funded DeepSeek API key in Settings.
+Study Desk desktop beta — configure your own AI provider key in Settings. Free OpenRouter models are experimental and restricted to verified brief concept explanations; use a suitable paid model for question generation and tutoring.
 
 This beta includes drag/drop and screenshot paste, visible file queues, bounded
 larger Workspace batches, multi-attachment questions, local OCR review/cache,
@@ -15,9 +15,11 @@ Download the installer for your computer:
 
 The pipeline checks each native build and its packaged backend, then validates architecture, source commit, file format and checksums before publication. This is not a GUI/device compatibility certification. macOS/Linux installers are experimental; test installation, key storage, indexing, generation and shutdown on your own devices. Installers are unsigned and macOS builds are not notarized, so operating-system trust checks can prevent opening them.
 
-AI questions and solutions can contain mistakes, particularly difficult proofs. Automated verification does not guarantee correctness. Study data stays on your computer; relevant excerpts are sent to DeepSeek for AI requests. No developer key or course documents are included.
+AI questions and solutions can contain mistakes, particularly difficult proofs. Automated verification does not guarantee correctness. Study data stays on your computer; relevant excerpts are sent to your selected provider and hosting endpoint for AI requests. No developer key or course documents are included.
 
 See the [current README](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application)
 for installation, updates and backups. SHA256SUMS.txt covers every installer and
 build manifest attached to this release. Remaining Chroma and Linux GTK dependency
 risks are documented in the [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
+
+AI connections: secure separate provider keys, refreshable text-model catalogs, hosting selection, free-only price caps, allowance handling and explicit paid consent. DeepSeek, OpenRouter, OpenAI API, Claude API and custom compatible endpoints are available; eligibility and model quality vary. Existing connections are retained.

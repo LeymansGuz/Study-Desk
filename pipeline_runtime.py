@@ -48,14 +48,18 @@ async def generation_slot():
     checks_token = LOCAL_CHECKS.set({})
     trace={'stage':'retrieval'}
     trace_token=TRACE.set(trace)
+    import providers
+    connection_token=providers.ACTIVE.set(providers.ACTIVE.get() or providers.snapshot())
     try:
-        async with asyncio.timeout(GENERATION_TIMEOUT_SECONDS) as timer:
-            trace.update(timer=timer,started=asyncio.get_running_loop().time())
-            yield
+        async with providers.workflow_slot():
+            async with asyncio.timeout(GENERATION_TIMEOUT_SECONDS) as timer:
+                trace.update(timer=timer,started=asyncio.get_running_loop().time())
+                yield
     except BaseException as exc:
         if not getattr(exc,'pipeline_stage',None):exc.pipeline_stage=trace['stage']
         raise
     finally:
+        providers.ACTIVE.reset(connection_token)
         TRACE.reset(trace_token)
         LOCAL_CHECKS.reset(checks_token)
         _OWNED.reset(token)

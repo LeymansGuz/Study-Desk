@@ -88,17 +88,28 @@ def provider_call(user_id, stage, model, inputs, outputs, cached, latency, known
     current = CURRENT.get()
     identifier = uuid.uuid4().hex
     r = rates()
-    cost = charge(inputs, outputs, cached, r) if known else None
+    import providers
+    connection=providers.ACTIVE.get()
+    pricing_known=True
+    if connection is not None:
+        model=connection.provider+':'+connection.model
+        if connection.pricing is not None:
+            r=dict(zip(('input','output','cached_input'),connection.pricing))
+        elif connection.provider!='deepseek':
+            pricing_known=False
+            r={'input':0,'output':0,'cached_input':0}
+    cost = charge(inputs, outputs, cached, r) if known and pricing_known else None
+    accounted=known and pricing_known
     stage = str(stage)[:80]
     model = str(model)[:120]
     with db.connect() as c:
         c.execute('INSERT INTO model_calls VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', (identifier, current['id'] if current else None, user_id, stage, model, time.time(), latency, inputs, outputs, cached, cost, int(known), outcome, r['input'], r['output'], r['cached_input'], str(error_detail)[:2000]))
-        c.execute('INSERT INTO model_daily VALUES(?,?,1,?,?) ON CONFLICT(user_id,day) DO UPDATE SET calls=calls+1,errors=errors+excluded.errors,missing_usage=missing_usage+excluded.missing_usage', (user_id, day(), int(outcome != 'success'), int(not known)))
+        c.execute('INSERT INTO model_daily VALUES(?,?,1,?,?) ON CONFLICT(user_id,day) DO UPDATE SET calls=calls+1,errors=errors+excluded.errors,missing_usage=missing_usage+excluded.missing_usage', (user_id, day(), int(outcome != 'success'), int(not accounted)))
         if known and (inputs or outputs):
             c.execute('INSERT INTO token_usage(user_id,input_tokens,output_tokens,created_at) VALUES(?,?,?,?)', (user_id, inputs, outputs, db.utc_now()))
             accumulate(c, user_id, inputs, outputs, cost or 0)
         if current:
-            c.execute('UPDATE operations SET model_calls=model_calls+1,input_tokens=input_tokens+?,output_tokens=output_tokens+?,cost_usd=cost_usd+?,missing_usage=missing_usage+? WHERE id=?', (inputs, outputs, cost or 0, int(not known), current['id']))
+            c.execute('UPDATE operations SET model_calls=model_calls+1,input_tokens=input_tokens+?,output_tokens=output_tokens+?,cost_usd=cost_usd+?,missing_usage=missing_usage+? WHERE id=?', (inputs, outputs, cost or 0, int(not accounted), current['id']))
     return (identifier, cost)
 
 def invalid_call(identifier, error_detail=''):

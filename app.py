@@ -1506,3 +1506,5 @@ compliance.install(app)
 app.add_middleware(compliance.DataUseBoundary)
 import attachment_batch
 attachment_batch.install(app,globals())
+import providers
+providers.install(app)

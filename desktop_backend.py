@@ -30,7 +30,7 @@ def main():
     # All providers are configured here, before importing app modules. Installed
     # releases contain no .env, study data, private course files or developer key.
     for key in list(os.environ):
-        if key.startswith(('OPENAI_','DEEPSEEK_','LANGCHAIN_','LANGSMITH_','OPA_')):os.environ.pop(key,None)
+        if key.startswith(('OPENAI_','OPENROUTER_','ANTHROPIC_','DEEPSEEK_','LANGCHAIN_','LANGSMITH_','OPA_')):os.environ.pop(key,None)
     os.environ.update(APP_DB_PATH=str(data/'app.db'),USERS_DIR=str(data/'users'),CHROMA_DIR=str(data/'chroma'),
         OPENAI_BASE_URL='https://api.deepseek.com/v1',OPENAI_MODEL='deepseek-flash',OPENAI_API_KEY='',
         LANGSMITH_TRACING='false',LANGCHAIN_TRACING_V2='false',AUTO_MAINTENANCE='true',MANAGED_LOGGING='true',

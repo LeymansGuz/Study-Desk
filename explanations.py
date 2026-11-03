@@ -57,6 +57,10 @@ async def generate(topic, depth, sources, overview):
     scope = wrap_untrusted('course_scope', overview, max_chars=20000)
     task = wrap_untrusted('requested_topic', topic, max_chars=200)
     length = 'Brief overview: around 180–250 words total; one short worked example.' if depth == 'brief' else 'Deep dive with examples: around 500–850 words; explain dependent steps, assumptions and interpretation with a fully worked example.'
+    import providers
+    if providers.limited(providers.ACTIVE.get()):
+        if depth!='brief':raise tools.TutorError('This free model supports brief concept explanations only.')
+        length+=' Use one direct, simple source-supported application, with at most one short calculation or inference. Invent an original clearly hypothetical example rather than copying a source exercise. Avoid complex proofs, extra subparts or extensions. Keep all required sections and evidence citations.'
     if len(overview) > 20000:
         raise tools.TutorError('Select fewer courses so their complete scope can be checked.')
     draft = await tools._invoke_json(length + '\n' + task + '\n' + scope + '\n' + context, 0.2, ExplanationDraft)

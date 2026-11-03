@@ -75,10 +75,11 @@ class LLMSettings:
     api_key: str
 
 @lru_cache(maxsize=1)
-def get_settings() -> LLMSettings:
+def _legacy_settings() -> LLMSettings:
     api_key = os.getenv('OPENAI_API_KEY', '').strip()
     if not api_key and os.getenv('STUDY_DESKTOP')=='true':
-        raise TutorError('Add your DeepSeek API key in Settings to enable AI study tools.')
+        from generation_errors import StageFailure
+        raise StageFailure('provider','Choose an AI provider and save its key and model in Settings before using AI study tools.')
     if not api_key:
         raise TutorError('OPENAI_API_KEY is missing. Put it in the local .env, then restart the API.')
     if api_key.lower().startswith(('sk-your', 'your-', 'replace')):
@@ -88,6 +89,17 @@ def get_settings() -> LLMSettings:
     if base_url.rstrip('/') in {'https://api.deepseek.com', 'https://api.deepseek.com/v1'} and model == 'deepseek-chat':
         model = 'deepseek-flash'
     return LLMSettings(model=model, base_url=base_url, api_key=api_key)
+
+def get_settings() -> LLMSettings:
+    import providers
+    connection=providers.ACTIVE.get() or providers.snapshot()
+    if connection is not None:
+        if not connection.api_key and connection.provider!='custom':
+            raise TutorError('Add this provider’s API key in Settings before using AI study tools.')
+        return LLMSettings(connection.model,connection.base_url,connection.api_key or 'local-no-key')
+    return _legacy_settings()
+
+get_settings.cache_clear = _legacy_settings.cache_clear
 
 def public_settings() -> dict[str, Any]:
     """Configuration that is safe to expose through /health."""
@@ -433,7 +445,12 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
     from usage_log import current_user_id, _usage_numbers
     from pipeline_runtime import mark_stage
     mark_stage({'PublicValidity':'premise','PremiseChallenge':'premise','TopicAlignment':'topic','EvidenceBrief':'retrieval','QuestionSeed':'writer','TaskDesignReview':'writer','SolverAnswer':'solver','Verification':'verifier','ExplanationDraft':'writer','ExplanationReview':'verifier','SyntaxFix':'calculator','SyntaxSolverAnswer':'calculator'}.get(schema.__name__,'solver'))
-    llm = _get_llm(temperature)
+    import providers
+    connection=providers.ACTIVE.get() or providers.snapshot()
+    if providers.limited(connection) and schema.__name__ not in {'ExplanationDraft','ExplanationReview','SolverAnswer'}:
+        from generation_errors import StageFailure
+        raise StageFailure('provider','This free model is restricted to verified brief concept explanations. Choose a suitable paid connection for question generation or grading.')
+    llm = providers.Model(connection,temperature) if connection is not None else _get_llm(temperature)
     correction = ''
     retry_count = 1 if schema.__name__ in {'SyntaxFix', 'SyntaxSolverAnswer'} else 3
     for attempt in range(retry_count):
@@ -486,11 +503,15 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                 try:
                     limit = reservation['max_output'] if reservation else max_output
                     from urllib.parse import urlparse
-                    provider_kwargs = {'extra_body': {'max_tokens': limit, 'thinking': {'type': 'disabled'}}} if urlparse(get_settings().base_url).hostname == 'api.deepseek.com' else {}
+                    provider_kwargs = {'extra_body': {'max_tokens': limit, 'thinking': {'type': 'disabled'}}} if connection is None and urlparse(get_settings().base_url).hostname == 'api.deepseek.com' else {}
+                    if connection is not None:
+                        provider_kwargs={'response_schema':schema.model_json_schema(),'schema_name':schema.__name__}
                     provider_started=True
                     response = await llm.ainvoke(model_input, max_tokens=limit, **provider_kwargs)
                     usage_known = any(_usage_numbers(response))
                     call_id = record_response_usage(response, schema.__name__, (time.perf_counter() - started) * 1000)
+                    if connection is not None and response.response_metadata.get('finish_reason') in {'length','max_tokens'}:
+                        raise providers.ProviderError('The model exhausted its response budget before completing the required result. Choose a more suitable model or simpler task.',422)
                 finally:
                     token_budget.finish(reservation, usage_known)
             if uid and (not db_user_active(uid)):
@@ -522,6 +543,9 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                     except Exception:
                         logger.warning('Could not record provider failure')
             status = getattr(exc, 'status_code', None)
+            if isinstance(exc,providers.ProviderError):
+                from generation_errors import StageFailure
+                raise StageFailure('provider',str(exc)) from exc
             if status in {400, 401, 403, 404, 413, 422}:
                 raise TutorError('The model service rejected the request; check its configuration.') from exc
             logger.warning('Model stage %s failed (attempt %s): %s', schema.__name__, attempt + 1, type(exc).__name__)

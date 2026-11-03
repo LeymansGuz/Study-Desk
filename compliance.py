@@ -6,7 +6,7 @@ from starlette.responses import JSONResponse
 from starlette.requests import Request
 import db
 
-VERSION = '2026-11-04'
+VERSION = '2026-11-04-providers'
 DOCUMENTS = {'privacy': 'PRIVACY.md', 'terms': 'TERMS.md', 'licenses': 'THIRD-PARTY-NOTICES.md'}
 AI_PREFIXES = ('/ask', '/answer', '/explain', '/practice/follow-up', '/benchmarks/reference')
 

@@ -3,19 +3,19 @@
 The desktop application opens Study Desk in its own window. Python, OPA, Node.js,
 OCR models and the study interface are bundled. Users do not need a terminal,
 Python installation, `.env` file or an account on a hosted Study Desk service.
-DeepSeek generation needs internet access and the user's own funded API key.
+Hosted AI needs internet access and the user's own eligible provider API key. Free endpoints are limited and experimental.
 Local text embeddings may download their model on first use.
 
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.6-beta.1).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.7-beta.1).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
    for platform requirements and unsigned-build guidance.
 2. Open **Study Desk** from the Start menu or its shortcut.
-3. On first launch, **Settings → DeepSeek connection** opens automatically.
+3. On first launch, **Settings → AI connection** opens automatically.
    Paste your API key and choose **Save API key**. Saving makes no provider call.
 4. Add course documents in Workspace, wait for indexing, then practise or explain
    a concept. The same question-quality gates apply in the desktop application.
