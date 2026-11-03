@@ -203,8 +203,12 @@ software behaviour, not these live model-quality estimates.
 ## Estimated AI cost
 
 Study Desk charges no application subscription. AI requests use your own funded
-DeepSeek account. Recent normal-use MCQ examples recorded approximately
-**US$0.0025–$0.005 per operation**. Older evaluations deliberately stressed harder
+DeepSeek account. Recent normal-use MCQ examples from the hosted deployment
+recorded approximately **US$0.0025–$0.005 per operation**. Local evaluation logs
+also recorded successful MCQs at roughly **US$0.004–$0.01 at peak rates**, before
+adding failed attempts; equivalent off-peak token usage costs half as much.
+Neither sample is a representative benchmark of this desktop release.
+Older evaluations deliberately stressed harder
 questions and retries; their generation logs suggest **US$0.01–$0.03 per accepted
 question**, including failed attempts. These describe different workloads:
 
@@ -655,7 +659,7 @@ uv run --frozen pytest -q
 Tests use temporary storage and block paid model calls. They cover local access
 boundaries, uploads, session resume, arithmetic, formatting, grading and
 feedback-derived calibration regressions. Offline tests do not establish live
-generation accuracy. CI runs the 113-test suite on Windows, Apple Silicon Mac,
+generation accuracy. CI runs the 114-test suite on Windows, Apple Silicon Mac,
 Intel Mac and Linux, then checks each frozen backend. Mac/Linux graphical and full
 source-edition lifecycle testing remain separate from those checks.
 

@@ -131,3 +131,23 @@ def test_forced_rebuild_republishes_cached_document_without_touching_other_cours
     assert not calls  # Normal indexing reuses an unchanged published document.
     retrieval._ingest_file_set(auth.OWNER_ID,course,['notes.md'],force=True)
     assert calls==['extract',{'replacements':{(course['id'],'notes.md')}}]
+
+
+def test_deepseek_json_stages_explicitly_disable_hidden_thinking(monkeypatch):
+    import asyncio, tools
+    from pydantic import BaseModel
+    from langchain_core.messages import AIMessage
+    class Probe(BaseModel): value: str
+    calls=[]
+    class Model:
+        async def ainvoke(self, *args, **kwargs):
+            calls.append(kwargs)
+            return AIMessage(content='{"value":"checked"}')
+    monkeypatch.setattr(tools,'_get_llm',lambda *a:Model())
+    monkeypatch.setattr(tools,'get_settings',lambda:tools.LLMSettings('deepseek-flash','https://api.deepseek.com/v1','offline'))
+    assert asyncio.run(tools._invoke_json('Return JSON with value.',0,Probe)).value=='checked'
+    assert calls[0]['extra_body']['thinking']=={'type':'disabled'}
+    assert calls[0]['extra_body']['max_tokens']==calls[0]['max_tokens']
+    monkeypatch.setattr(tools,'get_settings',lambda:tools.LLMSettings('custom','https://example.test/v1','offline'))
+    asyncio.run(tools._invoke_json('Return JSON with value.',0,Probe))
+    assert 'extra_body' not in calls[1]

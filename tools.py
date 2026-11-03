@@ -486,7 +486,7 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                 try:
                     limit = reservation['max_output'] if reservation else max_output
                     from urllib.parse import urlparse
-                    provider_kwargs = {'extra_body': {'max_tokens': limit}} if urlparse(get_settings().base_url).hostname == 'api.deepseek.com' else {}
+                    provider_kwargs = {'extra_body': {'max_tokens': limit, 'thinking': {'type': 'disabled'}}} if urlparse(get_settings().base_url).hostname == 'api.deepseek.com' else {}
                     provider_started=True
                     response = await llm.ainvoke(model_input, max_tokens=limit, **provider_kwargs)
                     usage_known = any(_usage_numbers(response))
