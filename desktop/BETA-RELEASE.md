@@ -1,9 +1,10 @@
 Study Desk desktop beta — use your own funded DeepSeek API key in Settings.
 
-This beta provides optional Course scope settings and a background, selected-course
-index rebuild with progress and local storage guidance. The default model is
-DeepSeek Flash. The README includes separate normal-use and stress-workload cost
-estimates and explains the limits of previous reliability measurements.
+This beta includes signed full-package updates in Settings, an idle-workspace
+and verified-backup check before installation, a versioned AI data-use notice,
+upload-rights confirmation and bundled dependency notices. Install this first
+updater-enabled version manually; subsequent updates can be installed in-app.
+Update signing is separate from OS code signing/notarization.
 
 Download the installer for your computer:
 

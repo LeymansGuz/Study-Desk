@@ -50,3 +50,43 @@ def test_complete_release_has_independently_recomputed_checksums(builds,tmp_path
         assert digest==hashlib.sha256((destination/name).read_bytes()).hexdigest()
     check_tag('v0.2.2-beta.1','0.2.2')
     with pytest.raises(ValueError):check_tag('v0.2.1','0.2.2')
+
+def signed_fixture(path,version='0.2.2'):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    private=Ed25519PrivateKey.generate();keyid=b'fixture1'
+    public=base64.b64encode(b'untrusted comment: fixture\n'+base64.b64encode(b'Ed'+keyid+private.public_key().public_bytes_raw())+b'\n').decode()
+    def sign(payload):
+        signature=private.sign(hashlib.blake2b(payload).digest())
+        comment='timestamp:0\tversion:'+version
+        text='untrusted comment: fixture\n'+base64.b64encode(b'ED'+keyid+signature).decode()+'\ntrusted comment: '+comment+'\n'+base64.b64encode(private.sign(signature+comment.encode())).decode()+'\n'
+        return base64.b64encode(text.encode()).decode()
+    return public,sign
+
+def test_independent_signature_checks_bytes_key_and_version(tmp_path):
+    from desktop.verify_signature import verify
+    path=tmp_path/'update.exe';path.write_bytes(b'example payload')
+    public,sign=signed_fixture(path)
+    signature=sign(path.read_bytes());verify(path,signature,public,'0.2.2')
+    with pytest.raises(ValueError,match='version'):verify(path,signature,public,'0.2.3')
+    path.write_bytes(b'tampered')
+    with pytest.raises(Exception):verify(path,signature,public,'0.2.2')
+
+def test_signed_release_requires_every_platform_signature(builds,tmp_path,monkeypatch):
+    import desktop.collect_release as release
+    public,sign=signed_fixture(tmp_path)
+    config=tmp_path/'source/desktop/src-tauri/tauri.conf.json';config.parent.mkdir(parents=True)
+    config.write_text(json.dumps({'plugins':{'updater':{'pubkey':public}}}))
+    monkeypatch.setattr(release,'ROOT',tmp_path/'source')
+    for platform in PLATFORMS:
+        folder=builds/platform
+        if platform.startswith('macos'):(folder/('Study-Desk_'+platform+'_0.2.2.app.tar.gz')).write_bytes(b'fixture app archive')
+        updates=[p for p in folder.iterdir() if p.suffix in {'.exe','.AppImage','.deb'} or p.name.endswith('.app.tar.gz')]
+        for payload in updates:payload.with_name(payload.name+'.sig').write_text(sign(payload.read_bytes()))
+        (folder/'SHA256SUMS.txt').write_text('\n'.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in folder.iterdir() if p.name!='SHA256SUMS.txt'))
+    destination=tmp_path/'signed-release'
+    release.collect(builds,destination,'0.2.2','same-commit',signed=True,tag='v0.2.2-beta.1')
+    manifest=json.loads((destination/'latest.json').read_text())
+    assert len(manifest['platforms'])==5
+    next((builds/'macos-intel').glob('*.sig')).unlink()
+    with pytest.raises(ValueError,match='signature'):release.collect(builds,tmp_path/'bad-release','0.2.2','same-commit',signed=True,tag='v0.2.2-beta.1')

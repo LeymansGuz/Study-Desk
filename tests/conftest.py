@@ -25,4 +25,7 @@ def no_paid_calls(monkeypatch):
 def client():
     from fastapi.testclient import TestClient
     import app
-    with TestClient(app.app,base_url='http://localhost',client=('127.0.0.1',1234)) as c: yield c
+    import compliance,db
+    db.init_db()
+    db.set_app_setting('data_use_acknowledgement',compliance.VERSION)
+    with TestClient(app.app,base_url='http://localhost',client=('127.0.0.1',1234),headers={'X-Study-Upload-Rights':'confirmed'}) as c: yield c

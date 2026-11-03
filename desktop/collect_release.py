@@ -38,11 +38,11 @@ def check_format(path):
         raise ValueError('Incorrect native installer format: '+path.name)
 
 
-def collect(source, destination, release_version, revision):
+def collect(source, destination, release_version, revision, *, signed=False, tag=None):
     source, destination = Path(source), Path(destination)
     if not revision:
         raise ValueError('The exact build commit is required.')
-    files, names = [], set()
+    files, names, platforms = [], set(), {}
     for platform, (system, architectures, suffixes) in PLATFORMS.items():
         manifests = list(source.rglob('build-manifest-'+platform+'.json'))
         if len(manifests) != 1:
@@ -63,7 +63,23 @@ def collect(source, destination, release_version, revision):
             if release_version not in path.name or checksums.get(path.name) != hashlib.sha256(path.read_bytes()).hexdigest():
                 raise ValueError('Stale or corrupted installer: '+path.name)
             check_format(path)
-        for path in installers+[manifest_path]:
+        extras=[]
+        if signed:
+            updates = [p for p in manifest_path.parent.iterdir() if (p.name.endswith('.app.tar.gz') if system=='darwin' else p.suffix in ({'.exe'} if system=='win32' else {'.AppImage','.deb'}))]
+            if len(updates)!=(2 if system=='linux' else 1):raise ValueError('Missing or duplicate updater payload: '+platform)
+            for payload in updates:
+                signature=payload.with_name(payload.name+'.sig')
+                if not signature.is_file() or checksums.get(signature.name)!=hashlib.sha256(signature.read_bytes()).hexdigest():raise ValueError('Missing or corrupted updater signature: '+platform)
+                if checksums.get(payload.name)!=hashlib.sha256(payload.read_bytes()).hexdigest():raise ValueError('Corrupted updater payload: '+platform)
+                from desktop.verify_signature import verify
+                public_key=json.loads((ROOT/'desktop/src-tauri/tauri.conf.json').read_text(encoding='utf-8'))['plugins']['updater']['pubkey']
+                verify(payload,signature.read_text(encoding='utf-8').strip(),public_key,release_version)
+                if payload not in installers:extras.append(payload)
+                extras.append(signature)
+                published=re.sub(r'[^A-Za-z0-9._-]+','-',payload.name).strip('.-')
+                target={'windows':'windows-x86_64-nsis','macos-arm64':'darwin-aarch64-app','macos-intel':'darwin-x86_64-app','linux':'linux-x86_64-'+('deb' if payload.suffix=='.deb' else 'appimage')}[platform]
+                platforms[target]={'url':f'https://github.com/LeymansGuz/Study-Desk/releases/download/{tag}/{published}','signature':signature.read_text(encoding='utf-8').strip()}
+        for path in installers+extras+[manifest_path]:
             # GitHub normalizes special characters in asset names. Choose stable
             # portable names before hashing so downloaded checksums still work.
             published_name = re.sub(r'[^A-Za-z0-9._-]+', '-', path.name).strip('.-')
@@ -77,6 +93,9 @@ def collect(source, destination, release_version, revision):
         raise ValueError('Release staging directory must be empty.')
     for path,published_name in files:
         shutil.copy2(path, destination/published_name)
+    if signed:
+        from datetime import datetime,timezone
+        (destination/'latest.json').write_text(json.dumps({'version':release_version,'notes':'A signed Study Desk update is available. See the GitHub release for details.','pub_date':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'platforms':platforms},indent=2)+'\n',encoding='utf-8')
     lines = [hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in sorted(destination.iterdir())]
     (destination/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n', encoding='utf-8')
     return files
@@ -88,4 +107,4 @@ if __name__ == '__main__':
     if sys.argv[1:] != ['--check-tag']:
         if len(sys.argv) != 3:
             raise SystemExit('Usage: collect_release.py INPUT OUTPUT, or --check-tag')
-        collect(sys.argv[1], sys.argv[2], release_version, os.environ.get('GITHUB_SHA', ''))
+        collect(sys.argv[1], sys.argv[2], release_version, os.environ.get('GITHUB_SHA', ''),signed=True,tag=os.environ['RELEASE_TAG'])

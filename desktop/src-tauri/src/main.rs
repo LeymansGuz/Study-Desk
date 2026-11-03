@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{fs, io::{Read, Write}, net::{TcpListener, TcpStream}, process::{Child, Command, Stdio}, sync::{Arc, Mutex}, thread, time::{Duration, Instant}};
 use tauri::Manager;
+use tauri_plugin_opener::OpenerExt;
+mod updates;
 
 struct Backend { child: Mutex<Option<Child>>, port: u16, secret: String }
 impl Backend {
@@ -31,6 +33,8 @@ fn main() {
     let engine=Arc::new(Mutex::new(None::<Arc<Backend>>));
     let setup_engine=engine.clone();
     let app=tauri::Builder::default()
+      .plugin(tauri_plugin_updater::Builder::new().build())
+      .plugin(tauri_plugin_opener::init())
       .plugin(tauri_plugin_single_instance::init(|app,_,_| {
           if let Some(window)=app.get_webview_window("main") { let _=window.show();let _=window.set_focus(); }
       }))
@@ -44,15 +48,22 @@ fn main() {
         let mut command=Command::new(backend);
         command.args(["--port",&port.to_string(),"--data-dir",&data.to_string_lossy(),"--parent-pid",&std::process::id().to_string()]);
         command.env("STUDY_DESKTOP_SECRET",&secret).stdin(Stdio::null()).stdout(Stdio::null());
+        command.env("STUDY_DESKTOP_VERSION",app.package_info().version.to_string());
         let log=fs::OpenOptions::new().create(true).append(true).open(data.join("startup.log"))?;
         command.stderr(Stdio::from(log));
         #[cfg(windows)] { use std::os::windows::process::CommandExt;command.creation_flags(0x08000000); }
         let child=command.spawn()?;
         let state=Arc::new(Backend {child:Mutex::new(Some(child)),port,secret});
         *setup_engine.lock().unwrap()=Some(state.clone());
+        updates::start(app.handle().clone(), state.clone());
+        let external=app.handle().clone();
         let window=tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::App("index.html".into()))
           .title("Study Desk").inner_size(1280.0,860.0).min_inner_size(800.0,620.0)
           .on_navigation(move |url| {
+              if url.scheme()=="https" && (url.host_str()==Some("cdn.deepseek.com") || (url.host_str()==Some("github.com") && url.path().starts_with("/LeymansGuz/Study-Desk"))) {
+                  let _=external.opener().open_url(url.as_str(),None::<&str>);
+                  return false;
+              }
               matches!(url.scheme(),"tauri"|"about") || (url.scheme()=="http" && url.host_str()==Some("127.0.0.1") && url.port()==Some(port)) || (url.scheme()=="http" && url.host_str()==Some("tauri.localhost"))
           }).build()?;
         thread::spawn(move || {

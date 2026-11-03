@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.3-beta.2](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.3-beta.2).
+The current published beta is [v0.2.4-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.4-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.3_amd64.deb
+sudo apt install ./Study-Desk_0.2.4_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.3_amd64.AppImage
-./Study-Desk_0.2.3_amd64.AppImage
+chmod +x ./Study-Desk_0.2.4_amd64.AppImage
+./Study-Desk_0.2.4_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -51,7 +51,7 @@ an API key needs an available system credential store, such as Secret Service.
 
 ### First launch
 
-1. Open **Study Desk**.
+1. Open **Study Desk**. Review the data-use notice and usage terms before enabling AI. You can defer this and use Workspace. Each upload requires confirmation that you may process the documents.
 2. In **Settings → DeepSeek connection**, enter your API key and choose **Save API
    key**. The app stores it in the system credential store. No `.env` editing is
    needed, and saving a key makes no paid request.
@@ -67,9 +67,33 @@ The four platform builds passed native CI builds, offline regression tests and
 packaged-backend checks. Windows has also received graphical checks. macOS and
 Linux graphical behaviour remains experimental and needs testing on your device.
 
-Your documents and progress are kept in your operating system's application-data
-folder. Close Study Desk before installing an update, and create a backup in
-Settings first. Updating the program preserves the separate study-data folder.
+### Updates inside the app
+
+In **Settings → App updates**, choose **Check for updates**, then **Download update**.
+The app downloads a full package from the official GitHub release and verifies
+its signature and signed version. Choose **Install and restart** when requests,
+uploads and indexing are finished. Study Desk creates and verifies a local backup
+before replacing the program. Documents, progress and your system credential stay
+separate from installation files. A failed check/download installs nothing.
+If installation cannot finish, reopen the app and check its installed version
+before retrying. Backups support recovery; they do not guarantee automatic
+database downgrades.
+
+Updates are manual, with full downloads rather than changed-file downloads.
+Install this first updater-enabled release manually from the links above.
+On Linux, the AppImage must be writable by your user; DEB updates may request
+administrator permission. On macOS, run from Applications rather than the DMG.
+Update signatures do not remove OS warnings about unsigned/not-notarized apps.
+
+### Data use and permissions
+
+The [data-use notice](PRIVACY.md), [usage terms](TERMS.md) and
+[third-party notices](THIRD-PARTY-NOTICES.md) are also in Settings. AI requests
+send relevant excerpts, questions and attempts to DeepSeek using your paid
+account. The backend requires current acknowledgement; withdrawal in Settings
+blocks future AI requests. Upload only material you may lawfully process.
+Local study data and backups are not encrypted by the app.
+See [compliance scope](COMPLIANCE.md) for remaining responsibilities.
 
 ## Platform support
 

@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.3-beta.2).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.4-beta.1).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -30,8 +30,7 @@ does not fall back to a plaintext key file.
 
 The application still runs a private loopback backend internally. Its random
 port and per-launch HttpOnly session are managed automatically. It does not
-publish a server on your network. Links outside the workspace cannot navigate
-the application's main window, and web content has no Tauri shell/file privileges.
+publish a server on your network. The main window stays inside its workspace. Allowlisted provider/legal and official repository links open in the system browser. Web content has no Tauri shell/file privileges.
 
 ## Study data and updates
 
@@ -43,10 +42,7 @@ Study data is separate from installation files:
 | macOS | `~/Library/Application Support/link.spookelgoose.studydesk` |
 | Linux | `$XDG_DATA_HOME/link.spookelgoose.studydesk`, usually `~/.local/share/link.spookelgoose.studydesk` |
 
-Install a newer release over the current one after closing Study Desk. Study data
-and the system-stored key are preserved. Create a backup in Settings first.
-There is no automatic updater in this release. Uninstalling removes the program;
-study data and the saved credential are intentionally retained for reinstalling.
+Use Settings → App updates to check, download and install a signed full-package update. Installation requires an idle workspace and a verified backup, then restarts the app. The first updater-enabled release needs a manual install. Uninstalling preserves study data and the system credential. See README for platform permissions and recovery limits.
 
 To transfer a source-edition workspace, stop both editions first. Back up its
 `data` folder, then copy its contents into the desktop data directory before
@@ -130,3 +126,28 @@ this Windows computer. The installed native window was inspected in light and
 dark modes; its first-run key setup and normal close/shutdown worked. Scanned-PDF
 upload, spawned OCR workers and local indexing also passed with an empty provider
 key. The release has not been verified on a clean Windows VM, macOS or Linux.
+
+## Maintaining signed updates
+
+Updater signing is separate from OS code signing. Official CI uses repository
+secret `TAURI_SIGNING_PRIVATE_KEY`. The public key and strict signed-version check
+are embedded in the native shell. Keep an encrypted offline backup of the private
+key: losing it prevents seamless updates for existing users. The maintainer's
+ignored `.signing/` directory must never be committed or bundled.
+
+For a local build, set `TAURI_SIGNING_PRIVATE_KEY` to your key path and, if needed,
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` in the build environment. Forks must generate
+their own key and change the fixed repository/feed URLs.
+
+Bump the version consistently in Python/uv, npm and Cargo/Tauri metadata, commit
+and push, then run desktop-build with a new matching tag. All four platform builds
+must pass. Publication independently verifies signatures, signed versions,
+architecture and checksums, then publishes latest.json and atomically updates
+desktop/update-manifest.json. The feed covers Windows NSIS, both Mac architectures
+and Linux DEB/AppImage. Never point it at incomplete/unsigned releases or replace
+published payloads. Use a newer application version for another update.
+
+Native update authority stays in Rust. The UI can request only check/download/
+install. Private control endpoints require the per-launch secret; webview input
+cannot override the feed, signing key or download path. Updates make no DeepSeek
+calls and send no course content to GitHub.

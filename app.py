@@ -1491,3 +1491,6 @@ app.add_middleware(IngressSecurity, services=globals())
 from local_runtime import LocalBoundary, install_local
 install_local(app)
 app.add_middleware(LocalBoundary)
+import compliance
+compliance.install(app)
+app.add_middleware(compliance.DataUseBoundary)

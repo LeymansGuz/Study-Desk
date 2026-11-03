@@ -67,3 +67,6 @@ desktop/src-tauri/gen/
 
 # Local Git history backups
 *.bundle
+
+# Private updater signing material
+.signing/

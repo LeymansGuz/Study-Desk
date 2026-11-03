@@ -30,7 +30,31 @@ def main():
                 if '.dist-info/' in str(f).replace('\\','/') and any(x in f.name.lower() for x in ['license','copying','notice']):
                     source=distribution.locate_file(f)
                     if source.is_file():
-                        target=licenses/name/f.name;target.parent.mkdir(exist_ok=True);shutil.copy2(source,target)
+                        relative=Path(*f.parts[f.parts.index(next(part for part in f.parts if part.endswith('.dist-info')))+1:])
+                        target=licenses/name/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
+        (licenses/'Python-dependencies.json').write_text(json.dumps([{'name':d.metadata.get('Name'),'version':d.version,'license':d.metadata.get('License-Expression') or d.metadata.get('License'),'homepage':d.metadata.get('Home-page')} for d in md.distributions()],indent=2),encoding='utf-8')
+        python_license=Path(sys.base_prefix)/'LICENSE.txt'
+        if python_license.is_file():shutil.copy2(python_license,licenses/'Python-LICENSE.txt')
+        else:
+            with local_app.download_client().open(f'https://raw.githubusercontent.com/python/cpython/v{platform.python_version()}/LICENSE',timeout=60) as response:(licenses/'Python-LICENSE.txt').write_bytes(response.read())
+        for name in ['PRIVACY.md','TERMS.md','THIRD-PARTY-NOTICES.md']:
+            shutil.copy2(ROOT/name,notice.parent/name)
+    # Native dependency notices must travel inside the packaged backend too.
+    native_licenses=ROOT/'dist/backend/StudyDeskBackend/licenses/Rust';native_licenses.mkdir(parents=True,exist_ok=True)
+    metadata=json.loads(subprocess.check_output(['cargo','metadata','--locked','--format-version','1','--manifest-path',str(ROOT/'desktop/src-tauri/Cargo.toml')],cwd=ROOT,text=True,encoding='utf-8'))
+    inventory=[]
+    for package in metadata['packages']:
+        inventory.append({k:package.get(k) for k in ['name','version','license','repository']})
+        folder=Path(package['manifest_path']).parent
+        for source in folder.iterdir():
+            if source.is_file() and source.name.lower().startswith(('license','copying','notice','copyright')):
+                target=native_licenses/(package['name']+'-'+package['version'])/source.name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
+        if package.get('license_file'):
+            source=folder/package['license_file']
+            if source.is_file():
+                target=native_licenses/(package['name']+'-'+package['version'])/source.name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
+    (native_licenses/'inventory.json').write_text(json.dumps(inventory,indent=2),encoding='utf-8')
+    if not options.shell_only:
         node_license=Path(node).parent/'LICENSE'
         if node_license.is_file():shutil.copy2(node_license,licenses/'Node-LICENSE.txt')
         node_version=subprocess.check_output([node,'--version'],text=True).strip()
@@ -62,7 +86,12 @@ def main():
     artifacts=ROOT/'desktop/src-tauri/target/release/bundle'
     output=ROOT/'dist/installers';output.mkdir(parents=True,exist_ok=True)
     for source in artifacts.rglob('*'):
-        if source.is_file() and source.suffix in {'.exe','.msi','.dmg','.deb','.AppImage'} and version in source.name:shutil.copy2(source,output/source.name)
+        if source.is_file() and (source.suffix in {'.exe','.msi','.dmg','.deb','.AppImage','.sig'} or source.name.endswith('.app.tar.gz')):
+            name=source.name
+            if '.app.tar.gz' in name:
+                arch='aarch64' if platform.machine().lower() in {'arm64','aarch64'} else 'x64'
+                name=f'Study-Desk_{version}_{arch}.app.tar.gz'+('.sig' if name.endswith('.sig') else '')
+            if version in name:shutil.copy2(source,output/name)
     if not any(p.suffix in {'.exe','.msi','.dmg','.deb','.AppImage'} and version in p.name for p in output.iterdir()):
         raise RuntimeError('No installer for this release version was produced.')
     lines=[hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in output.iterdir() if p.is_file() and p.name!='SHA256SUMS.txt']

@@ -7,6 +7,7 @@ root=Path(SPECPATH).parent
 datas=[(str(root/'static'),'static'),(str(root/'scripts/check-math.cjs'),'scripts'),
        (str(root/'policy/tutor.rego'),'policy'),(str(root/'policy/local_authz.rego'),'policy'),
        (str(root/'LICENSE'),'.')]
+datas += [(str(root/name),'.') for name in ['PRIVACY.md','TERMS.md','THIRD-PARTY-NOTICES.md']]
 binaries=[]
 hidden=[p.stem for p in root.glob('*.py') if not p.stem.startswith(('test_','evaluate_')) and p.stem not in {'run','service_host','local_app','desktop_backend'}]
 for package in ['chromadb','rapidocr_onnxruntime','extractous','keyring.backends']:

@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.3-beta.3
+        default: v0.2.4-beta.1
       publish:
         description: Publish checked installers as a prerelease
         type: boolean
@@ -65,6 +65,9 @@ jobs:
       - name: Offline regression tests
         run: uv run --frozen --group dev --group desktop-build pytest -q
       - name: Build and check the packaged backend
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: uv run --frozen --group desktop-build python desktop/build.py
       - name: Save build provenance
         shell: python
@@ -94,6 +97,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.9.5'
       - uses: actions/download-artifact@v4
         with:
           pattern: study-desk-*
@@ -101,7 +107,7 @@ jobs:
       - name: Check all platforms and create combined checksums
         env:
           RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
-        run: python desktop/collect_release.py downloaded-installers release-files
+        run: uv run --no-project --with cryptography==50.0.2 python -m desktop.collect_release downloaded-installers release-files
       - name: Publish beta downloads
         env:
           GH_TOKEN: ${{ github.token }}
@@ -123,3 +129,15 @@ jobs:
           fi
           gh release upload "$RELEASE_TAG" release-files/* --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease
+      - name: Publish complete signed update feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: python
+        run: |
+          import base64,json,os,subprocess
+          endpoint='repos/'+os.environ['GH_REPO']+'/contents/desktop/update-manifest.json'
+          current=subprocess.run(['gh','api',endpoint],capture_output=True,text=True)
+          body={'message':'Publish signed desktop update feed','branch':'main','content':base64.b64encode(open('release-files/latest.json','rb').read()).decode()}
+          if current.returncode==0:body['sha']=json.loads(current.stdout)['sha']
+          subprocess.run(['gh','api','--method','PUT',endpoint,'--input','-'],input=json.dumps(body),text=True,check=True,stdout=subprocess.DEVNULL)
