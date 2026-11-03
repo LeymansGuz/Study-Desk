@@ -89,14 +89,23 @@ def test_concurrent_retry_shares_one_extraction_worker(monkeypatch):
  asyncio.run(run())
 
 def test_cancelled_request_keeps_worker_reserved_until_ocr_finishes(monkeypatch):
- import time
+ import threading
+ started=threading.Event();finish=threading.Event()
  def extract(name,data):
-  time.sleep(.1);return dict(filename=name,text='Readable local question',page_count=1,ocr_used=True,truncated=False,chars=23,warnings=[],needs_review=False)
+  started.set();assert finish.wait(5)
+  return dict(filename=name,text='Readable local question',page_count=1,ocr_used=True,truncated=False,chars=23,warnings=[],needs_review=False)
  monkeypatch.setattr(attachment_batch,'extract_assignment_file',extract)
  async def run():
   worker=attachment_batch.Extractor();request=asyncio.create_task(worker.extract('owner','a.txt',b'question'))
-  await asyncio.sleep(.02);request.cancel()
-  with pytest.raises(asyncio.CancelledError):await request
-  assert worker.busy()
-  await asyncio.sleep(.15);assert not worker.busy()
+  try:
+   assert await asyncio.to_thread(started.wait,3)
+   request.cancel()
+   with pytest.raises(asyncio.CancelledError):await request
+   assert worker.busy()
+   finish.set()
+   async def idle():
+    while worker.busy():await asyncio.sleep(.01)
+   await asyncio.wait_for(idle(),5)
+   assert not worker.busy()
+  finally:finish.set()
  asyncio.run(run())
