@@ -91,14 +91,16 @@ def credential(provider, base_url=''):
 
 def read_key(provider, base_url=''):
     env_name = {'openrouter':'OPENROUTER_API_KEY','anthropic':'ANTHROPIC_API_KEY','openai':'OPENAI_DIRECT_API_KEY'}.get(provider)
+    try:
+        import desktop_runtime
+        saved=desktop_runtime.credential_store().get_password(*credential(provider, base_url)) or ''
+        if saved:return saved
+    except Exception:pass
     if os.getenv('STUDY_DESKTOP') != 'true':
         if env_name and os.getenv(env_name): return os.environ[env_name].strip()
         if provider == 'deepseek' and os.getenv('OPENAI_API_KEY') and 'deepseek.com' in os.getenv('OPENAI_BASE_URL','https://api.deepseek.com/v1'):
             return os.environ['OPENAI_API_KEY'].strip()
-    try:
-        import desktop_runtime
-        return desktop_runtime.credential_store().get_password(*credential(provider, base_url)) or ''
-    except Exception: return ''
+    return ''
 
 def snapshot():
     config = selection()
@@ -435,8 +437,8 @@ def install(app):
             elif body.free_only:raise HTTPException(422,'Choose the eligible free hosting endpoint. Free requests must not route to arbitrary providers.')
         if not read_key(body.provider,url) and body.provider!='custom':raise HTTPException(422,'Save a key for this connection first.')
         config={'provider':body.provider,'model':body.model.strip(),'base_url':url,'free_only':body.free_only,
-                'pricing':entry['pricing'] if entry else None,'json_mode':entry['json_mode'] if entry else body.json_mode,'reasoning':body.reasoning,
-                'structured_outputs':entry.get('structured_outputs',False) if entry else False,
+                'pricing':entry['pricing'] if entry else None,'json_mode':body.json_mode and (entry['json_mode'] if entry else True),'reasoning':body.reasoning,
+                'structured_outputs':body.json_mode and entry.get('structured_outputs',False) if entry else False,
                 'routes':routes}
         db.set_app_setting('ai_connection_v1',json.dumps(config))
         return {'message':'Connection saved. New study requests use this model; running workflows keep their original connection.','scope':'brief_only' if limited(snapshot()) else 'full'}

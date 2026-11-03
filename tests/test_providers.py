@@ -3,6 +3,7 @@ import asyncio,json,time
 import pytest,httpx
 import providers,db,auth,observability,tools
 from langchain_core.messages import HumanMessage
+REAL_READ_KEY=providers.read_key
 
 @pytest.fixture(autouse=True)
 def isolated_provider_state(monkeypatch):
@@ -197,3 +198,18 @@ def test_fresh_desktop_health_is_available_without_a_key(client,monkeypatch):
     assert response.status_code==200
     assert tools.public_settings()['configured'] is False
     tools.get_settings.cache_clear()
+
+def test_saved_source_key_takes_precedence_over_old_env(monkeypatch):
+    import desktop_runtime
+    class Store:
+        def get_password(self,*args):return 'new-saved-key'
+    monkeypatch.setattr(desktop_runtime,'credential_store',lambda:Store())
+    monkeypatch.setenv('STUDY_DESKTOP','false');monkeypatch.setenv('OPENROUTER_API_KEY','old-env-key')
+    assert REAL_READ_KEY('openrouter')=='new-saved-key'
+
+def test_custom_json_mode_can_be_disabled_even_with_catalog_entry(client):
+    url='https://example.test/v1'
+    providers.CATALOG['custom']={'identity':('custom',url),'at':time.time(),'models':[providers.metadata(row('fixture/model'),'custom')]}
+    payload={'provider':'custom','model':'fixture/model','base_url':url,'free_only':False,'accept_charges':True,'eligible':True,'json_mode':False}
+    assert client.post('/local/providers',json=payload).status_code==200
+    assert providers.snapshot().json_mode is False
