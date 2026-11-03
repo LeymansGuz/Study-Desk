@@ -3,10 +3,10 @@ window.studyAttachments={};
 class AttachmentQueue {
   constructor(input,kind,limits){
     this.input=input;this.kind=kind;this.limits=limits;this.files=[];this.urls=new Map();this.page=0;this.busy=false;this.extracted=null;
-    input.multiple=true;input.required=false;
+    input.multiple=true;input.required=false;input.classList.add('attachment-picker');
     this.zone=document.createElement('section');this.zone.className='attachment-zone';this.zone.tabIndex=0;this.zone.setAttribute('aria-label',`${kind==='ask'?'Question':'Workspace'} attachments: drop files or paste a screenshot`);
     input.parentElement.insertAdjacentElement('afterend',this.zone);
-    this.zone.innerHTML='<p class="hint">Drop files here or focus this area and paste a screenshot.</p><div class="local-actions"><button type="button" class="quiet-button" data-paste>Paste screenshot</button><button type="button" class="quiet-button" data-clear>Clear selected files</button></div><p data-summary class="hint"></p><div data-files></div><div data-pages class="local-actions"></div><p data-message role="status" aria-live="polite"></p>';
+    this.zone.innerHTML='<p class="hint">Drop files here or focus this area and paste a screenshot.</p><div class="local-actions"><button type="button" class="quiet-button" data-choose>Choose files</button><button type="button" class="quiet-button" data-paste>Paste screenshot</button><button type="button" class="quiet-button" data-clear>Clear selected files</button></div><p data-summary class="hint"></p><div data-files></div><div data-pages class="local-actions"></div><p data-message role="status" aria-live="polite"></p>';
     input.onchange=()=>{this.add([...input.files]);input.value='';};
     this.zone.ondragover=e=>{e.preventDefault();this.zone.classList.add('drag-over');};
     this.zone.ondragleave=()=>this.zone.classList.remove('drag-over');
@@ -14,6 +14,7 @@ class AttachmentQueue {
     this.zone.onpaste=e=>{const files=[...e.clipboardData.files];if(files.length){e.preventDefault();this.add(this.namedImages(files));}};
     input.form.addEventListener('paste',e=>{if(!this.zone.contains(e.target)&&e.clipboardData.files.length){e.preventDefault();this.add(this.namedImages([...e.clipboardData.files]));}});
     this.zone.querySelector('[data-paste]').onclick=()=>this.paste();
+    this.zone.querySelector('[data-choose]').onclick=()=>{if(!this.busy)this.input.click();};
     this.zone.querySelector('[data-clear]').onclick=()=>{if(!this.busy){this.files=[];this.invalidate();this.render();}};
     if(kind==='ask'){
       this.review=document.querySelector('#attachment-review');this.text=document.querySelector('#attachment-text');this.checked=document.querySelector('#attachment-reviewed');
@@ -66,6 +67,7 @@ class AttachmentQueue {
     if(this.files.length>10)for(const [label,delta] of [['Previous',-1],['Next',1]]){const b=document.createElement('button');b.type='button';b.className='quiet-button';b.textContent=label;b.disabled=this.page+delta<0||(this.page+delta)*10>=this.files.length;b.onclick=()=>{this.page+=delta;this.render();};pages.append(b);}
     this.zone.querySelector('[data-clear]').disabled=this.busy||!this.files.length;
     this.zone.querySelector('[data-paste]').disabled=this.busy;
+    this.zone.querySelector('[data-choose]').disabled=this.busy;
   }
   lock(value){this.busy=value;this.input.disabled=value;this.input.form.querySelectorAll('select').forEach(select=>select.disabled=value);this.render();}
   async read(){

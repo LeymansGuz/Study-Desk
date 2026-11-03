@@ -3,7 +3,7 @@ window.studyAttachments=window.studyAttachments||{};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rich=s=>window.studyRich(String(s??''));
-const fileSize=bytes=>bytes<1048576?`${(bytes/1024).toFixed(1)} KB`:`${(bytes/1048576).toFixed(1)} MB`;
+const fileSize=bytes=>bytes<1024?`${bytes} B`:bytes<1048576?`${(bytes/1024).toFixed(1)} KB`:`${(bytes/1048576).toFixed(1)} MB`;
 const local={view:'practice',courses:[],files:[],filePage:0,jobs:[],rebuildPending:false,practice:null,ask:null,path:null,settings:{},busy:new Set()};
 const types={syllabus:'Syllabus / learning outcomes',notes:'Notes',past_paper:'Past paper',exercise:'Exercise / assignment',marking_scheme:'Marking scheme',exam_report:'Exam report'};
 
