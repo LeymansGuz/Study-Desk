@@ -32,7 +32,7 @@ def main():
     for key in list(os.environ):
         if key.startswith(('OPENAI_','DEEPSEEK_','LANGCHAIN_','LANGSMITH_','OPA_')):os.environ.pop(key,None)
     os.environ.update(APP_DB_PATH=str(data/'app.db'),USERS_DIR=str(data/'users'),CHROMA_DIR=str(data/'chroma'),
-        OPENAI_BASE_URL='https://api.deepseek.com/v1',OPENAI_MODEL='deepseek-chat',OPENAI_API_KEY='',
+        OPENAI_BASE_URL='https://api.deepseek.com/v1',OPENAI_MODEL='deepseek-flash',OPENAI_API_KEY='',
         LANGSMITH_TRACING='false',LANGCHAIN_TRACING_V2='false',AUTO_MAINTENANCE='true',MANAGED_LOGGING='true',
         STUDY_DESKTOP='true',APP_ALLOWED_HOSTS='localhost,127.0.0.1,::1',
         STUDY_NODE_BINARY=str(binary_dir/('node.exe' if os.name=='nt' else 'node')),

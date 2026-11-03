@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rich=s=>window.studyRich(String(s??''));
-const local={view:'practice',courses:[],files:[],filePage:0,practice:null,ask:null,path:null,settings:{},busy:new Set()};
+const local={view:'practice',courses:[],files:[],filePage:0,jobs:[],rebuildPending:false,practice:null,ask:null,path:null,settings:{},busy:new Set()};
 const types={syllabus:'Syllabus / learning outcomes',notes:'Notes',past_paper:'Past paper',exercise:'Exercise / assignment',marking_scheme:'Marking scheme',exam_report:'Exam report'};
 
 async function api(path,options={}) {
@@ -43,6 +43,7 @@ async function courses(){
   const result=await api('/workspace/courses');local.courses=result.courses||[];
   $$('.course-select').forEach(el=>{const selected=el.value;el.innerHTML='<option value="">Choose a course</option>'+local.courses.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');if(local.courses.some(c=>c.id===selected))el.value=selected;else if(local.courses.length===1)el.value=local.courses[0].id;});
   $('#coverage-open').disabled=!$('#workspace-course').value;$('#delete-course').disabled=!$('#workspace-course').value;
+  renderMaintenance();
 }
 function request(){return {topic:$('#scope').value==='syllabus'?'Any syllabus topic':$('#topic').value,scope:$('#scope').value,difficulty:$('#difficulty').value,question_types:[$('#question-type').value],course_ids:[$('#practice-course').value],doc_types:$$('#source-types input:checked').map(x=>x.value),figure_mode:'auto',client_request_id:crypto.randomUUID()};}
 function figure(data){
@@ -101,10 +102,20 @@ async function sources(data){
 }
 async function jobs(){
   clearTimeout(local.jobsTimer);
-  const data=await api('/workspace/jobs');const rows=data.jobs||[];
-  $('#jobs').innerHTML=rows.slice(0,8).map(j=>`<p>${esc(j.course_name||'Indexing')} · ${esc(j.status)} ${esc(j.message||j.error||'')}${j.status==='failed'?` <button type="button" class="quiet-button" data-retry="${esc(j.id)}">Retry</button>`:''}</p>`).join('');
+  const data=await api('/workspace/jobs');const rows=local.jobs=data.jobs||[];
+  $('#jobs').innerHTML=rows.slice(0,8).map(j=>`<p>${esc(local.courses.find(c=>c.id===j.course_id)?.name||'Indexing')} · ${esc(j.status)} ${Number(j.progress)||0}% ${esc(j.message||j.error||'')}${j.status==='failed'?` <button type="button" class="quiet-button" data-retry="${esc(j.id)}">Retry</button>`:''}</p>`).join('');
+  renderMaintenance();
   $$('[data-retry]').forEach(b=>b.onclick=async()=>{try{await post('/workspace/jobs/'+b.dataset.retry+'/retry');await jobs();}catch(e){status('#upload-status',e.message,true);}});
   if(local.view==='workspace'&&rows.some(j=>['queued','running'].includes(j.status)))local.jobsTimer=setTimeout(()=>jobs().catch(fail),2000);
+}
+function renderMaintenance(){
+  const course=$('#workspace-course').value;
+  const active=local.jobs.find(j=>j.course_id===course&&['queued','running'].includes(j.status));
+  const hasFiles=local.files.some(f=>f.course_id===course);
+  $('#reindex').disabled=!course||!hasFiles||!!active||local.rebuildPending;
+  $('#reindex-hint').textContent=!course?'Choose a course to manage its index.':!hasFiles?'Upload course material before rebuilding its index.':active?'This course is being indexed. Wait for it to finish.':'Rebuild only this course. Existing documents and course settings are kept. This makes no AI generation calls.';
+  const job=local.jobs.find(j=>j.course_id===course&&j.doc_type==='rebuild');
+  $('#rebuild-progress').innerHTML=job?`<p>${esc(({queued:'Rebuild queued',running:'Rebuilding course index',done:'Course index rebuilt',failed:'Rebuild failed'})[job.status]||job.status)} · ${Number(job.progress)||0}% ${esc(job.message||'')}</p>${['queued','running'].includes(job.status)?`<progress aria-label="Course index rebuild progress" max="100" value="${Number(job.progress)||0}"></progress>`:''}`:'';
 }
 async function workspace(){
   const course=$('#workspace-course').value;
@@ -122,7 +133,7 @@ function renderFiles(){
   $$('[data-type]').forEach(b=>b.onchange=async()=>{try{await api('/workspace/files/'+b.dataset.type+'/type',{method:'PUT',body:JSON.stringify({doc_type:b.value})});await workspace();}catch(e){fail(e);}});
   $$('[data-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this document and its indexed content?'))return;try{await api('/workspace/files/'+b.dataset.delete,{method:'DELETE'});await workspace();}catch(e){fail(e);}});
 }
-async function coverage(){const id=$('#workspace-course').value;if(!id)return;const data=await api('/workspace/courses/'+id+'/coverage');$('#coverage').hidden=false;$('#coverage-summary').textContent=`${Number(data.eligible_sections??data.sections?.length??0)} source sections available for practice.`;$('#scope-rules').value=typeof data.scope_rules==='string'?data.scope_rules:(data.scope_rules?.[0]?.scope_notes||'');}
+async function coverage(){const id=$('#workspace-course').value;if(!id)return;const data=await api('/workspace/courses/'+id+'/coverage');$('#coverage').hidden=false;$('#coverage-summary').textContent='Index summary: '+Number(data.eligible_sections??data.sections?.length??0)+' extracted sections available for practice. This is not a check of complete syllabus coverage.';$('#scope-rules').value=typeof data.scope_rules==='string'?data.scope_rules:(data.scope_rules?.[0]?.scope_notes||'');}
 async function learning(){const data=await api('/learning/dashboard');$('#saved-sessions').innerHTML=(data.sessions||[]).map(s=>`<div class="local-item"><p>${esc(s.question)}</p><button class="quiet-button" data-resume="${esc(s.id)}" data-kind="${esc(s.kind)}">Resume ${esc(({tutor:"session",explain:"explanation",path:"mastery path",exam:"bank exam"})[s.kind]||"session")}</button></div>`).join('')||'<p class="hint">Your study sessions will appear here.</p>';$$('[data-resume]').forEach(b=>b.onclick=()=>resume(b.dataset.kind,b.dataset.resume).catch(fail));await bank();}
 async function resume(kind,id){
   if(kind==='tutor'){const data=await api('/session/'+id);const mode=data.mode==='question'?'ask':'practice';view(mode);local.path=null;renderQuestion(mode,data,true);}
@@ -164,7 +175,7 @@ async function init(){
   $('#coverage-open').onclick=()=>coverage().catch(fail);$('#coverage-close').onclick=()=>$('#coverage').hidden=true;
   $('#scope-save').onclick=async()=>{try{await api('/workspace/courses/'+$('#workspace-course').value+'/scope',{method:'PUT',body:JSON.stringify({scope_notes:$('#scope-rules').value})});status('#coverage-status','Scope saved.');}catch(e){status('#coverage-status',e.message,true);}};
   $('#delete-course').onclick=async()=>{if(!confirm('Delete this course and all its documents?'))return;try{await api('/workspace/courses/'+$('#workspace-course').value,{method:'DELETE'});await courses();await workspace();}catch(e){fail(e);}};
-  $('#reindex').onclick=async()=>{try{await post('/workspace/reindex',{course_ids:$('#workspace-course').value?[$('#workspace-course').value]:[]});await jobs();}catch(e){fail(e);}};
+  $('#reindex').onclick=async()=>{if($('#reindex').disabled)return;local.rebuildPending=true;renderMaintenance();status('#reindex-status','Requesting a course index rebuild…');try{await post('/workspace/reindex',{course_id:$('#workspace-course').value});status('#reindex-status','Rebuild requested. Progress appears below.');await jobs();}catch(e){status('#reindex-status',e.message,true);}finally{local.rebuildPending=false;renderMaintenance();}};
   $('#source-close').onclick=()=>{$('#source-dialog').close();$('#source-pdf').src='about:blank';};
   $('#exam-form').onsubmit=e=>{e.preventDefault();task('exam',e.currentTarget,'#exam-status',async()=>renderExam(await post('/bank-exams',{course_id:$('#exam-course').value,count:Number($('#exam-count').value),difficulty:$('#exam-difficulty').value,question_type:$('#exam-type').value})));};
   pathControls();

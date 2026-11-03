@@ -476,11 +476,11 @@ def _ingest_user_locked(user_id, courses, doc_types):
         name, count = _publish_chunks(user_id, chunks, manifests, full=True)
     return {'chunks': count, 'files': records, 'collection': name, 'coverage': manifests, 'indexed_at': datetime.now(timezone.utc).isoformat(timespec='seconds')}
 
-def ingest_files(user_id, course, filenames, doc_type='notes', progress=None):
+def ingest_files(user_id, course, filenames, doc_type='notes', progress=None, *, force=False):
     with _user_ingest_lock(user_id):
-        return _ingest_file_set(user_id, course, filenames, doc_type, progress)
+        return _ingest_file_set(user_id, course, filenames, doc_type, progress, force=force)
 
-def _ingest_file_set(user_id, course, filenames, doc_type='notes', progress=None):
+def _ingest_file_set(user_id, course, filenames, doc_type='notes', progress=None, *, force=False):
     """Checkpoint extraction outside the publication lock; expose complete new files early."""
     import index_cache, json
     chunks, records, manifests = ([], [], [])
@@ -498,7 +498,7 @@ def _ingest_file_set(user_id, course, filenames, doc_type='notes', progress=None
         existing = db.get_document_by_name(user_id, course_id, filename)
         with path.open('rb') as handle:
             digest = hashlib.file_digest(handle, 'sha256').hexdigest()
-        if existing and published.get(filename, {}).get('extraction_signature') == index_cache.signature(digest) and (existing['doc_type'] == doc_type):
+        if not force and existing and published.get(filename, {}).get('extraction_signature') == index_cache.signature(digest) and (existing['doc_type'] == doc_type):
             record = {**existing, 'course_name': course.get('name', 'Course'), 'pages': published[filename].get('indexed_pages', [])}
             records.append(record)
             index_cache.notify(stage='cached', completed_files=index, cache_hits=existing.get('page_count', 0))

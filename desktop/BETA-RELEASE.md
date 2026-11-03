@@ -1,5 +1,10 @@
 Study Desk desktop beta — use your own funded DeepSeek API key in Settings.
 
+This beta provides optional Course scope settings and a background, selected-course
+index rebuild with progress and local storage guidance. The default model is
+DeepSeek Flash. The README includes separate normal-use and stress-workload cost
+estimates and explains the limits of previous reliability measurements.
+
 Download the installer for your computer:
 
 - Windows x64: setup executable.
@@ -11,4 +16,7 @@ The pipeline checks each native build and its packaged backend, then validates a
 
 AI questions and solutions can contain mistakes, particularly difficult proofs. Automated verification does not guarantee correctness. Study data stays on your computer; relevant excerpts are sent to DeepSeek for AI requests. No developer key or course documents are included.
 
-See README for installation, updates and backups. SHA256SUMS.txt covers every installer and build manifest attached to this release.
+See the [current README](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application)
+for installation, updates and backups. SHA256SUMS.txt covers every installer and
+build manifest attached to this release. Remaining Chroma and Linux GTK dependency
+risks are documented in the [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).

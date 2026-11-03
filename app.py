@@ -44,7 +44,7 @@ from auth import current_user as require_user
 from extraction import extract_assignment_file
 from graph import graph, initial_state
 from policy import decide, opa_ready, close_policy_client
-from retrieval import TOP_K, collection_count, chroma_heartbeat, corpus_documents, course_workspace, delete_file, delete_user_collection, ingest_files, ingest_user, search, update_course_name, update_file_doc_type, update_file_identity, user_workspace, format_lineage
+from retrieval import TOP_K, collection_count, chroma_heartbeat, corpus_documents, course_workspace, delete_file, delete_user_collection, ingest_files, search, update_course_name, update_file_doc_type, update_file_identity, user_workspace, format_lineage
 from security import ALLOWED_CORPUS_EXTENSIONS, MAX_ASSIGNMENT_CHARS, MAX_UPLOAD_BYTES, SlidingWindowLimiter, enforce_rate_limit, extract_office_text, sanitize_filename, sanitize_text, security_headers, validate_upload
 from tools import Assessment, Difficulty, MAX_ATTEMPTS, QuestionType, TutorError, choice_answer_correct, generate_choice_hint, public_settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s | %(message)s')
@@ -332,6 +332,9 @@ class CourseCreateRequest(BaseModel):
 class CourseScopeRequest(BaseModel):
     scope_notes: str = Field(default='', max_length=4000)
 
+class CourseReindexRequest(BaseModel):
+    course_id: str = Field(min_length=1, max_length=64)
+
 class Course(BaseModel):
     id: str
     name: str
@@ -534,17 +537,8 @@ def _course_access_lost(user_id: str, course_ids: list[str] | None) -> bool:
     owned = {course['id'] for course in _owned_courses(user_id)}
     return any((course_id not in owned and course_id not in {} for course_id in course_ids))
 
-def _ingest_and_sync(user_id: str) -> dict[str, Any]:
-    courses = _owned_courses(user_id)
-    doc_types = {(doc['course_id'], doc['filename']): doc.get('doc_type', 'notes') for doc in db.list_documents(user_id)}
-    result = ingest_user(user_id, courses, doc_types)
-    db.sync_documents(user_id, result['files'])
-    curriculum.course_map(user_id, [course['id'] for course in courses])
-    LAST_INGEST[user_id] = datetime.now(timezone.utc).isoformat(timespec='seconds')
-    return result
-
-def _ingest_files_and_sync(user_id: str, course: dict[str, Any], filenames: list[str], doc_type: str='notes', progress: Any=None) -> dict[str, Any]:
-    result = ingest_files(user_id, course, filenames, doc_type, progress=progress)
+def _ingest_files_and_sync(user_id: str, course: dict[str, Any], filenames: list[str], doc_type: str='notes', progress: Any=None, *, force: bool=False) -> dict[str, Any]:
+    result = ingest_files(user_id, course, filenames, doc_type, progress=progress, force=force)
     db.sync_documents(user_id, result['files'], prune=False, update_doc_type=False)
     curriculum.course_map(user_id, [course['id']])
     LAST_INGEST[user_id] = datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -598,7 +592,7 @@ def _process_index_job(job_id: str) -> None:
                 index_cache.detail(job_id, **values)
             token = index_cache.PROGRESS.set(stage_progress)
             try:
-                result = _ingest_files_and_sync(job['user_id'], course, filenames, doc_type, progress=report_progress)
+                result = _ingest_files_and_sync(job['user_id'], course, filenames, doc_type, progress=report_progress, force=job.get('doc_type') == 'rebuild')
             finally:
                 index_cache.PROGRESS.reset(token)
             processed += len(filenames)
@@ -1417,12 +1411,24 @@ async def delete_workspace_file(document_id: str, request: Request, user: dict[s
 
 @app.post('/workspace/reindex', tags=['workspace'])
 @index_limit
-async def reindex_workspace(request: Request, user: dict[str, Any]=Depends(require_user)) -> dict[str, Any]:
+async def reindex_workspace(request: Request, req: CourseReindexRequest, user: dict[str, Any]=Depends(require_user)) -> dict[str, Any]:
     enforce_rate_limit(request, UPLOAD_LIMIT, 'reindex', user_id=user['id'])
     async with WORKSPACE_LOCK:
-        result = await asyncio.to_thread(_ingest_and_sync, user['id'])
+        course = db.get_course(user['id'], req.course_id)
+        if not course:
+            raise HTTPException(404, 'Choose an existing course before rebuilding its index.')
+        _assert_course_editable(user, course)
+        documents = db.list_documents(user['id'], [course['id']])
+        if not documents:
+            raise HTTPException(422, 'This course has no documents. Upload course material before rebuilding its index.')
+        if db.active_index_job(user['id'], course['id']):
+            raise HTTPException(409, 'This course is already being indexed. Wait for indexing to finish.')
+        import growth_limits
+        growth_limits.disk()
+        job = db.add_index_job(user['id'], course['id'], [doc['filename'] for doc in documents], 'rebuild')
+    await _enqueue_index_job(job)
     _log_usage(user['id'], 'reindex')
-    return result
+    return {'status': 'queued', 'job_id': job['id'], 'course_id': course['id']}
 
 @app.get('/workspace/health', response_model=WorkspaceHealthResponse, tags=['workspace'])
 async def workspace_health(user: dict[str, Any]=Depends(require_user)) -> WorkspaceHealthResponse:

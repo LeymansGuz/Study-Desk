@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.2-beta.3
+        default: v0.2.3-beta.2
       publish:
         description: Publish checked installers as a prerelease
         type: boolean

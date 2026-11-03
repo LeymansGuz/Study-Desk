@@ -15,9 +15,9 @@ def disk(additional=0, path=None):
     base = Path(path or db.DB_PATH.parent)
     base.mkdir(parents=True, exist_ok=True)
     usage = shutil.disk_usage(base)
-    reserve = max(int(os.getenv('APP_MIN_FREE_DISK_BYTES', str(1024 ** 3))), int(usage.total * float(os.getenv('APP_MIN_FREE_DISK_PERCENT', '20')) / 100))
+    reserve = max(int(os.getenv('APP_MIN_FREE_DISK_BYTES', str(1024 ** 3))), int(usage.total * float(os.getenv('APP_MIN_FREE_DISK_PERCENT', '0')) / 100))
     if usage.free - additional < reserve:
-        raise HTTPException(507, 'Storage reserve reached. New uploads/exports are paused to protect existing documents; contact the owner.')
+        raise HTTPException(507, 'Not enough free disk space to process study files. Free some space on the drive containing your study data, then retry. Existing documents are kept.')
 
 def chunks(user, course, filename, count):
     if count > MAX_CHUNKS_DOCUMENT:

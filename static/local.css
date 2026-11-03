@@ -2,3 +2,7 @@
 .local-card input,.local-card select,.local-card textarea,.local-dialog select{padding:10px 12px;min-height:42px;border:1px solid var(--line,#bcc5bc);border-radius:7px;background:var(--surface,#fff);color:var(--ink,#20251f);font:inherit}.local-card input[type=radio],.local-card input[type=checkbox]{min-height:0;width:auto;padding:0}.local-card textarea{resize:vertical;min-height:110px}.local-card fieldset{border:0;padding:0;margin:0 0 16px}.local-card legend{margin-bottom:12px;font-weight:600}.local-dialog{color:var(--ink,#20251f)}
 
 .local-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:16px;margin:18px 0}.local-metrics>div{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--line);border-radius:8px}.local-metrics strong{text-transform:capitalize;font-size:.85rem}.local-metrics span{font-size:1.5rem}
+.index-maintenance{margin-top:24px;padding-top:20px;border-top:1px solid var(--border,#8b938633)}
+.index-maintenance summary{cursor:pointer;font-weight:600;padding:8px 0}
+.index-maintenance>p{margin:12px 0;line-height:1.6}
+.index-maintenance progress{display:block;width:100%;height:12px;accent-color:var(--accent)}

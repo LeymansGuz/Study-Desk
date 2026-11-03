@@ -126,6 +126,16 @@ Documents classified as **Syllabus / learning outcomes** supply the official
 allowed scope in the prompt. Content methods still require supporting evidence;
 a syllabus awaiting indexing blocks generation until its scope is available.
 
+In **Workspace → Course scope**, optionally specify learning objectives, allowed
+methods or excluded topics for the selected course. Its index summary counts
+extracted sections; it is not a guarantee of complete syllabus understanding.
+Uploads index automatically. If existing documents cannot be found during study,
+use **Index maintenance → Rebuild course index** for that course. The rebuild
+runs in the background with progress, keeps document types and scope settings,
+and makes no AI generation calls. It requires documents and cannot start while
+the course is already being indexed. Study-file processing keeps at least 1 GiB
+of disk space free by default, plus the estimated space needed for new work.
+
 In **Learning tools**, **Verified bank mock exam** draws 1–10 distinct existing
 verified questions from a selected course. Filter by difficulty and question type,
 or allow a mixture. There is no AI question-generation request and no silent
@@ -157,6 +167,74 @@ eligibility requires the current assessment policy and current course evidence.
 Review calls use the configured AI provider, so agreement is not a proof of
 correctness. Independently check important answers, especially complex proofs.
 Some complex questions can still be withheld or time out.
+
+## Estimated reliability
+
+Evidence reviewed **3 November 2026**. Reliability here means a generation
+request returns a question accepted by the pipeline. It does **not** mean the
+question, answer or difficulty has been proven correct.
+
+For mostly routine questions from well-indexed, readable course notes, a
+tentative planning estimate is **80–90% first-attempt acceptance**. Confidence
+in that estimate is limited: it is informed by earlier mixed testing, not a
+representative benchmark of the current release. Advanced proofs are a weaker
+area, and newer checks can reject candidates that earlier versions accepted.
+
+| Previous evaluation | Accepted / attempted | Acceptance |
+|---|---:|---:|
+| Earlier mixed-course/type run | 30 / 33 | 90.9% |
+| Later proof-heavy stress baseline | 9 / 14 | 64.3% |
+| Same stress cases after revisions | 8 / 14 | 57.1% |
+| Selected stress-case confirmation | 5 / 7 | 71.4% |
+
+These small runs used different revisions and deliberately difficult cases;
+they must not be pooled into a production success rate. The favourable mixed
+run does not establish a 90% current-release rate. Subsequent checks found that
+model-based reviewers could miss mathematical errors and source-like questions.
+There is no defensible universal answer-correctness percentage. Check important
+answers independently, especially proofs. Source-clone screening reduces risk
+but cannot guarantee that every generated question is original.
+
+Accepted questions averaged approximately **30–40 seconds** in several retained
+runs. Failed attempts may reach the 60/90-second deadline; queue wait is separate.
+Bank reuse avoids fresh question generation. Offline regression tests establish
+software behaviour, not these live model-quality estimates.
+
+## Estimated AI cost
+
+Study Desk charges no application subscription. AI requests use your own funded
+DeepSeek account. Recent normal-use MCQ examples recorded approximately
+**US$0.0025–$0.005 per operation**. Older evaluations deliberately stressed harder
+questions and retries; their generation logs suggest **US$0.01–$0.03 per accepted
+question**, including failed attempts. These describe different workloads:
+
+| Workload | Approximate unit cost (USD) | 100 questions/operations | 1,000 |
+|---|---:|---:|---:|
+| Recent MCQ operations, without additional failed attempts or follow-ups | $0.0025–$0.005 | $0.25–$0.50 | $2.50–$5 |
+| Heavier evaluation workload, allowing for failed generation attempts | $0.01–$0.03 per accepted question | $1–$3 | $10–$30 |
+
+For example, one mixed run recorded about $0.41536 for 33 generation attempts
+yielding 30 accepted questions; a later stress run recorded about $0.21849 for
+14 attempts yielding eight. These figures exclude extra evaluation-only audits.
+Some cancelled requests have missing usage, so recorded costs are incomplete.
+The normal-use examples are a small sample, not a measured average for every
+course or type. These ranges are estimates, not spending caps or provider invoices.
+
+Historical estimates used Flash rates of $0.30 per million uncached input tokens,
+$0.006 per million cached input tokens and $1.20 per million output tokens.
+Those match the published peak rates checked on 3 November 2026. The recent
+MCQ examples used off-peak rates, which are half, and benefited from cached input.
+For example, 16,196 input tokens (7,168 cached) plus 2,198 output tokens cost
+approximately $0.002695 at those off-peak rates. This is not evidence of a
+version-related price increase. Confirm [DeepSeek's current pricing](https://api-docs.deepseek.com/quick_start/pricing/)
+before topping up. Model, cache hits, retries and output length affect spending.
+The default model is `deepseek-flash`.
+
+Answer feedback, hints and concept explanations can incur additional AI charges.
+Opening bank questions or starting a bank exam makes no generation call, but
+grading can use AI. Local OCR, embedding/indexing and index rebuilding make no
+DeepSeek calls. **Settings → Local maintenance** shows recorded tokens, cached
+input and estimated USD costs; the provider dashboard is authoritative for billing.
 
 **Settings → Local maintenance** shows the last 30 days of tokens and estimated
 USD cost, with five decimal places. Cached input is part of total input, not an
@@ -577,7 +655,7 @@ uv run --frozen pytest -q
 Tests use temporary storage and block paid model calls. They cover local access
 boundaries, uploads, session resume, arithmetic, formatting, grading and
 feedback-derived calibration regressions. Offline tests do not establish live
-generation accuracy. CI runs the 106-test suite on Windows, Apple Silicon Mac,
+generation accuracy. CI runs the 113-test suite on Windows, Apple Silicon Mac,
 Intel Mac and Linux, then checks each frozen backend. Mac/Linux graphical and full
 source-edition lifecycle testing remain separate from those checks.
 

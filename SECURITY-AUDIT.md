@@ -141,5 +141,19 @@ Neither these notices nor the glib advisory were suppressed or described as
 fixed. Cross-platform stable-release approval still requires dependency review
 and graphical tests on the target devices.
 
+## Course index maintenance — 3 November 2026
+
+Source verification for version 0.2.3 passed 113 offline tests, 28 browser
+screenshots across two desktop widths and both themes, and a real local
+two-course upload/index/rebuild check. The selected course's document IDs,
+document types, syllabus exclusions and scope settings were preserved; the
+other course's chunks were unchanged. No paid provider calls were made.
+Invalid/empty-course requests fail before checking storage or creating jobs;
+concurrent rebuild requests are rejected while that course is indexing.
+The default free-space reserve is 1 GiB plus estimated new work. Explicit
+source-edition reserve settings remain respected. Model defaults use the
+provider's documented `deepseek-flash` identifier; legacy source settings are
+mapped only for the official DeepSeek endpoint.
+
 Private evidence is retained under ignored `audit/final-beta-audit/`; user study
 data and provider credentials were not added to the repository.

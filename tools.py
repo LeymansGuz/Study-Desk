@@ -83,7 +83,11 @@ def get_settings() -> LLMSettings:
         raise TutorError('OPENAI_API_KEY is missing. Put it in the local .env, then restart the API.')
     if api_key.lower().startswith(('sk-your', 'your-', 'replace')):
         raise TutorError('OPENAI_API_KEY is still a placeholder; set the real key.')
-    return LLMSettings(model=os.getenv('OPENAI_MODEL', 'deepseek-chat').strip(), base_url=os.getenv('OPENAI_BASE_URL', 'https://api.deepseek.com/v1').strip(), api_key=api_key)
+    model = os.getenv('OPENAI_MODEL', 'deepseek-flash').strip() or 'deepseek-flash'
+    base_url = os.getenv('OPENAI_BASE_URL', 'https://api.deepseek.com/v1').strip()
+    if base_url.rstrip('/') in {'https://api.deepseek.com', 'https://api.deepseek.com/v1'} and model == 'deepseek-chat':
+        model = 'deepseek-flash'
+    return LLMSettings(model=model, base_url=base_url, api_key=api_key)
 
 def public_settings() -> dict[str, Any]:
     """Configuration that is safe to expose through /health."""
