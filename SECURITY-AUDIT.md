@@ -123,5 +123,23 @@ including build dependencies, reports no known vulnerabilities. These scans
 are point-in-time checks, not a guarantee against unknown vulnerabilities or a
 full audit of every platform-specific native library.
 
+An additional OSV check covered 444 registry packages in `Cargo.lock` and the
+Intel Mac's ONNX Runtime 1.23.2. The Intel runtime had no advisory match. The
+Rust graph includes Linux GTK's `glib` 0.18.5 unsound iterator advisory
+[RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html).
+Its upstream fix is in glib 0.20, outside Tauri's GTK3 dependency range; this is
+also tracked by [Tauri upstream](https://github.com/tauri-apps/tauri/issues/12564).
+The app does not directly call the affected iterator, but this review does not
+prove that dependency paths cannot reach it. The Linux build therefore retains
+this unresolved upstream risk. Replacing the GTK dependency with an incompatible
+major version is not a validated repair.
+
+Four other Rust matches are maintenance notices for `proc-macro-error`,
+`zbus_names`, `zvariant` and `zvariant_derive`, rather than identified exploit
+reports. Their replacement requires changes in upstream dependency chains.
+Neither these notices nor the glib advisory were suppressed or described as
+fixed. Cross-platform stable-release approval still requires dependency review
+and graphical tests on the target devices.
+
 Private evidence is retained under ignored `audit/final-beta-audit/`; user study
 data and provider credentials were not added to the repository.
