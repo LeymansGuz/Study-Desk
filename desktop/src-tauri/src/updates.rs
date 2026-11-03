@@ -3,9 +3,25 @@
 use std::{sync::Arc, thread, time::Duration};
 use serde_json::{json, Value};
 use tauri_plugin_updater::UpdaterExt;
+use tauri::Manager;
+use std::io::Write;
 use crate::Backend;
 
 const FEED: &str = "https://raw.githubusercontent.com/LeymansGuz/Study-Desk/main/desktop/update-manifest.json";
+
+fn diagnostic(app: &tauri::AppHandle, stage: &str, error: &dyn std::fmt::Display) {
+    let directory=std::env::var_os("STUDY_DESKTOP_DATA_DIR").map(std::path::PathBuf::from).or_else(||app.path().app_data_dir().ok());
+    if let Some(directory)=directory {
+        let path=directory.join("updater.log");
+        if std::fs::metadata(&path).map(|m|m.len()>1_000_000).unwrap_or(false) {
+            let previous=directory.join("updater.previous.log");
+            let _=std::fs::remove_file(&previous);let _=std::fs::rename(&path,previous);
+        }
+        if let Ok(mut file)=std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _=writeln!(file,"{:?} {stage}: {error}",std::time::SystemTime::now());
+        }
+    }
+}
 
 fn official_asset(url: &reqwest::Url, version: &str) -> bool {
     let prefix = format!("/LeymansGuz/Study-Desk/releases/download/v{version}");
@@ -52,7 +68,7 @@ pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
                             candidate = Some(update);
                         },
                         Ok(None) => report(&client,&backend,"current","You have the current published version.","",0,0),
-                        Err(_) => report(&client,&backend,"error","Could not check for updates. Check your connection and try again. Your current app is unchanged.","",0,0),
+                        Err(error) => { diagnostic(&app,"check",&error); report(&client,&backend,"error","Could not check for updates. Check your connection and try again. Your current app is unchanged.","",0,0); },
                     }
                 },
                 "download" => {
@@ -71,7 +87,8 @@ pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
                                 report(&client,&backend,"downloaded","Signature verified. Install and restart when your study work is finished.",&update.version,bytes.len() as u64,bytes.len() as u64);
                                 package=Some(bytes);
                             },
-                            Err(_) => {
+                            Err(error) => {
+                                diagnostic(&app,"download or signature",&error);
                                 report(&client,&backend,"error","Download or signature verification failed. No update was installed. Check your connection and free space, then check again.","",0,0);
                                 package=None;candidate=None;
                             }
@@ -83,7 +100,8 @@ pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
                         report(&client,&backend,"installing","Backup verified. Restarting to install the signed update…",&update.version,0,0);
                         backend.stop();
                         // install() rechecks the signature. The package never comes from webview input.
-                        if update.install(bytes).is_err() {
+                        if let Err(error)=update.install(bytes) {
+                            diagnostic(&app,"install",&error);
                             // Restart the existing installed application if replacement failed.
                             app.restart();
                         }

@@ -60,7 +60,7 @@ fn main() {
         let window=tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::App("index.html".into()))
           .title("Study Desk").inner_size(1280.0,860.0).min_inner_size(800.0,620.0)
           .on_navigation(move |url| {
-              if url.scheme()=="https" && (url.host_str()==Some("cdn.deepseek.com") || (url.host_str()==Some("github.com") && url.path().starts_with("/LeymansGuz/Study-Desk"))) {
+              if url.scheme()=="https" && url.username().is_empty() && url.password().is_none() && (url.host_str()==Some("cdn.deepseek.com") || (url.host_str()==Some("github.com") && (url.path()=="/LeymansGuz/Study-Desk" || url.path().starts_with("/LeymansGuz/Study-Desk/")))) {
                   let _=external.opener().open_url(url.as_str(),None::<&str>);
                   return false;
               }
