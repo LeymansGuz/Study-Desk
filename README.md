@@ -7,16 +7,55 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-**Windows x64:** download the setup executable from the [Releases page](https://github.com/LeymansGuz/Study-Desk/releases)
-after a release is published. For a local build, the installer and checksum
-file are in `dist/installers/`.
+The current published beta is [v0.2.2-beta.2](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.2-beta.2).
+Choose an installer for your computer; the source-code ZIP is for source setup.
+Desktop users do not need Python, Node.js or a `.env` file.
 
-1. Run the downloaded Windows setup executable and install it for your Windows user.
-2. Open **Study Desk** from its shortcut or the Start menu.
-3. In **Settings → DeepSeek connection**, enter your API key and choose **Save API
+| Computer | Download |
+|---|---|
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_amd64.AppImage) |
+
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/SHA256SUMS.txt)
+and build manifests. For your own local build, installer files are in `dist/installers/`.
+
+**Windows:** run the setup executable, install it for your Windows user, and open
+**Study Desk** from its shortcut or the Start menu.
+
+**macOS:** open the DMG, drag **Study Desk** into **Applications**, eject the DMG,
+then open Study Desk from Applications. These beta builds are unsigned and not
+notarized. If macOS blocks opening, review [Apple's app-opening guidance](https://support.apple.com/en-hk/102445)
+before deciding whether to approve this app. Do not disable system-wide protection.
+
+**Linux DEB:** on Ubuntu/Debian, install the downloaded file with your package
+manager, or run this from the download folder:
+
+```bash
+sudo apt install ./Study-Desk_0.2.2_amd64.deb
+```
+
+**Linux AppImage:** make the downloaded file executable in its file properties,
+then open it. The equivalent terminal commands are:
+
+```bash
+chmod +x ./Study-Desk_0.2.2_amd64.AppImage
+./Study-Desk_0.2.2_amd64.AppImage
+```
+
+Linux builds target Ubuntu 22.04. Other distributions may need additional system
+libraries. If the AppImage reports missing FUSE support, use the DEB on a compatible
+distribution or install your distribution's FUSE compatibility package. Saving
+an API key needs an available system credential store, such as Secret Service.
+
+### First launch
+
+1. Open **Study Desk**.
+2. In **Settings → DeepSeek connection**, enter your API key and choose **Save API
    key**. The app stores it in the system credential store. No `.env` editing is
    needed, and saving a key makes no paid request.
-4. Upload your course documents in **Workspace**, wait for indexing, and start
+3. Upload your course documents in **Workspace**, wait for indexing, and start
    studying. Close the app to stop its private services; reopen it to resume.
 
 The installer bundles Python, Node.js, OPA and native processing dependencies.
@@ -24,13 +63,9 @@ Users need internet access for DeepSeek and may need an initial embedding-model
 download. Study data is kept outside the installation directory, so program
 updates preserve it. The initial installer is unsigned.
 
-**macOS 14+ and Linux x64:** experimental installers are built by GitHub Actions
-for each tagged beta release. Choose the `aarch64` DMG for Apple Silicon, the
-`x64` DMG for Intel, or the Linux DEB/AppImage. Download them from the same Releases
-page after the workflow succeeds. These builds receive native build and packaged
-backend checks; their graphical interface still needs testing on your device.
-macOS builds are unsigned and not notarized, so macOS trust checks may prevent
-opening them. Linux builds target Ubuntu 22.04 and require a working system keyring.
+The four platform builds passed native CI builds, offline regression tests and
+packaged-backend checks. Windows has also received graphical checks. macOS and
+Linux graphical behaviour remains experimental and needs testing on your device.
 
 Your documents and progress are kept in your operating system's application-data
 folder. Close Study Desk before installing an update, and create a backup in
@@ -41,11 +76,11 @@ Settings first. Updating the program preserves the separate study-data folder.
 | Platform | Status | How to run |
 |---|---|---|
 | Windows 10/11 (x64) | Primary desktop target; source lifecycle and packaged backend tested | Installer, or source launchers below |
-| macOS 14+ Apple Silicon (arm64) | Experimental DMG; target-device GUI untested | GitHub beta release after successful CI build |
-| macOS 14+ Intel (x86_64) | Experimental compatibility DMG; ONNX Runtime 1.23.2 | GitHub beta release after successful CI build |
-| Linux x86_64 | Experimental DEB/AppImage; target-device GUI untested | GitHub beta release after successful CI build |
+| macOS 14+ Apple Silicon (arm64) | Published experimental DMG; target-device GUI untested | Download the aarch64 DMG above |
+| macOS 14+ Intel (x86_64) | Published compatibility DMG; ONNX Runtime 1.23.2 | Download the x64 DMG above |
+| Linux x86_64 | Published experimental DEB/AppImage; target-device GUI untested | Download the DEB or AppImage above |
 | Linux arm64 | No packaged build; native dependencies not validated | Requires separate dependency/build work |
-| Windows arm64 | Automatic OPA download is not supported | Install OPA manually, then use the Windows launchers |
+| Windows arm64 | No native validated package; dependency support is unverified | Requires separate compatibility/build work |
 
 **The source edition is installable through the terminal.** The `.cmd` files are
 Windows-only. Setup, start, status and stop are Python launcher commands that
@@ -111,15 +146,17 @@ generation preserves existing study work and does not publish a partial question
 The generation deadline starts after acquiring a concurrency slot. The default
 is 60 seconds; Insane proof and long-answer requests have a 90-second ceiling,
 measured from the same start time. Configure `GENERATION_TIMEOUT_SECONDS` and
-`GENERATION_COMPLEX_TIMEOUT_SECONDS` in `.env`, then restart the app. These are
+`GENERATION_COMPLEX_TIMEOUT_SECONDS` in the source edition's `.env`, then restart
+its services. Desktop installers do not load the source checkout's `.env`. These are
 upper bounds, not a promise that generation will succeed. Queue waiting is separate.
 
 Independent public-premise and topic checks, strict response schemas, option-key
 agreement and bounded working checks supplement the Solver/Verifier pipeline.
 Hard and Insane questions receive an additional fresh review. Verified-bank
-eligibility requires the current assessment policy (version 16) and current course
-evidence. These checks increase confidence but cannot guarantee every question
-or answer. Some complex questions can still be withheld or time out.
+eligibility requires the current assessment policy and current course evidence.
+Review calls use the configured AI provider, so agreement is not a proof of
+correctness. Independently check important answers, especially complex proofs.
+Some complex questions can still be withheld or time out.
 
 **Settings → Local maintenance** shows the last 30 days of tokens and estimated
 USD cost, with five decimal places. Cached input is part of total input, not an
@@ -130,8 +167,9 @@ traces; daily cost totals may cover a longer window when detailed traces expire.
 
 Study Desk runs on the Windows, macOS or Linux computer where it is installed.
 Its loopback address is available only on that computer. The browser layout fits
-both full-size and narrow desktop windows. Windows is live-tested here; macOS
-and Linux installation/lifecycle paths are provided but have not been live-tested.
+both full-size and narrow desktop windows. Windows has graphical checks; all four
+native build targets have CI backend checks. Mac/Linux graphical workflows and
+the complete source-edition service lifecycle still need target-device testing.
 
 ## Source/build requirements
 
@@ -180,8 +218,9 @@ optional.
 
 ## macOS source install (terminal)
 
-These steps work for Apple Silicon and Intel Macs. Homebrew is optional; the
-official installers are alternatives.
+These source instructions target macOS 14+ on Apple Silicon and Intel. The
+prebuilt DMG is the simpler option. Apple Silicon users can use Homebrew or the
+official tool installers; Intel source setup also needs the native build tools below.
 
 ### 1. Install `uv`
 
@@ -223,6 +262,20 @@ You can also download the ZIP from GitHub and extract it, then `cd` into the
 extracted folder.
 
 ### 4. Install the locked environment
+
+On **Intel Macs only**, the current cryptography package builds from source.
+Install a C compiler with Apple's Command Line Tools if unavailable, then install
+Rust, OpenSSL and pkg-config. With Homebrew:
+
+```bash
+brew install rust openssl@3 pkg-config
+export OPENSSL_DIR="$(brew --prefix openssl@3)"
+export OPENSSL_STATIC=1
+```
+
+Keep those environment variables in the terminal used for `uv sync` and setup.
+The lock selects ONNX Runtime 1.23.2 on Intel Macs; other supported targets use
+1.31.0. These build prerequisites are not needed by users installing the DMG.
 
 ```bash
 uv sync --frozen --no-dev
@@ -333,7 +386,7 @@ The release suite is offline and blocks paid model calls.
 
 ## Linux source install (terminal)
 
-The same launcher commands are used. Install `uv`, Node.js 20+ and OPA using
+These source commands target Linux x86_64. Install `uv`, Node.js 20+ and OPA using
 your distribution or the official installers, then:
 
 ```bash
@@ -344,7 +397,7 @@ uv run --no-dev python local_app.py setup
 uv run --no-dev python local_app.py start
 ```
 
-OPA setup downloads the static Linux binary for x86_64 or arm64. If downloads are
+OPA setup downloads the static Linux binary for x86_64. If downloads are
 blocked, install OPA manually and ensure `opa` is on `PATH`.
 
 To avoid opening a browser:
@@ -489,8 +542,9 @@ contain local configuration, private study material or generated files.
 
 ## Removing the app
 
-Desktop application: close Study Desk, then uninstall it through your operating
-system's installed-apps settings. Study data and the saved system credential are
+Desktop application: close Study Desk first. On Windows, use installed-apps
+settings; on macOS, remove Study Desk from Applications; on Linux, remove the DEB
+through your package manager or delete the standalone AppImage. Study data and the saved system credential are
 retained for reinstalling. Create a backup before changing your installation.
 
 Source edition: stop it first:
@@ -523,8 +577,9 @@ uv run --frozen pytest -q
 Tests use temporary storage and block paid model calls. They cover local access
 boundaries, uploads, session resume, arithmetic, formatting, grading and
 feedback-derived calibration regressions. Offline tests do not establish live
-generation accuracy. The release test suite passes 106 tests on Windows; the
-macOS/Linux lifecycle has not been live-tested in this release.
+generation accuracy. CI runs the 106-test suite on Windows, Apple Silicon Mac,
+Intel Mac and Linux, then checks each frozen backend. Mac/Linux graphical and full
+source-edition lifecycle testing remain separate from those checks.
 
 ## Publishing this source
 

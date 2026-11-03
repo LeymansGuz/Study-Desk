@@ -89,3 +89,39 @@ calls. Frozen dependency metadata and JavaScript syntax checks passed. The local
 service was restarted and the new endpoint validation checked on port 8002.
 No new dependency vulnerability scan or live LLM quality benchmark was run in this
 workflow pass. Evidence is under ignored `audit/refinement-*` paths.
+
+## Published desktop beta review — 3 November 2026
+
+The public Windows v0.2.2-beta.2 installer was downloaded and its SHA-256 checked
+against the release checksum file. Installation into an isolated directory,
+bundled backend self-checks, scanned-PDF upload, OCR, embedding/indexing and clean
+backend shutdown passed. The installed window rendered and navigated correctly
+in light and dark themes. Uninstallation removed the isolated program copy and
+retained its separate study data. No paid model requests were made. The four native CI
+targets also passed their offline suites and packaged-backend checks; macOS and
+Linux graphical installation and credential-store behaviour still require
+target-device testing. Unsigned installers remain a distribution limitation.
+
+A new desktop browser pass covered 92 screenshots at two window widths in light
+and dark mode, including source evidence, mastery progression, bank exams,
+paper summaries, backup verification and safe failure messages. There were no
+uncaught page errors. Generated study content in this pass used isolated
+fixtures; these results do not measure LLM correctness or acceptance rates.
+
+The current Windows offline regression suite passed **106 tests**. The tracked
+source check found no local databases, build output, audit evidence or configured
+provider credentials in the 157 tracked files. Documentation links and version
+consistency checks also passed.
+
+The current Python dependency audit reports five advisory entries for Chroma
+1.5.9 (four distinct advisories, including a duplicate entry). No fixed version
+is listed by the scanner. The app still uses embedded `PersistentClient` and
+does not expose Chroma's HTTP API or accept remote embedding configurations.
+The upstream HTTP-server and multi-tenant risks therefore remain documented,
+rather than being described as fixed. The npm audit of the desktop lock,
+including build dependencies, reports no known vulnerabilities. These scans
+are point-in-time checks, not a guarantee against unknown vulnerabilities or a
+full audit of every platform-specific native library.
+
+Private evidence is retained under ignored `audit/final-beta-audit/`; user study
+data and provider credentials were not added to the repository.

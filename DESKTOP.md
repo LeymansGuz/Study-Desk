@@ -6,10 +6,14 @@ Python installation, `.env` file or an account on a hosted Study Desk service.
 DeepSeek generation needs internet access and the user's own funded API key.
 Local text embeddings may download their model on first use.
 
-## Installing and using Windows releases
+## Installing and using releases
 
-1. After a release is published, download the Windows setup executable and `SHA256SUMS.txt`
-   from [GitHub Releases](https://github.com/LeymansGuz/Study-Desk/releases). Install it for your Windows user.
+1. Download the installer for your computer and `SHA256SUMS.txt` from the
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.2-beta.2).
+   On Windows, run the setup executable for your Windows user. On macOS, drag
+   the app from the DMG into Applications. On Linux, install the DEB or make
+   the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
+   for platform requirements and unsigned-build guidance.
 2. Open **Study Desk** from the Start menu or its shortcut.
 3. On first launch, **Settings → DeepSeek connection** opens automatically.
    Paste your API key and choose **Save API key**. Saving makes no provider call.
@@ -54,8 +58,9 @@ meet the current verification policy.
 ## Building from source
 
 Build on the OS and architecture you intend to distribute. Windows x64 is the
-primary target. macOS and Linux build paths are provided for subsequent testing;
-they are not established as tested releases by the Windows build.
+primary target. The published beta also has native Apple Silicon, Intel Mac and
+Linux x64 builds. All four targets passed CI tests and packaged-backend checks;
+macOS and Linux still need graphical testing on target devices.
 
 Build-machine requirements: Python 3.12 via uv, Node.js 20+, Rust stable and the
 platform build tools described in the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
@@ -88,7 +93,7 @@ Desk before rebuilding: Windows can lock executables being packaged.
 
 1. Review and commit the source, lock files, `desktop/` and `.github/workflows/`.
    Push them to your repository. Do not force-add ignored local files.
-2. Push a new tag matching the source version, such as **v0.2.2-beta.1**. This
+2. Push an unused tag matching the source version, such as **v0.2.2-beta.3**. This
    starts **Build desktop installers** for Windows x64, Apple Silicon, Intel Mac
    and Linux x64. Alternatively run that workflow manually on `main`, supplying
    a new tag and selecting `publish`. No DeepSeek key is required.
@@ -106,7 +111,7 @@ Desk before rebuilding: Windows can lock executables being packaged.
    regenerate the corresponding locks and repeat verification. The build manifest
    reads the version from `pyproject.toml`.
 
-The initial locally built Windows installer is unsigned. Signing credentials
+The current beta installers are unsigned. Signing credentials
 are not supplied by this repository. For a publicly distributed release, arrange
 Windows code signing; macOS distribution also needs appropriate Apple signing
 and notarization. Configure signing secrets in CI only after obtaining them.
