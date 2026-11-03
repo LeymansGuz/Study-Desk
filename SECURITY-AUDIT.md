@@ -1,4 +1,6 @@
-# Local security and setup audit — 2 November 2026
+# Local security and setup audit
+
+Latest addendum: **4 November 2026**. Baseline review: 2 November 2026.
 
 Scope: ai-tutor-github only. Reviewed setup/process control, dependencies, local
 access, policy service, secrets, uploads, archives, storage, backups, rendering,
@@ -206,3 +208,12 @@ Native dependency builds do not certify target-device GUI behaviour, eliminate
 upstream dependency advisories, or replace OS code signing/notarization. Keep an
 offline backup of the private updater key. Private evidence and signing material
 remain outside Git under ignored directories.
+
+The v0.2.5-beta.1 release passed all four native CI builds and independent
+pre-publication signature checks. Post-publication checks matched all 18 asset
+digests to the combined checksum file, verified all seven installer/update-payload
+links, matched the complete five-target update feed to the release, and confirmed
+that the tested Windows installer matches GitHub's public payload digest. The
+published README matches the tracked source. The final installed Windows app also
+passed its native update check against the published feed. macOS/Linux graphical
+and installation/update testing on target devices remains outstanding.
