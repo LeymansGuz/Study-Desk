@@ -15,7 +15,7 @@ class AttachmentQueue {
     input.form.addEventListener('paste',e=>{if(!this.zone.contains(e.target)&&e.clipboardData.files.length){e.preventDefault();this.add(this.namedImages([...e.clipboardData.files]));}});
     this.zone.querySelector('[data-paste]').onclick=()=>this.paste();
     this.zone.querySelector('[data-choose]').onclick=()=>{if(!this.busy)this.input.click();};
-    this.zone.querySelector('[data-clear]').onclick=()=>{if(!this.busy){this.files=[];this.invalidate();this.render();}};
+    this.zone.querySelector('[data-clear]').onclick=()=>this.change(()=>this.files=[]);
     if(kind==='ask'){
       this.review=document.querySelector('#attachment-review');this.text=document.querySelector('#attachment-text');this.checked=document.querySelector('#attachment-reviewed');
       document.querySelector('#read-attachments').onclick=async()=>{try{await this.read();}catch(error){this.message(error.message,true);}};
@@ -24,7 +24,12 @@ class AttachmentQueue {
   }
   namedImages(files){return files.map((file,index)=>!file.name||file.name==='image.png'?new File([file],`Screenshot-${new Date().toISOString().replace(/[:.]/g,'-')}-${index+1}.${file.type==='image/jpeg'?'jpg':file.type==='image/webp'?'webp':'png'}`,{type:file.type||'image/png'}):file);}
   message(text,error=false){const host=this.zone.querySelector('[data-message]');host.textContent=text;host.classList.toggle('error-text',error);}
-  invalidate(){this.extracted=null;if(this.review){this.review.hidden=true;this.text.value='';this.checked.checked=false;}for(const url of this.urls.values())URL.revokeObjectURL(url);this.urls.clear();}
+  invalidate(){this.extracted=null;if(this.kind==='workspace')document.querySelector('#upload-rights').checked=false;if(this.review){this.review.hidden=true;this.text.value='';this.checked.checked=false;}for(const url of this.urls.values())URL.revokeObjectURL(url);this.urls.clear();}
+  async change(action){
+    if(this.busy)return;this.lock(true);
+    try{if(this.kind==='workspace')await window.cancelCourseUpload();action();this.invalidate();this.message('Selection updated.');}
+    catch(error){this.message(error.message,true);}finally{this.lock(false);}
+  }
   add(incoming){
     if(this.busy)return;
     const allowed=this.input.accept.split(',');let next=[...this.files],duplicates=0;
@@ -60,7 +65,7 @@ class AttachmentQueue {
       const index=this.page*10+offset,row=document.createElement('article');row.className='attachment-row';
       if(file.type.startsWith('image/')){const img=document.createElement('img');if(!this.urls.has(file))this.urls.set(file,URL.createObjectURL(file));img.src=this.urls.get(file);img.alt='Screenshot preview';img.loading='lazy';row.append(img);}
       const info=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('p');name.textContent=file.name;name.title=file.name;meta.className='hint';meta.dataset.fileIndex=index;meta.textContent=`${file.name.split('.').pop().toUpperCase()} · ${fileSize(file.size)} · ${this.extracted?.[index]?'Read':'Selected'}`;info.append(name,meta);row.append(info);
-      const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Remove';remove.disabled=this.busy;remove.setAttribute('aria-label','Remove '+file.name);remove.onclick=()=>{if(this.busy)return;this.files.splice(index,1);this.invalidate();this.render();};row.append(remove);host.append(row);
+      const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Remove';remove.disabled=this.busy;remove.setAttribute('aria-label','Remove '+file.name);remove.onclick=()=>this.change(()=>this.files.splice(index,1));row.append(remove);host.append(row);
     });
     this.zone.querySelector('[data-summary]').textContent=`${this.files.length} file${this.files.length===1?'':'s'} selected · ${fileSize(this.files.reduce((n,f)=>n+f.size,0))} total`;
     const pages=this.zone.querySelector('[data-pages]');pages.innerHTML='';

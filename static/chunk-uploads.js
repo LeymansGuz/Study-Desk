@@ -2,6 +2,12 @@
 (()=>{
   let pending=null;
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  window.cancelCourseUpload=async()=>{
+    if(!pending?.id)return;
+    const response=await fetch(`/workspace/uploads/${pending.id}`,{method:'DELETE'});
+    if(!response.ok&&response.status!==404){const body=await response.json().catch(()=>({}));throw Error(body.detail||'Wait for document saving to finish before changing this selection.');}
+    pending=null;
+  };
   const transient=error=>!error.status||[408,409,425,429].includes(error.status)||error.status>=500;
   async function json(url,options={}){
     const response=await fetch(url,{...options,signal:AbortSignal.timeout(20000)});
