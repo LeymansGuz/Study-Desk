@@ -217,3 +217,57 @@ that the tested Windows installer matches GitHub's public payload digest. The
 published README matches the tracked source. The final installed Windows app also
 passed its native update check against the published feed. macOS/Linux graphical
 and installation/update testing on target devices remains outstanding.
+
+## Bounded attachments and final beta verification — 4 November 2026
+
+Version 0.2.6 adds shared file queues with picker/drop/screenshot paste, explicit
+clipboard access, visible file sizes and local OCR review. Workspace limits are
+50 files / 500 MiB per batch / 200 MiB per document. Question attachments are
+limited to five files / 50 MiB total / 20 MiB each / 20 pages, with the existing
+30,000-character combined question limit. Images are capped at 20 MiB / 16 MP.
+Image format/integrity and PDF page limits are checked before OCR. Clipboard
+reading happens only after a user action. OCR does not interpret diagrams.
+
+Extraction runs through a bounded worker and a bounded text-only memory cache;
+identical concurrent requests share extraction. Cancellation does not release
+the worker while OCR is still running. Retries reuse successful text, and
+discarding an interrupted workspace selection releases its staging reservation.
+The updater refuses installation while extraction is active. No additional LLM
+stages or larger question-context budgets were introduced.
+
+Verification: 130 offline tests passed, including a clean tracked-source export,
+plus two native Rust tests. Desktop browser checks produced 124 screenshots
+across light/dark themes and wide/narrow windows with no page errors. They cover
+attachment selection, limits, clipboard fallback, OCR review, retries, image
+preview, interrupted-upload cleanup and the existing study flows. No paid
+provider calls were made; this pass does not establish a new generation
+acceptance or answer-correctness rate.
+
+All four native CI builds passed for v0.2.6-beta.1. Public verification matched
+all 18 asset digests to the checksum file, checked all seven installer/update
+payload links, all four build revisions and the complete five-target update
+feed. The public Windows installer was downloaded and matched to its digest.
+A real installed public 0.2.5 client downloaded and verified 0.2.6, created a
+verified backup, installed/restarted and preserved course/document data and
+credential configuration. It required the updated privacy acknowledgement and
+then reported the current version correctly.
+
+The installed 0.2.6 backend passed multi-file OCR/progress/cache checks, workspace
+image upload/indexing/preview and rebuilding with the existing OCR checkpoint.
+The sample screenshot took 2.653 seconds to read initially and 0.007 seconds on
+retry. A separate text-PDF sample added about 0.7 ms of worker/cache overhead.
+These samples are not guarantees for large scanned documents.
+
+Windows NSIS LZMA compression reduced the published installer from 288,020,735
+bytes (0.2.5) to 216,551,151 bytes (0.2.6), about 24.8%. A controlled comparison
+of the same application payload found all 3,051 runtime files identical after
+extraction; LZMA archive extraction added about 4.8 seconds in that sample.
+Application runtime performance is unaffected by the installer compressor.
+macOS/Linux compression was retained. Target-device GUI/install/update testing
+for those platforms remains outstanding; native CI checks are not a substitute.
+
+Repository checks found no private test artifacts or configured credentials in
+tracked files. Private reports, screenshots and signing material remain ignored.
+The hosted website was not changed by this work. Uninstalling the disposable
+Windows test installation removed its program files while preserving its
+separate study database and backup.

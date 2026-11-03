@@ -80,7 +80,8 @@ before retrying. Backups support recovery; they do not guarantee automatic
 database downgrades.
 
 Updates are manual, with full downloads rather than changed-file downloads.
-Install this first updater-enabled release manually from the links above.
+If your installed version has no **App updates** section, install the current
+release manually from the links above.
 On Linux, the AppImage must be writable by your user; DEB updates may request
 administrator permission. On macOS, run from Applications rather than the DMG.
 Update signatures do not remove OS warnings about unsigned/not-notarized apps.
