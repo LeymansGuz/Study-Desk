@@ -189,3 +189,11 @@ def test_free_scope_cannot_be_bypassed_at_model_stage(monkeypatch):
         with pytest.raises(StageFailure,match='restricted to verified brief'):
             asyncio.run(tools._invoke_json('Generate a question.',0,QuestionSeed))
     finally:providers.ACTIVE.reset(token)
+
+def test_fresh_desktop_health_is_available_without_a_key(client,monkeypatch):
+    monkeypatch.setenv('STUDY_DESKTOP','true');monkeypatch.setenv('OPENAI_API_KEY','')
+    tools.get_settings.cache_clear()
+    response=client.get('/health')
+    assert response.status_code==200
+    assert tools.public_settings()['configured'] is False
+    tools.get_settings.cache_clear()

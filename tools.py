@@ -78,8 +78,7 @@ class LLMSettings:
 def _legacy_settings() -> LLMSettings:
     api_key = os.getenv('OPENAI_API_KEY', '').strip()
     if not api_key and os.getenv('STUDY_DESKTOP')=='true':
-        from generation_errors import StageFailure
-        raise StageFailure('provider','Choose an AI provider and save its key and model in Settings before using AI study tools.')
+        raise TutorError('Choose an AI provider and save its key and model in Settings before using AI study tools.')
     if not api_key:
         raise TutorError('OPENAI_API_KEY is missing. Put it in the local .env, then restart the API.')
     if api_key.lower().startswith(('sk-your', 'your-', 'replace')):
