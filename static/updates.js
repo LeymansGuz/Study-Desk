@@ -7,7 +7,7 @@ document.addEventListener('study-ready',async()=>{
   async function refresh(){
     try{
       const state=await api('/desktop/update/status');
-      panel.querySelector('[data-version]').textContent='Installed version: '+state.current_version+(state.version?' 繚 Available: '+state.version:'');
+      panel.querySelector('[data-version]').textContent='Installed version: '+state.current_version+(state.version?' · Available: '+state.version:'');
       panel.querySelector('[data-status]').textContent=state.message;
       const progress=panel.querySelector('progress');progress.hidden=state.state!=='downloading';
       if(state.total>0){progress.max=state.total;progress.value=state.received;}else progress.removeAttribute('value');
