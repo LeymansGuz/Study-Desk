@@ -13,10 +13,16 @@ from security import (
 )
 
 
-def test_filename_traversal_is_reduced_to_basename():
+def test_filename_traversal_is_reduced_to_basename(monkeypatch):
+    from pathlib import PurePosixPath
+    import security
+    # Exercise POSIX path semantics even when the developer runs Windows.
+    monkeypatch.setattr(security,'Path',PurePosixPath)
     assert sanitize_filename("../../etc/passwd.md") == "passwd.md"
     assert sanitize_filename(r"..\..\windows\notes.md") == "notes.md"
     assert sanitize_filename("....//secret.txt") == "secret.txt"
+    assert sanitize_filename(r"C:\Users\student\notes.md") == "notes.md"
+    assert sanitize_filename("folder\uff0fnotes.md") == "notes.md"
 
 
 def test_injection_scanner_flags_instruction_override():

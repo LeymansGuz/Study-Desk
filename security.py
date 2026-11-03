@@ -6,7 +6,7 @@ sliding-window rate limiter, upload validation, prompt-injection scanning, and
 safe untrusted-text wrapping.
 """
 from __future__ import annotations
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import hashlib
 import io
 import zipfile
@@ -41,8 +41,9 @@ def hash_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 def sanitize_filename(name: str, allowed: set[str] | None=None) -> str:
-    base = Path(name or '').name
-    base = unicodedata.normalize('NFKC', base)
+    # Upload names can use either separator regardless of the server's OS.
+    normalized = unicodedata.normalize('NFKC', name or '').replace('\\', '/')
+    base = PurePosixPath(normalized).name
     base = re.sub('[^A-Za-z0-9._ -]+', '_', base)
     base = re.sub('\\s+', ' ', base).strip(' .')
     base = re.sub('\\.{2,}', '.', base)
