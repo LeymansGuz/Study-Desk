@@ -174,3 +174,35 @@ self-check, scanned-PDF OCR/indexing, selected-course rebuilding, shutdown and
 uninstallation with study data retained. The tested Windows payload matches
 the published SHA-256. All five installer links and all release payload digests
 were checked. macOS/Linux graphical behaviour still needs target-device testing.
+
+## Signed updates and data-use safeguards — 4 November 2026
+
+The desktop updater pins the official feed and publisher key in Rust, restricts
+downloads to versioned official release assets, requires signed-version matching,
+and verifies packages before installation. Web content cannot supply URLs, paths,
+signatures or native control results. Installation refuses active work/uploads/
+indexing, freezes new writes and verifies a SQLite/document backup before stopping
+the backend. Downloads use full packages. Update checks are manual.
+
+Versioned data-use/usage notices are available in Settings. The backend blocks AI
+requests without the current acknowledgement, supports withdrawal and requires
+upload-rights confirmation. Notices describe provider transfers, costs, local
+unencrypted data, deletion controls and licence responsibilities. Python licence
+paths are preserved and native dependency notices accompany the installers.
+These safeguards are not legal clearance; see COMPLIANCE.md.
+
+Verification: 122 offline tests, including a clean Git export, plus two native
+Rust tests; 128 desktop browser screenshots across light/dark and wide/narrow
+windows, with no page errors. A production-updater test using an isolated
+lower-version NSIS-marked client verified a public signed package, installed it,
+restarted and preserved course/document data, acknowledgement and credential
+configuration. The final 0.2.5 Windows installer passed native startup/update
+checking, private-control/consent guards, frozen math/OCR/extraction/storage
+checks, real scanned-PDF indexing, rebuilding and clean shutdown. No paid model
+calls were made for this pass. Existing generation-quality limitations remain;
+this was not a new LLM correctness evaluation.
+
+Native dependency builds do not certify target-device GUI behaviour, eliminate
+upstream dependency advisories, or replace OS code signing/notarization. Keep an
+offline backup of the private updater key. Private evidence and signing material
+remain outside Git under ignored directories.
