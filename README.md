@@ -11,7 +11,7 @@ Both editions open directly as the local owner.
 after a release is published. For a local build, the installer and checksum
 file are in `dist/installers/`.
 
-1. Run `Study Desk_0.2.2_x64-setup.exe` and install it for your Windows user.
+1. Run the downloaded Windows setup executable and install it for your Windows user.
 2. Open **Study Desk** from its shortcut or the Start menu.
 3. In **Settings → DeepSeek connection**, enter your API key and choose **Save API
    key**. The app stores it in the system credential store. No `.env` editing is

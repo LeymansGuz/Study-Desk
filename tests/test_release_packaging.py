@@ -13,7 +13,7 @@ def builds(tmp_path):
         checks=[]
         for suffix in sorted(suffixes):
             payload={'.exe':b'MZ', '.deb':b'!<arch>\n', '.AppImage':b'\x7fELF', '.dmg':b'koly'}[suffix]+b'\0'*508
-            asset=folder/(name+'-0.2.2'+suffix)
+            asset=folder/('Study Desk-'+name+'-0.2.2'+suffix)
             asset.write_bytes(payload)
             checks.append(hashlib.sha256(payload).hexdigest()+'  '+asset.name)
         (folder/'SHA256SUMS.txt').write_text('\n'.join(checks),encoding='utf-8')
@@ -44,6 +44,7 @@ def test_complete_release_has_independently_recomputed_checksums(builds,tmp_path
     destination=tmp_path/'release'
     files=collect(builds,destination,'0.2.2','same-commit')
     assert len(files)==9
+    assert all(' ' not in p.name for p in destination.iterdir())
     for line in (destination/'SHA256SUMS.txt').read_text().splitlines():
         digest,name=line.split('  ',1)
         assert digest==hashlib.sha256((destination/name).read_bytes()).hexdigest()

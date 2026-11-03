@@ -64,16 +64,19 @@ def collect(source, destination, release_version, revision):
                 raise ValueError('Stale or corrupted installer: '+path.name)
             check_format(path)
         for path in installers+[manifest_path]:
-            if path.name in names:
+            # GitHub normalizes special characters in asset names. Choose stable
+            # portable names before hashing so downloaded checksums still work.
+            published_name = re.sub(r'[^A-Za-z0-9._-]+', '-', path.name).strip('.-')
+            if published_name in names:
                 raise ValueError('Duplicate release asset: '+path.name)
-            names.add(path.name)
-            files.append(path)
+            names.add(published_name)
+            files.append((path,published_name))
     # Publish nothing unless every requested platform has passed validation.
     destination.mkdir(parents=True, exist_ok=True)
     if any(destination.iterdir()):
         raise ValueError('Release staging directory must be empty.')
-    for path in files:
-        shutil.copy2(path, destination/path.name)
+    for path,published_name in files:
+        shutil.copy2(path, destination/published_name)
     lines = [hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in sorted(destination.iterdir())]
     (destination/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n', encoding='utf-8')
     return files

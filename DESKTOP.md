@@ -8,7 +8,7 @@ Local text embeddings may download their model on first use.
 
 ## Installing and using Windows releases
 
-1. After a release is published, download the Windows `Study Desk_0.2.2_x64-setup.exe` and `SHA256SUMS.txt`
+1. After a release is published, download the Windows setup executable and `SHA256SUMS.txt`
    from [GitHub Releases](https://github.com/LeymansGuz/Study-Desk/releases). Install it for your Windows user.
 2. Open **Study Desk** from the Start menu or its shortcut.
 3. On first launch, **Settings → DeepSeek connection** opens automatically.
