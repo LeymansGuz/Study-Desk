@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.2-beta.2](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.2-beta.2).
+The current published beta is [v0.2.3-beta.2](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.3-beta.2).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/Study-Desk_0.2.2_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/Study-Desk_0.2.3_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.2-beta.2/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.3-beta.2/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.2_amd64.deb
+sudo apt install ./Study-Desk_0.2.3_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.2_amd64.AppImage
-./Study-Desk_0.2.2_amd64.AppImage
+chmod +x ./Study-Desk_0.2.3_amd64.AppImage
+./Study-Desk_0.2.3_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -170,74 +170,79 @@ Some complex questions can still be withheld or time out.
 
 ## Estimated reliability
 
-Evidence reviewed **3 November 2026**. Reliability here means a generation
-request returns a question accepted by the pipeline. It does **not** mean the
-question, answer or difficulty has been proven correct.
+Latest live check: **3 November 2026**, version **0.2.3-beta.2**, runtime revision
+[`dacce90`](https://github.com/LeymansGuz/Study-Desk/commit/dacce908734f9b057295dfd70a411ce374c760c4),
+assessment policy 19, DeepSeek Flash with explicit non-thinking JSON stages.
+These results replace older runs as the basis of the estimates below.
 
-For mostly routine questions from well-indexed, readable course notes, a
-tentative planning estimate is **80–90% first-attempt acceptance**. Confidence
-in that estimate is limited: it is informed by earlier mixed testing, not a
-representative benchmark of the current release. Advanced proofs are a weaker
-area, and newer checks can reject candidates that earlier versions accepted.
+| Current-release check | Result |
+|---|---:|
+| Complete generation attempts | 9 |
+| Accepted by the production pipeline | 8 / 9 (88.9%) |
+| Timeouts | 1 (Medium essay, Solver stage) |
+| Mean time for accepted questions | 33.5 seconds |
+| Accepted questions with no additional model-review flags | 7 / 8 |
 
-| Previous evaluation | Accepted / attempted | Acceptance |
-|---|---:|---:|
-| Earlier mixed-course/type run | 30 / 33 | 90.9% |
-| Later proof-heavy stress baseline | 9 / 14 | 64.3% |
-| Same stress cases after revisions | 8 / 14 | 57.1% |
-| Selected stress-case confirmation | 5 / 7 | 71.4% |
+The sample covered five courses and all seven question types, spanning Easy,
+Medium, Hard and Insane. One course used a copy of the real local vector index;
+the other four used frozen excerpts from real course files with simplified
+retrieval. Bank reuse was disabled. This is a small, selected generation and
+validation check, not a representative end-to-end benchmark of normal traffic.
+**88.9% is this sample's acceptance rate, not a guaranteed production rate.**
 
-These small runs used different revisions and deliberately difficult cases;
-they must not be pooled into a production success rate. The favourable mixed
-run does not establish a 90% current-release rate. Subsequent checks found that
-model-based reviewers could miss mathematical errors and source-like questions.
-There is no defensible universal answer-correctness percentage. Check important
-answers independently, especially proofs. Source-clone screening reduces risk
-but cannot guarantee that every generated question is original.
+Acceptance is not correctness. Further model review flagged one accepted biology
+item whose microscopy explanation used resolving-power material unsupported by
+the supplied passages; inspection of the retained passages confirmed the evidence
+gap. The answer itself was not flagged as false. All eight reviews considered
+their answers and working correct, but these are same-provider model judgements,
+not expert certification. There is no defensible universal correctness percentage.
+Originality screening also cannot guarantee the absence of every source clone.
+Check important answers independently, especially proofs.
 
-Accepted questions averaged approximately **30–40 seconds** in several retained
-runs. Failed attempts may reach the 60/90-second deadline; queue wait is separate.
-Bank reuse avoids fresh question generation. Offline regression tests establish
-software behaviour, not these live model-quality estimates.
+Requests may still reach the 60/90-second deadline; queue waiting is separate.
+Bank reuse avoids fresh generation. Offline regression tests establish software
+behaviour rather than live question quality.
 
 ## Estimated AI cost
 
 Study Desk charges no application subscription. AI requests use your own funded
-DeepSeek account. Recent normal-use MCQ examples from the hosted deployment
-recorded approximately **US$0.0025–$0.005 per operation**. Local evaluation logs
-also recorded successful MCQs at roughly **US$0.004–$0.01 at peak rates**, before
-adding failed attempts; equivalent off-peak token usage costs half as much.
-Neither sample is a representative benchmark of this desktop release.
-Older evaluations deliberately stressed harder
-questions and retries; their generation logs suggest **US$0.01–$0.03 per accepted
-question**, including failed attempts. These describe different workloads:
+DeepSeek account. The **same current-release live check** recorded:
 
-| Workload | Approximate unit cost (USD) | 100 questions/operations | 1,000 |
-|---|---:|---:|---:|
-| Recent MCQ operations, without additional failed attempts or follow-ups | $0.0025–$0.005 | $0.25–$0.50 | $2.50–$5 |
-| Heavier evaluation workload, allowing for failed generation attempts | $0.01–$0.03 per accepted question | $1–$3 | $10–$30 |
+| Cost measure | Recorded USD |
+|---|---:|
+| Medium MCQ generation example | $0.00250 |
+| Mean successful generation operation | $0.00504 |
+| Successful generation operation range | $0.00250–$0.00637 |
+| All nine generation attempts combined | $0.04795 |
+| Generation spending divided by eight accepted questions, including the failed attempt | $0.00599 |
+| Extra evaluation-only reviews, excluded from generation figures | $0.00396 |
 
-For example, one mixed run recorded about $0.41536 for 33 generation attempts
-yielding 30 accepted questions; a later stress run recorded about $0.21849 for
-14 attempts yielding eight. These figures exclude extra evaluation-only audits.
-Some cancelled requests have missing usage, so recorded costs are incomplete.
-The normal-use examples are a small sample, not a measured average for every
-course or type. These ranges are estimates, not spending caps or provider invoices.
+One timed-out provider call has missing token usage, so these totals are
+**incomplete recorded estimates**, not provider invoices or spending caps.
+At this sample's off-peak rates and workload, 100 accepted questions would record
+roughly **$0.60**, or roughly **$1.20 at peak rates**, plus any unreported usage
+and follow-up costs. Different course context, retries and response lengths can
+change the result substantially. Nine attempts do not establish a stable average.
 
-Historical estimates used Flash rates of $0.30 per million uncached input tokens,
-$0.006 per million cached input tokens and $1.20 per million output tokens.
-Those match the published peak rates checked on 3 November 2026. The recent
-MCQ examples used off-peak rates, which are half, and benefited from cached input.
-For example, 16,196 input tokens (7,168 cached) plus 2,198 output tokens cost
-approximately $0.002695 at those off-peak rates. This is not evidence of a
-version-related price increase. Confirm [DeepSeek's current pricing](https://api-docs.deepseek.com/quick_start/pricing/)
-before topping up. Model, cache hits, retries and output length affect spending.
-The default model is `deepseek-flash`.
+The check made 82 provider requests: 74 production generation/validation calls
+and eight extra evaluation reviews. Including ten diagnostic requests before the
+model-mode correction, **92 of the authorized 100 requests** were used. All
+internal retries and validation calls counted toward that ceiling.
+
+Rates verified on 3 November 2026: off-peak Flash input costs $0.15 per million
+uncached tokens or $0.003 per million cached tokens; output costs $0.60 per
+million tokens. Peak rates are twice these figures. Cached input is already part
+of total input, not an extra category to add twice. Confirm
+[DeepSeek's current pricing](https://api-docs.deepseek.com/quick_start/pricing/)
+before topping up. The default model is `deepseek-flash`.
 
 Answer feedback, hints and concept explanations can incur additional AI charges.
 Opening bank questions or starting a bank exam makes no generation call, but
 grading can use AI. Local OCR, embedding/indexing and index rebuilding make no
 DeepSeek calls. **Settings → Local maintenance** shows recorded tokens, cached
+input and estimated costs; the provider dashboard is authoritative for billing.
+
+**Settings → Local maintenance** shows recorded tokens, cached
 input and estimated USD costs; the provider dashboard is authoritative for billing.
 
 **Settings → Local maintenance** shows the last 30 days of tokens and estimated

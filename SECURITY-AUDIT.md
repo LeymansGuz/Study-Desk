@@ -155,5 +155,22 @@ source-edition reserve settings remain respected. Model defaults use the
 provider's documented `deepseek-flash` identifier; legacy source settings are
 mapped only for the official DeepSeek endpoint.
 
+The explicit DeepSeek request mode is covered by an additional transport-options
+regression test (114 offline tests total). The current live check used runtime
+revision `dacce90`, policy 19: nine generation attempts, eight accepted, one
+Solver timeout, and one accepted item with an additional grounding-review flag.
+No universal correctness claim follows from these results. The current README
+records the generation-only costs, missing usage and retrieval limitations.
+The shared live-evaluation ledger reserved 92 requests, including ten preliminary
+diagnostic calls and eight final-sample review calls, below the authorized 100.
+Private evidence remains under ignored `audit/workspace-refinement/`.
+
 Private evidence is retained under ignored `audit/final-beta-audit/`; user study
 data and provider credentials were not added to the repository.
+
+Corrected v0.2.3-beta.2 native builds passed all four platform test suites and
+packaged-backend checks. Its Windows installer passed isolated installation,
+self-check, scanned-PDF OCR/indexing, selected-course rebuilding, shutdown and
+uninstallation with study data retained. The tested Windows payload matches
+the published SHA-256. All five installer links and all release payload digests
+were checked. macOS/Linux graphical behaviour still needs target-device testing.

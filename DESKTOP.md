@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.2-beta.2).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.3-beta.2).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -93,7 +93,7 @@ Desk before rebuilding: Windows can lock executables being packaged.
 
 1. Review and commit the source, lock files, `desktop/` and `.github/workflows/`.
    Push them to your repository. Do not force-add ignored local files.
-2. Push an unused tag matching the source version, such as **v0.2.2-beta.3**. This
+2. Push an unused tag matching the source version, such as **v0.2.3-beta.3**. This
    starts **Build desktop installers** for Windows x64, Apple Silicon, Intel Mac
    and Linux x64. Alternatively run that workflow manually on `main`, supplying
    a new tag and selecting `publish`. No DeepSeek key is required.
