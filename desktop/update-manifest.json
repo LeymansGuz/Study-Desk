@@ -1,27 +1,27 @@
 {
-  "version": "0.2.4",
+  "version": "0.2.5",
   "notes": "A signed Study Desk update is available. See the GitHub release for details.",
-  "pub_date": "2026-11-03T14:16:10.426687Z",
+  "pub_date": "2026-11-03T17:51:35.927467Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzFvdzMwT2tkYWkxbS9NVi8rQXRqS3JlTnhNd2hEZnRPb1VWWWtzaElEMjgyUUgzTWliQ0piVFlkZGxHUFJzUnRpVHRaQXl2UFl6S1hPVFcyWUxuOWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzE0Mjc4CWZpbGU6U3R1ZHkgRGVza18wLjIuNF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjQKT1pBTjRQZjJQSnRyVml4cHcwWUd6aG15Z0I4b3BYMDJhNVBObnJnQ0RKOXQ3VWhqd0FjY2E4VWdvNllTYWdxS29CUEh5Y1gzWUNkeVVMYi9FbHBKQ0E9PQo="
+      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByN3dUK0IxanpUNm80bkcvdEU4c0hucmF4RXQ0SnZNTm9CdStxeGJ0VHh2VXBhS1lkQzZqOGhLRHBRMUlZSlladit5VWZGKzdyWkR0Y0dpS3FnZTJwbHdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI3NDEwCWZpbGU6U3R1ZHkgRGVza18wLjIuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjUKTVoyR1MzZzZtaHVpR1dlL3ZnZ2xINTR1WE1EUjhYa0lKM0ZZdDY1VWQrZWlCdUdBTzhUR3B1aW84OVpjTU1uc2NoVE5xYUZadnF5MHhFYjNobEtzRFE9PQo="
     },
     "darwin-aarch64-app": {
-      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_aarch64.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzYraDFSdFJTZVBrSjE3V2R6d3l0cHpPTkNLc1NFWnV3Nzk1bHpTWTlFU2t6WDB4Zy90Y0E4cTVOakRyakpnVk5HUldhOVJ1elJZaHk0SkZPWDR6SWdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzE0MTQ0CWZpbGU6U3R1ZHkgRGVzay5hcHAudGFyLmd6CXZlcnNpb246MC4yLjQKSm1ubjI0SnFYWS9nZ2tUT01RZ1Z6Z1dWTTRuSXMrWThCMUFpTnpYZ2YzOTl2c1VTMlp6bGNIUHhGU05vSzNkUkV5SW03bDE3V0pKTFBPN3A3ejhlREE9PQo="
+      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_aarch64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNythRWxuV1VUZmlWUEtqMmVmVHlTT3RlUkUvbFNjUCs3cHdGVzViTnZyY0VOZ0czSWpMbzNvWEVTL2g0eUFNMkJRcGR3QVpscTJUbEtSS21rVkJGUndJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI3MjEyCWZpbGU6U3R1ZHkgRGVzay5hcHAudGFyLmd6CXZlcnNpb246MC4yLjUKR1lzRHdMNFdqYlArTDA1UDhObUZncDZadFlFMWQ0b0o2TFE1QVNlT2IxRHlUWldKaGdzV2hPRUxuMi9GQUZjRDcxamh4S3JIU2ROdFczaVVaa0dzQ1E9PQo="
     },
     "darwin-x86_64-app": {
-      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_x64.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzhuUHpsMzRhbFFHS0dDR2hDRi9EUDdhLzJzdWxnR1k2YmI5KzNzMWxZTkFpc1BtNldUdzA1WUdLeTBWTm1aS05GS1ZhME11OS9MY25ZTmNRT1JJeXdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzE1Mjc0CWZpbGU6U3R1ZHkgRGVzay5hcHAudGFyLmd6CXZlcnNpb246MC4yLjQKUzFhUFJFT2tlbWNHaW9ZelJndDVoaGdPUGwvWU9NVVE1ejlncEQyOGpneGpiRzRibnFQMTQyRVc1Wlhacmh0cFc4QjZUalIzemRQaDNBQXk1VE55Q1E9PQo="
+      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_x64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByN3dWVnJvUDkwWEpxV0x4aEVsNzBKSFhTRDhTZTQycnpCbmV4V0tFaTNIamRJUzBselpKbHptbzBRbGhINlhmQ0JieFZYMGVxZ2lXLzNlTFg0bzFJaEFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI4MDIxCWZpbGU6U3R1ZHkgRGVzay5hcHAudGFyLmd6CXZlcnNpb246MC4yLjUKR0lVcDBKdnpjcEtFa1VpMlNmcGMycTVMREJRMGdBQjVESklVTTNqNkd1STFsY0N1YmFBMjNoTkxpQXRMM3BBU2dRK3RnV3RXS2p2b29jZnB5OTlTQWc9PQo="
     },
     "linux-x86_64-appimage": {
-      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_amd64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzlyR3V4ODBXRTA5bjUyNW5RWFlTY2FLblFEV3R1TWp6bEVxaFpxK2hPOGt5N3g1eXBWcWxkekoxK3N3dVJaL3JSSnJaUDRZdTV6c2NLaFpMWUlSOFFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzE0MzUzCWZpbGU6U3R1ZHkgRGVza18wLjIuNF9hbWQ2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMi40CjNhNEovNUdIM09wNFlHRWJHR0prdkpSS0xrZXJ0c202L24yRDltM3NKS21RaVA2YWltTHhRdjQxM1AyeUlXbVFxVlMwYVkxWHdSUlRKamV3eG5kVURBPT0K"
+      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_amd64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzNnMXczbjZ3U1hQQkxvU0pUeHZMSEdCNkJxMTJYMWVFMFZwNTBZbDYzNGRQZlF3eWNDRkc0TW83WHRPNWRTWS8wZXdoS3ZSU1BaRU9hZUJydTA1UEFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI3MjgzCWZpbGU6U3R1ZHkgRGVza18wLjIuNV9hbWQ2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMi41CmQrMk84RGRpVG02dW5jRUJlSUJvWURKWEo5MXVZRzg5WlJUb2huSWlNN3c1a1oyS2dyT1dnUHptZjBoL0VjN1prcjlTNjQ2S2NmMVJ4aG9DNXRpeERBPT0K"
     },
     "linux-x86_64-deb": {
-      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4-beta.1/Study-Desk_0.2.4_amd64.deb",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNzFDVThxcEVxeTEwNkFzckUyMEt6bjBGaC8yamdWYytuMVM2dHpVeE54aVpYamZRa0Yxamo1V2FWN2JaWmxuSDh3RzNHaG5ZZXA3U1pEbzNvTlY1SEFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzE0MzUzCWZpbGU6U3R1ZHkgRGVza18wLjIuNF9hbWQ2NC5kZWIJdmVyc2lvbjowLjIuNAp2VXY3VHpqZmJMeXVUdURPa3hid3BUaHkyZEo3aUF6Zm90bjZnMFpPQ3c1ZldDRHI5VzZXS0tGcDcrY1NGcWVEVjF4YzFmOTdPamUwYlpqZDd1SjlBZz09Cg=="
+      "url": "https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.5-beta.1/Study-Desk_0.2.5_amd64.deb",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURTNwRjE4aHByNy9STUxTVlBpUDNJcFhhMEVDVzdRNkZ0c2VJSWxVTXExTW9TVU9JODhndjRORTVKbEtyckFBaHluRnRjSFVKUUZxakw0VFNLb3A0TDhTL2YrZTUxc2djPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI3MjgyCWZpbGU6U3R1ZHkgRGVza18wLjIuNV9hbWQ2NC5kZWIJdmVyc2lvbjowLjIuNQpPV3hKVk04SGN5UWFmTE8reCs2dXZRT1FpYUF3c3N1ZThSMUJnWm5XS2c3UE5ycHNkQkdPTkNQa1RITVBZZGFza2E5bUpjTXpmclBFY1Voa2ZaYXVBQT09Cg=="
     }
   }
 }
