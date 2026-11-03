@@ -1,0 +1,69 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+# Signing credentials must never be published with installers or source.
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Local runtime, environments, and generated evidence
+.venv/
+.tools/
+data/
+audit/
+test-results/
+.pytest_cache/
+.tox/
+.nox/
+/junit.xml
+coverage.xml
+htmlcov/
+
+# Temporary evaluation harnesses and reports. Keep maintained tests/ in source.
+adhoc-tests/
+live-evaluations/
+test-reports/
+/PIPELINE-RELIABILITY.md
+/RELIABILITY-REPORT*.md
+playwright-report/
+/test_llm_pipeline.py
+/evaluate_*.py
+/test_*_live.py
+/scripts/evaluate_*.py
+/scripts/test_llm*.py
+/scripts/ui_smoke*.py
+*.junit.xml
+
+# Python and database artifacts
+__pycache__/
+*.py[cod]
+*.db
+*.db-*
+*.sqlite*
+*.log
+*.tmp
+*.bak
+
+# Editor and OS artifacts
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Build, packaging, test coverage and local diagnostic exports
+build/
+dist/
+desktop/node_modules/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+*.egg-info/
+.ruff_cache/
+.coverage
+.coverage.*
+*.zip
+*.7z
+
+# Local Git history backups
+*.bundle

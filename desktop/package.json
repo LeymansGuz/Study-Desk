@@ -1,0 +1,7 @@
+{
+  "name": "study-desk-desktop",
+  "version": "0.2.2",
+  "private": true,
+  "scripts": {"build": "tauri build", "dev": "tauri dev"},
+  "devDependencies": {"@tauri-apps/cli": "^2.0.0"}
+}

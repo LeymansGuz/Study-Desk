@@ -1,0 +1,78 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use std::{fs, io::{Read, Write}, net::{TcpListener, TcpStream}, process::{Child, Command, Stdio}, sync::{Arc, Mutex}, thread, time::{Duration, Instant}};
+use tauri::Manager;
+
+struct Backend { child: Mutex<Option<Child>>, port: u16, secret: String }
+impl Backend {
+    fn request(&self, path: &str, method: &str) -> bool {
+        let Ok(mut stream) = TcpStream::connect_timeout(&([127,0,0,1],self.port).into(), Duration::from_millis(500)) else { return false };
+        let _=stream.set_read_timeout(Some(Duration::from_secs(1)));
+        let request=format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{}\r\nX-Study-Desktop: {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",self.port,self.secret);
+        if stream.write_all(request.as_bytes()).is_err() { return false }
+        let mut buf=[0u8;128];
+        stream.read(&mut buf).map(|n| String::from_utf8_lossy(&buf[..n]).starts_with("HTTP/1.1 200")).unwrap_or(false)
+    }
+    fn stop(&self) {
+        let _=self.request("/desktop/stop","POST");
+        let deadline=Instant::now()+Duration::from_secs(25);
+        if let Ok(mut child)=self.child.lock() {
+            if let Some(process)=child.as_mut() {
+                while Instant::now()<deadline {
+                    if process.try_wait().ok().flatten().is_some() {return}
+                    thread::sleep(Duration::from_millis(100));
+                }
+                let _=process.kill();let _=process.wait();
+            }
+        }
+    }
+}
+
+fn main() {
+    let engine=Arc::new(Mutex::new(None::<Arc<Backend>>));
+    let setup_engine=engine.clone();
+    let app=tauri::Builder::default()
+      .plugin(tauri_plugin_single_instance::init(|app,_,_| {
+          if let Some(window)=app.get_webview_window("main") { let _=window.show();let _=window.set_focus(); }
+      }))
+      .setup(move |app| {
+        let data=std::env::var_os("STUDY_DESKTOP_DATA_DIR").map(std::path::PathBuf::from).unwrap_or(app.path().app_data_dir()?);
+        fs::create_dir_all(&data)?;
+        let resource=app.path().resource_dir()?;
+        let backend=resource.join("backend").join(if cfg!(windows){"StudyDeskBackend.exe"}else{"StudyDeskBackend"});
+        let listener=TcpListener::bind("127.0.0.1:0")?;let port=listener.local_addr()?.port();drop(listener);
+        let secret=format!("{}{}",uuid::Uuid::new_v4().simple(),uuid::Uuid::new_v4().simple());
+        let mut command=Command::new(backend);
+        command.args(["--port",&port.to_string(),"--data-dir",&data.to_string_lossy(),"--parent-pid",&std::process::id().to_string()]);
+        command.env("STUDY_DESKTOP_SECRET",&secret).stdin(Stdio::null()).stdout(Stdio::null());
+        let log=fs::OpenOptions::new().create(true).append(true).open(data.join("startup.log"))?;
+        command.stderr(Stdio::from(log));
+        #[cfg(windows)] { use std::os::windows::process::CommandExt;command.creation_flags(0x08000000); }
+        let child=command.spawn()?;
+        let state=Arc::new(Backend {child:Mutex::new(Some(child)),port,secret});
+        *setup_engine.lock().unwrap()=Some(state.clone());
+        let window=tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::App("index.html".into()))
+          .title("Study Desk").inner_size(1280.0,860.0).min_inner_size(800.0,620.0)
+          .on_navigation(move |url| {
+              matches!(url.scheme(),"tauri"|"about") || (url.scheme()=="http" && url.host_str()==Some("127.0.0.1") && url.port()==Some(port)) || (url.scheme()=="http" && url.host_str()==Some("tauri.localhost"))
+          }).build()?;
+        thread::spawn(move || {
+            let deadline=Instant::now()+Duration::from_secs(120);
+            while Instant::now()<deadline {
+                if state.request("/desktop/ready","GET") {
+                    let url=format!("http://127.0.0.1:{}/desktop/launch?token={}",state.port,state.secret);
+                    if let Ok(parsed)=url.parse(){let _=window.navigate(parsed);}
+                    return
+                }
+                if state.child.lock().unwrap().as_mut().and_then(|c|c.try_wait().ok().flatten()).is_some(){break}
+                thread::sleep(Duration::from_millis(300));
+            }
+            let _=window.eval("document.querySelector('#message').textContent='Study Desk could not start. Close this window and reopen the app. If it happens again, see startup.log in your application data folder.';");
+        });
+        Ok(())
+      }).build(tauri::generate_context!()).expect("Study Desk could not initialize");
+    app.run(move |_,event| {
+        if let tauri::RunEvent::Exit=event {
+            if let Some(state)=engine.lock().unwrap().as_ref(){state.stop();}
+        }
+    });
+}

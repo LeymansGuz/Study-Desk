@@ -1,0 +1,125 @@
+name: Build desktop installers
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: New beta tag matching the source version
+        required: true
+        default: v0.2.2-beta.1
+      publish:
+        description: Publish checked installers as a prerelease
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: desktop-${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-latest
+          - platform: macos-arm64
+            runner: macos-14
+          - platform: macos-intel
+            runner: macos-15-intel
+          - platform: linux
+            runner: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ startsWith(matrix.platform, 'macos-') && '14.0' || '' }}
+      APPIMAGE_EXTRACT_AND_RUN: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.9.5'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux native dependencies
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf libsecret-1-dev
+      - name: Intel Mac cryptography source-build dependencies
+        if: matrix.platform == 'macos-intel'
+        shell: bash
+        run: |
+          brew install openssl@3 pkg-config
+          printf 'OPENSSL_DIR=%s\nOPENSSL_STATIC=1\n' "$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
+      - name: Install locked build environment
+        run: uv sync --frozen --group dev --group desktop-build
+      - name: Check release version
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: uv run --frozen --group desktop-build python desktop/collect_release.py --check-tag
+      - name: Offline regression tests
+        run: uv run --frozen --group dev --group desktop-build pytest -q
+      - name: Build and check the packaged backend
+        run: uv run --frozen --group desktop-build python desktop/build.py
+      - name: Save build provenance
+        shell: python
+        env:
+          PLATFORM_NAME: ${{ matrix.platform }}
+        run: |
+          import os, shutil
+          from pathlib import Path
+          shutil.copy2('dist/backend/StudyDeskBackend/build-manifest.json', Path('dist/installers') / ('build-manifest-' + os.environ['PLATFORM_NAME'] + '.json'))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: study-desk-${{ matrix.platform }}
+          path: dist/installers/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+  publish:
+    needs: build
+    if: github.event_name == 'push' || inputs.publish == true
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: study-desk-*
+          path: downloaded-installers
+      - name: Check all platforms and create combined checksums
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: python desktop/collect_release.py downloaded-installers release-files
+      - name: Publish beta downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if tagged_commit=$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha 2>/dev/null); then
+            if [ "$tagged_commit" != "$GITHUB_SHA" ]; then
+              echo '::error::The release tag points to another commit. Use a new tag or correct the unpublished tag first.'
+              exit 1
+            fi
+          fi
+          if gh release view "$RELEASE_TAG" --json isDraft > release-state.json 2>/dev/null; then
+            python -c "import json; assert json.load(open('release-state.json'))['isDraft'], 'Use a new beta tag instead of overwriting a published release.'"
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --prerelease --title "Study Desk $RELEASE_TAG" --notes-file desktop/BETA-RELEASE.md
+          fi
+          gh release upload "$RELEASE_TAG" release-files/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease

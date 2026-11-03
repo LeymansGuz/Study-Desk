@@ -1,0 +1,49 @@
+[project]
+name = "study-desk-local"
+version = "0.2.2"
+description = "Local document-grounded study tutor"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.9",
+    "certifi>=2026.10.23",
+    "cryptography>=50.0.2",
+    "python-docx>=1.2",
+    "psutil>=7",
+    "extractous==0.3.0",
+    "fastapi>=0.161.1",
+    "fsrs>=6,<7",
+    "httpx>=0.28.1",
+    "langchain-openai>=1.7.2",
+    "langgraph>=1.2.16",
+    "langsmith>=0.14.12",
+    "markdown-it-py>=3.0.0",
+    "pypdf>=6.21.4",
+    "pypdfium2>=5.14.0",
+    "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
+    "rapidocr-onnxruntime>=1.4.4",
+    "slowapi>=0.1.9,<0.2",
+    "sympy>=1.14,<2",
+    "uvicorn[standard]>=0.54.0",
+    "keyring>=25,<27",
+    "onnxruntime==1.23.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "onnxruntime==1.31.0; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+]
+
+[dependency-groups]
+desktop-build = [
+    "pyinstaller>=6,<7",
+]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["security_rate: tests with real SlowAPI enforcement"]
