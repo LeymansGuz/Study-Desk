@@ -33,9 +33,16 @@ fn official_asset(url: &reqwest::Url, version: &str) -> bool {
 }
 
 fn report(client: &reqwest::blocking::Client, backend: &Backend, state: &str, message: &str, version: &str, received: u64, total: u64) {
-    let _ = client.post(format!("http://127.0.0.1:{}/desktop/update/result", backend.port))
-        .header("X-Study-Desktop", &backend.secret)
-        .json(&json!({"state":state,"message":message,"version":version,"received":received,"total":total})).send();
+    // download() invokes its progress callback inside Tokio. reqwest's blocking
+    // client must run on a separate OS thread there, including response drop.
+    // Joining keeps progress/final states ordered; at most one report is active.
+    thread::scope(|scope| {
+        let _=scope.spawn(|| {
+            let _ = client.post(format!("http://127.0.0.1:{}/desktop/update/result", backend.port))
+                .header("X-Study-Desktop", &backend.secret)
+                .json(&json!({"state":state,"message":message,"version":version,"received":received,"total":total})).send();
+        }).join();
+    });
 }
 
 pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
@@ -118,6 +125,26 @@ pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn progress_reporting_is_safe_inside_the_download_runtime() {
+        use std::{io::{Read,Write},net::TcpListener,sync::Mutex};
+        let listener=TcpListener::bind("127.0.0.1:0").unwrap();
+        let port=listener.local_addr().unwrap().port();
+        let server=thread::spawn(move || {
+            let (mut stream,_)=listener.accept().unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+            let mut request=Vec::new();let mut buffer=[0;1024];
+            while !request.windows(4).any(|s|s==b"\r\n\r\n") {
+                let n=stream.read(&mut buffer).unwrap();if n==0 {break}request.extend_from_slice(&buffer[..n]);
+            }
+            assert!(String::from_utf8_lossy(&request).contains("POST /desktop/update/result"));
+            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 11\r\nConnection: close\r\n\r\n{\"ok\":true}").unwrap();
+        });
+        let backend=Backend{child:Mutex::new(None),port,secret:"isolated-test-secret".into()};
+        let client=reqwest::blocking::Client::builder().no_proxy().timeout(Duration::from_secs(3)).build().unwrap();
+        tauri::async_runtime::block_on(async {report(&client,&backend,"downloading","Downloading","0.2.5",1,2)});
+        server.join().unwrap();
+    }
     #[test]
     fn only_versioned_official_assets_are_accepted() {
         for url in ["http://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.4/x0.2.4.exe",
