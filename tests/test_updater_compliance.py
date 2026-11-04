@@ -18,8 +18,8 @@ def test_ai_notice_is_required_versioned_and_withdrawable(client):
         assert client.post('/explain',json={}).status_code==428
     finally:db.set_app_setting('data_use_acknowledgement',compliance.VERSION)
 
-def test_upload_requires_rights_confirmation(client):
-    assert client.post('/workspace/uploads',json={},headers={'X-Study-Upload-Rights':''}).status_code==428
+def test_upload_does_not_require_extra_rights_checkbox(client):
+    assert client.post('/workspace/uploads',json={},headers={'X-Study-Upload-Rights':''}).status_code!=428
 
 def desktop_app(monkeypatch):
     monkeypatch.setenv('STUDY_DESKTOP_SECRET','a'*64)

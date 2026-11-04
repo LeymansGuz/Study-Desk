@@ -22,9 +22,6 @@ class DataUseBoundary:
     async def __call__(self, scope, receive, send):
         if scope['type'] == 'http' and scope['method'] == 'POST':
             path = scope['path']
-            if path in {'/workspace/uploads','/workspace/files','/workspace/files/local'} or path.endswith('/import-zip'):
-                if Request(scope).headers.get('x-study-upload-rights') != 'confirmed':
-                    return await JSONResponse({'detail':'Confirm that you have the right to process these documents before uploading.'},status_code=428)(scope,receive,send)
             if any(path == p or path.startswith(p + '/') for p in AI_PREFIXES) and not accepted():
                 return await JSONResponse({'detail': 'Review and accept the AI data-use notice in Settings before using AI study tools.', 'code': 'data_use_acknowledgement_required'}, status_code=428)(scope, receive, send)
         return await self.app(scope, receive, send)

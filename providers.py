@@ -372,8 +372,6 @@ class SaveConnection(BaseModel):
     base_url: str=Field(default='',max_length=300)
     api_key: str=Field(default='',max_length=512)
     activate: bool=True
-    accept_charges: bool=False
-    eligible: bool=False
     free_only: bool=True
     json_mode: bool=True
     reasoning: str=Field(default='auto',pattern='^(auto|off|low)$')
@@ -420,12 +418,10 @@ def install(app):
             CATALOG.pop(body.provider,None)
         if not body.activate:return {'message':'Key saved securely. Refresh models to choose a connection; no generation request was made.'}
         if not body.model.strip() or any(ord(c)<32 for c in body.model):raise HTTPException(422,'Choose a model or enter a valid model ID.')
-        if not body.eligible:raise HTTPException(422,'Confirm the model and hosting provider permit use in your location.')
         catalog=CATALOG.get(body.provider)
         entry=next((m for m in catalog['models'] if m['id']==body.model),None) if catalog and catalog['identity']==(body.provider,url) and time.time()-catalog['at']<3600 else None
         if body.free_only and (body.provider!='openrouter' or not entry or entry['price_status']!='free'):
             raise HTTPException(422,'Refresh models and select a confirmed free OpenRouter model, or turn off Free only and acknowledge possible charges.')
-        if not body.free_only and not body.accept_charges:raise HTTPException(422,'Acknowledge possible provider charges before saving this connection.')
         routes=[]
         if body.provider=='openrouter':
             route=body.route or (RECOMMENDED_ROUTES[0] if body.model==RECOMMENDED_FREE and RECOMMENDED_ROUTES else '')

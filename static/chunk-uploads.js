@@ -49,8 +49,7 @@
     if(!pending?.id){
       pending ||= {courseId,docType,files:[...files],requestKey:crypto.randomUUID().replaceAll('-','')};
       report('Preparing secure upload…');
-      if(!document.querySelector('#upload-rights')?.checked)throw new Error('Confirm your right to process these documents before uploading.');
-      batch=await retry(()=>json('/workspace/uploads',{method:'POST',headers:{'Content-Type':'application/json','X-Study-Upload-Rights':'confirmed'},body:JSON.stringify({course_id:courseId,doc_type:docType,files:files.map(file=>({name:file.name,size:file.size})),request_key:pending.requestKey})}));
+      batch=await retry(()=>json('/workspace/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({course_id:courseId,doc_type:docType,files:files.map(file=>({name:file.name,size:file.size})),request_key:pending.requestKey})}));
       pending.id=batch.id;
     }
     const base=`/workspace/uploads/${batch.id}`;

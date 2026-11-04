@@ -111,12 +111,8 @@ def test_unknown_price_never_uses_deepseek_rates():
         assert cost is None and row['cost_usd'] is None and row['input_tokens']==100 and row['model']=='openai:example'
     finally:providers.ACTIVE.reset(token)
 
-def test_activation_requires_price_and_region_acknowledgement(client):
+def test_activation_does_not_require_extra_checkboxes(client):
     payload={'provider':'openai','model':'example','free_only':False}
-    assert client.post('/local/providers',json=payload).status_code==422
-    payload['eligible']=True
-    assert client.post('/local/providers',json=payload).status_code==422
-    payload['accept_charges']=True
     assert client.post('/local/providers',json=payload).status_code==200
     assert 'offline-test-key' not in client.get('/local/providers').text
 
@@ -210,6 +206,6 @@ def test_saved_source_key_takes_precedence_over_old_env(monkeypatch):
 def test_custom_json_mode_can_be_disabled_even_with_catalog_entry(client):
     url='https://example.test/v1'
     providers.CATALOG['custom']={'identity':('custom',url),'at':time.time(),'models':[providers.metadata(row('fixture/model'),'custom')]}
-    payload={'provider':'custom','model':'fixture/model','base_url':url,'free_only':False,'accept_charges':True,'eligible':True,'json_mode':False}
+    payload={'provider':'custom','model':'fixture/model','base_url':url,'free_only':False,'json_mode':False}
     assert client.post('/local/providers',json=payload).status_code==200
     assert providers.snapshot().json_mode is False

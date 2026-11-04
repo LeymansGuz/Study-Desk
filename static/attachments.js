@@ -17,14 +17,14 @@ class AttachmentQueue {
     this.zone.querySelector('[data-choose]').onclick=()=>{if(!this.busy)this.input.click();};
     this.zone.querySelector('[data-clear]').onclick=()=>this.change(()=>this.files=[]);
     if(kind==='ask'){
-      this.review=document.querySelector('#attachment-review');this.text=document.querySelector('#attachment-text');this.checked=document.querySelector('#attachment-reviewed');
+      this.review=document.querySelector('#attachment-review');this.text=document.querySelector('#attachment-text');
       document.querySelector('#read-attachments').onclick=async()=>{try{await this.read();}catch(error){this.message(error.message,true);}};
     }
     this.render();
   }
   namedImages(files){return files.map((file,index)=>!file.name||file.name==='image.png'?new File([file],`Screenshot-${new Date().toISOString().replace(/[:.]/g,'-')}-${index+1}.${file.type==='image/jpeg'?'jpg':file.type==='image/webp'?'webp':'png'}`,{type:file.type||'image/png'}):file);}
   message(text,error=false){const host=this.zone.querySelector('[data-message]');host.textContent=text;host.classList.toggle('error-text',error);}
-  invalidate(){this.extracted=null;if(this.kind==='workspace')document.querySelector('#upload-rights').checked=false;if(this.review){this.review.hidden=true;this.text.value='';this.checked.checked=false;}for(const url of this.urls.values())URL.revokeObjectURL(url);this.urls.clear();}
+  invalidate(){this.extracted=null;if(this.review){this.review.hidden=true;this.text.value='';}for(const url of this.urls.values())URL.revokeObjectURL(url);this.urls.clear();}
   async change(action){
     if(this.busy)return;this.lock(true);
     try{if(this.kind==='workspace')await window.cancelCourseUpload();action();this.invalidate();this.message('Selection updated.');}
@@ -95,16 +95,15 @@ class AttachmentQueue {
       }
       if(!result)throw Error('Attachment reading was interrupted. Retry to reuse completed extractions.');
       this.extracted=result;this.text.value=result.map(r=>`### ${r.filename}\n${r.text}`).join('\n\n');this.review.hidden=false;
-      const warnings=[...new Set(result.flatMap(r=>r.warnings||[]))];this.needsReview=warnings.length>0;this.checked.checked=false;
-      document.querySelector('#attachment-review-check').hidden=!this.needsReview;document.querySelector('#attachment-warnings').textContent=warnings.join(' ');
+      const warnings=[...new Set(result.flatMap(r=>r.warnings||[]))];this.needsReview=warnings.length>0;
+document.querySelector('#attachment-warnings').textContent=warnings.join(' ');
       this.review.open=this.needsReview;this.message('Attachments read. Review or edit the extracted question text below. No AI request has been sent.');return result;
     }finally{this.lock(false);}
   }
   async question(){
     if(!this.files.length)return {attachment_text:'',attachment_name:''};
     await this.read();
-    if(this.needsReview&&!this.checked.checked){this.review.open=true;throw Error('Check the extracted symbols and diagram facts, then confirm the review before starting tutoring.');}
-    return {attachment_text:this.text.value,attachment_name:`${this.files.length} attachment${this.files.length===1?'':'s'}`};
+        return {attachment_text:this.text.value,attachment_name:`${this.files.length} attachment${this.files.length===1?'':'s'}`};
   }
 }
 document.addEventListener('study-ready',async()=>{

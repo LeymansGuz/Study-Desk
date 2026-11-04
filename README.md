@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.7-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.7-beta.1).
+The current published beta is [v0.2.8-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.8-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/Study-Desk_0.2.7_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/Study-Desk_0.2.7_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/Study-Desk_0.2.7_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/Study-Desk_0.2.7_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/Study-Desk_0.2.7_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.7-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.7_amd64.deb
+sudo apt install ./Study-Desk_0.2.8_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.7_amd64.AppImage
-./Study-Desk_0.2.7_amd64.AppImage
+chmod +x ./Study-Desk_0.2.8_amd64.AppImage
+./Study-Desk_0.2.8_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -51,11 +51,12 @@ an API key needs an available system credential store, such as Secret Service.
 
 ### First launch
 
-1. Open **Study Desk**. Review the data-use notice and usage terms before enabling AI. You can defer this and use Workspace. Each upload requires confirmation that you may process the documents.
-2. In **Settings → AI connection**, choose a provider, enter your own key and
-   choose **Save key securely**. Refresh models, select a model and (for free
-   OpenRouter requests) its hosting endpoint, confirm eligibility, then save the
-   connection. Keys use the system credential store; no `.env` editing is needed.
+1. Open **Study Desk**. Review the data-use notice and usage terms before enabling AI. You can defer this and use Workspace.
+2. In **Settings → AI connection**, choose a provider and enter your own key.
+   Click **Save and use** once to save the key; the model catalog then loads
+   automatically. Select a model and (for OpenRouter) its hosting endpoint, then
+   click **Save and use** again. Keys use the system credential store; no `.env`
+   editing is needed. The current provider and model are shown above the form.
    Saving a key and listing models make no generation request.
 3. Upload your course documents in **Workspace**, wait for indexing, and start
    studying. Close the app to stop its private services; reopen it to resume.
@@ -106,13 +107,13 @@ questions, grade answers, run mastery paths or request deep explanations; these
 restrictions are enforced on the backend even when Free only is unchecked for a
 known free model. Brief explanations retain the independent example solve,
 grounding, arithmetic and verifier checks and can be withheld when checks fail.
-Existing working connections are preserved. Availability in a catalog and a
-successful connection test do not certify question quality or regional eligibility.
-Check both model and hosting-provider terms. Free requests pin the selected host,
-disable fallback and cap prompt/completion/request/image prices at zero.
+Existing working connections are preserved. Availability in a catalog does not
+certify question quality or regional eligibility. Check both model and
+hosting-provider terms. Free requests pin the selected host, disable fallback and
+cap prompt/completion/request/image prices at zero.
 
-**Refresh models** loads a bounded, cached catalog. Text-generating models are
-shown; known non-text services are excluded. Price labels are Free, Paid or
+The model catalog loads automatically when a key is saved. Text-generating models
+are shown; known non-text services are excluded. Price labels are Free, Paid or
 Pricing unknown; incomplete metadata is never treated as free. Advanced controls
 allow a manual model ID and JSON/reasoning settings. Mandatory-reasoning models
 may be slow or exhaust the stage's output budget. Schema support does not replace
@@ -126,11 +127,10 @@ deadline; calls are paced and bounded, insufficient known allowance is rejected
 before a workflow's first call, and quota errors stop retries. There is no
 automatic paid fallback. Inputs and completed study work are retained on failure.
 
-Non-free connections require an explicit possible-charge acknowledgement. A
-small **Test connection** request requires separate permission and consumes
-allowance or can incur charges. It checks connectivity and JSON only. Statistics
-record the provider/model and actual returned tokens; unsupported pricing is
-shown as unknown rather than applying DeepSeek prices. Provider invoices control.
+Paid connections may consume provider allowance or incur charges; the setup form
+shows a plain notice rather than extra checkboxes. Statistics record the
+provider/model and actual returned tokens; unsupported pricing is shown as
+unknown rather than applying DeepSeek prices. Provider invoices control.
 
 Source installations may use the optional credentials in `.env.example` or the
 same Settings flow. Desktop installations ignore developer credential environment

@@ -22,4 +22,4 @@ for installation, updates and backups. SHA256SUMS.txt covers every installer and
 build manifest attached to this release. Remaining Chroma and Linux GTK dependency
 risks are documented in the [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
 
-AI connections: secure separate provider keys, refreshable text-model catalogs, hosting selection, free-only price caps, allowance handling and explicit paid consent. DeepSeek, OpenRouter, OpenAI API, Claude API and custom compatible endpoints are available; eligibility and model quality vary. Existing connections are retained.
+AI connections: secure separate provider keys, refreshable text-model catalogs, hosting selection, free-only price caps, allowance handling and a plain provider-charge notice. DeepSeek, OpenRouter, OpenAI API, Claude API and custom compatible endpoints are available; eligibility and model quality vary. Existing connections are retained.
