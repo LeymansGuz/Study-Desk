@@ -34,7 +34,7 @@
       "nsis": {
         "installMode": "currentUser",
         "compression": "lzma",
-        "installerHooks": "./windows/update-blocks.nsh"
+        "template": "./windows/installer.nsi"
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper",

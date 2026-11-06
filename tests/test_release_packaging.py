@@ -1,6 +1,7 @@
 import hashlib
 import json
 import pytest
+from pathlib import Path
 from desktop.collect_release import PLATFORMS, check_tag, collect
 
 
@@ -27,6 +28,17 @@ def test_release_requires_all_four_platforms_before_staging(builds,tmp_path):
     destination=tmp_path/'release'
     with pytest.raises(ValueError,match='Missing or duplicate'):collect(builds,destination,'0.2.2','same-commit')
     assert not destination.exists()
+
+def test_windows_template_has_only_the_reviewed_upstream_compression_change():
+    root=Path(__file__).resolve().parents[1]
+    template=(root/'desktop/src-tauri/windows/installer.nsi').read_text(encoding='utf-8')
+    upstream='Unicode true'+template.split('Unicode true',1)[1]
+    assert upstream.count('SetCompressor /FINAL "{{compression}}"')==1
+    upstream=upstream.replace('SetCompressor /FINAL "{{compression}}"','SetCompressor /SOLID "{{compression}}"')
+    assert hashlib.sha256(upstream.encode()).hexdigest()=='d00089d3b1a2c4a30d7b6e098079100cb8f25e980f84d4515aca4597b95e967d'
+    config=json.loads((root/'desktop/src-tauri/tauri.conf.json').read_text())
+    assert config['bundle']['windows']['nsis']['template']=='./windows/installer.nsi'
+    assert json.loads((root/'desktop/package.json').read_text())['devDependencies']['@tauri-apps/cli']=='2.12.4'
 
 
 def test_release_rejects_builds_from_another_commit(builds,tmp_path):

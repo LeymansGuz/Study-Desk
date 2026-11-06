@@ -33,6 +33,8 @@ successful compilation is not a device compatibility guarantee.
   Reconstruct a complete package in the app-data cache. Verify signed metadata,
   hashes and the version-bound package signature before installation. Keep the
   ordinary signed full-download fallback. Never patch a running application.
+  The Windows template is pinned to CLI 2.12.4; when upgrading that tool, refresh
+  the upstream template and retain its licence and single compression change.
 
 ## Interface and data
 

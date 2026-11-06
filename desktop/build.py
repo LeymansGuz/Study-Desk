@@ -24,6 +24,7 @@ def main():
         notice.write_text('Study Desk bundles Python and packages listed in uv.lock (see source release), Node.js (https://nodejs.org/en/about/previous-releases), Open Policy Agent (Apache-2.0, https://github.com/open-policy-agent/opa), KaTeX (MIT), Marked (MIT), DOMPurify (Apache-2.0 OR MPL-2.0). Package license metadata is included in _internal. See DESKTOP.md in the source release for build/distribution requirements.\n',encoding='utf-8')
         import importlib.metadata as md
         licenses=notice.parent/'licenses';licenses.mkdir(exist_ok=True)
+        shutil.copy2(ROOT/'desktop/src-tauri/windows/TAURI-NSIS-LICENSE.txt',licenses/'Tauri-NSIS-template-MIT.txt')
         for distribution in md.distributions():
             name=distribution.metadata.get('Name','package')
             for f in distribution.files or []:

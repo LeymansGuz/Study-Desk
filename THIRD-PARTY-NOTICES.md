@@ -1,5 +1,11 @@
 # Third-party software
 
+The Windows installer template in `desktop/src-tauri/windows/installer.nsi` is
+from Tauri CLI 2.12.4, Copyright 2017–Present Tauri Apps Contributors, used under
+the MIT licence. Its only functional modification selects per-file compression
+for differential downloads. The full licence is beside the template and included
+in desktop bundles as `licenses/Tauri-NSIS-template-MIT.txt`.
+
 Study Desk's own code is MIT licensed. Dependencies retain their own licences; the project's MIT licence does not relicense them. Exact Python and Rust versions are recorded in `uv.lock` and `desktop/src-tauri/Cargo.lock`; the desktop tooling is recorded in `desktop/package-lock.json`.
 
 Desktop bundles include Python and its installed packages, Node.js, Open Policy Agent, the Tauri runtime and system/webview integration libraries. Browser assets include KaTeX and its fonts (MIT), Marked (MIT) and DOMPurify (Apache-2.0 OR MPL-2.0). Their licence files accompany `static/vendor`. Node's distribution licence includes its bundled components. OPA is Apache-2.0. Python uses the PSF licence and its included historical notices.

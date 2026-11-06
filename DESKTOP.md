@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.10-beta.2).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.10-beta.3).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -173,8 +173,9 @@ signed package. The worker exits if its parent desktop app exits.
 
 `desktop/build.py` creates and signs block maps for every updater payload.
 `desktop/collect_release.py` checks all maps, signatures, payload checksums,
-platforms and source commits before publishing. Windows uses a small NSIS hook
-to select non-solid LZMA; the standard upstream installer remains in use. Data
+platforms and source commits before publishing. Windows uses the pinned Tauri
+CLI 2.12.4 installer template with one compression directive changed to non-solid
+LZMA. Its upstream logic and MIT licence are retained. Data
 backups exclude the download cache. Cache retention is one previous verified
 package and one staging file; an initial full download is necessary when neither
 can supply matching bytes. Test real installation on each target operating
