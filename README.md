@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.8-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.8-beta.1).
+The current published beta is [v0.2.9-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.9-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/Study-Desk_0.2.8_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/Study-Desk_0.2.9_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/Study-Desk_0.2.9_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/Study-Desk_0.2.9_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/Study-Desk_0.2.9_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/Study-Desk_0.2.9_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.8-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.8_amd64.deb
+sudo apt install ./Study-Desk_0.2.9_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.8_amd64.AppImage
-./Study-Desk_0.2.8_amd64.AppImage
+chmod +x ./Study-Desk_0.2.9_amd64.AppImage
+./Study-Desk_0.2.9_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -112,9 +112,17 @@ certify question quality or regional eligibility. Check both model and
 hosting-provider terms. Free requests pin the selected host, disable fallback and
 cap prompt/completion/request/image prices at zero.
 
-The model catalog loads automatically when a key is saved. Text-generating models
-are shown; known non-text services are excluded. Price labels are Free, Paid or
-Pricing unknown; incomplete metadata is never treated as free. Advanced controls
+The model catalog loads automatically when a key is saved or you return to a
+provider with a saved key. Each provider retains its own key and last saved model
+selection; leave the key field blank to reuse it. Save is unavailable while
+connection details or hosting endpoints are loading, and after a failed hosting
+lookup until an eligible endpoint is selected.
+
+Text-generating models are shown; known non-text services are excluded. Price
+labels distinguish Free and Paid from rates not provided by a catalog; incomplete
+metadata is never treated as free. Direct DeepSeek Flash and Pro display official
+peak/off-peak token rates (checked 6 November 2026), including cached input.
+Provider invoices and current published rates control. Advanced controls
 allow a manual model ID and JSON/reasoning settings. Mandatory-reasoning models
 may be slow or exhaust the stage's output budget. Schema support does not replace
 independent answer, grounding, arithmetic and source-copying checks.

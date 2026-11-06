@@ -1,6 +1,6 @@
 [package]
 name = "study-desk"
-version = "0.2.8"
+version = "0.2.9"
 description = "Document-grounded private study workspace"
 edition = "2021"
 license = "MIT"

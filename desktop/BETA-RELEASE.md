@@ -1,5 +1,11 @@
 Study Desk desktop beta — configure your own AI provider key in Settings. Free OpenRouter models are experimental and restricted to verified brief concept explanations; use a suitable paid model for question generation and tutoring.
 
+AI connection settings retain each provider’s secure key and last saved model.
+Switch back without re-entering the key. Save is disabled while models or hosting
+endpoints load, with refresh and recovery after lookup failures. Direct DeepSeek
+models are labelled Paid and show Flash/Pro peak/off-peak token prices checked
+6 November 2026. Pro cost estimates use Pro rates.
+
 This beta includes drag/drop and screenshot paste, visible file queues, bounded
 larger Workspace batches, multi-attachment questions, local OCR review/cache,
 and signed in-app updates. Windows uses stronger installer archive compression;

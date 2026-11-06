@@ -95,6 +95,8 @@ def provider_call(user_id, stage, model, inputs, outputs, cached, latency, known
         model=connection.provider+':'+connection.model
         if connection.pricing is not None:
             r=dict(zip(('input','output','cached_input'),connection.pricing))
+        elif connection.provider=='deepseek' and connection.model=='deepseek-v4-pro':
+            r=dict(zip(('input','output','cached_input'),(0.66,1.98,0.022) if is_off_peak() else (1.32,3.96,0.044)))
         elif connection.provider!='deepseek':
             pricing_known=False
             r={'input':0,'output':0,'cached_input':0}

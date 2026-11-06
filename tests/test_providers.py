@@ -9,11 +9,13 @@ REAL_READ_KEY=providers.read_key
 def isolated_provider_state(monkeypatch):
     db.init_db();auth.initialize();observability.initialize()
     old=db.get_app_setting('ai_connection_v1','{}');db.set_app_setting('ai_connection_v1','{}')
+    profiles=db.get_app_setting('ai_provider_profiles_v1','{}')
     providers.CATALOG.clear();providers.USAGE.clear();providers.LOCKS.clear()
     providers.ROUTES.clear()
     monkeypatch.setattr(providers,'read_key',lambda *a:'offline-test-key')
     yield
     db.set_app_setting('ai_connection_v1',old);providers.CATALOG.clear();providers.USAGE.clear();providers.LOCKS.clear()
+    db.set_app_setting('ai_provider_profiles_v1',profiles)
 
 def row(identifier='example/test:free',**extra):
     return {'id':identifier,'architecture':{'output_modalities':['text']},'pricing':{'prompt':'0','completion':'0'},'supported_parameters':['response_format'],**extra}
@@ -209,3 +211,47 @@ def test_custom_json_mode_can_be_disabled_even_with_catalog_entry(client):
     payload={'provider':'custom','model':'fixture/model','base_url':url,'free_only':False,'json_mode':False}
     assert client.post('/local/providers',json=payload).status_code==200
     assert providers.snapshot().json_mode is False
+
+def test_provider_keys_and_profiles_survive_switch_and_reload(client,monkeypatch):
+    import desktop_runtime
+    store={}
+    class Store:
+        def get_password(self,*args):return store.get(args,'')
+        def set_password(self,service,account,key):store[(service,account)]=key
+    monkeypatch.setattr(desktop_runtime,'credential_store',lambda:Store())
+    monkeypatch.setattr(providers,'read_key',REAL_READ_KEY)
+    monkeypatch.setenv('STUDY_DESKTOP','true')
+    for provider,model in [('deepseek','deepseek-flash'),('openai','example')]:
+        response=client.post('/local/providers',json={'provider':provider,'model':model,'api_key':'offline-'+provider+'-key','free_only':False})
+        assert response.status_code==200
+    saved=client.get('/local/providers?provider=deepseek').json()
+    assert saved['key_saved'] and saved['profile']['model']=='deepseek-flash'
+    assert 'offline-' not in json.dumps(saved)
+    assert client.post('/local/providers',json={'provider':'deepseek','model':'deepseek-flash','free_only':False}).status_code==200
+    assert client.get('/local/providers').json()['configured']
+    assert client.get('/local/providers?provider=openai').json()['key_saved']
+    assert client.get('/local/providers?provider=custom&base_url=http://127.0.0.1:11434/v1').json()['key_saved'] is False
+
+def test_existing_active_profile_is_preserved_on_first_switch(client):
+    db.set_app_setting('ai_provider_profiles_v1','{}')
+    db.set_app_setting('ai_connection_v1',json.dumps({'provider':'deepseek','model':'deepseek-flash','base_url':providers.DEFINITIONS['deepseek'][1],'free_only':False}))
+    assert client.post('/local/providers',json={'provider':'openai','model':'example','free_only':False}).status_code==200
+    assert client.get('/local/providers?provider=deepseek').json()['profile']['model']=='deepseek-flash'
+
+def test_direct_provider_models_are_paid_and_deepseek_has_official_rates():
+    for provider in ['deepseek','openai','anthropic']:
+        assert providers.metadata({'id':'example'},provider)['price_status']=='paid'
+    flash=providers.metadata({'id':'deepseek-flash'},'deepseek')
+    pro=providers.metadata({'id':'deepseek-v4-pro'},'deepseek')
+    assert '0.15 input / 0.6 output' in flash['price_note']
+    assert '0.66 input / 1.98 output' in pro['price_note']
+    assert flash['pricing'] is None  # Time-dependent prices must not be frozen at selection.
+
+@pytest.mark.parametrize('offpeak,expected',[(True,0.66+1.98),(False,1.32+3.96)])
+def test_pro_cost_uses_pro_rates_instead_of_flash(monkeypatch,offpeak,expected):
+    monkeypatch.setattr(observability,'is_off_peak',lambda *a:offpeak)
+    token=providers.ACTIVE.set(providers.Connection('deepseek','deepseek-v4-pro',providers.DEFINITIONS['deepseek'][1],'offline'))
+    try:
+        _,cost=observability.provider_call(auth.OWNER_ID,'Test','deepseek-v4-pro',1000000,1000000,0,1)
+        assert cost==pytest.approx(expected)
+    finally:providers.ACTIVE.reset(token)

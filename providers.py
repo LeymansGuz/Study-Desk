@@ -170,6 +170,15 @@ def metadata(row, provider):
     values=[_number(pricing.get(k)) for k in ('prompt','completion')]
     rates=None
     state='unknown'
+    price_note=''
+    if provider in {'deepseek','openai','anthropic'}:
+        state='paid'
+    if provider=='deepseek':
+        flash=identifier in {'deepseek-flash','deepseek-v4-flash','deepseek-v4-flash-vision-exp'}
+        if flash or identifier=='deepseek-v4-pro':
+            low=(0.15,0.60,0.003) if flash else (0.66,1.98,0.022)
+            high=(0.30,1.20,0.006) if flash else (1.32,3.96,0.044)
+            price_note=f'USD per million tokens · off-peak: {low[0]} input / {low[1]} output / {low[2]} cached input; peak: {high[0]} / {high[1]} / {high[2]}. Official rates checked 2026-11-06; provider invoice controls.'
     if provider=='openrouter' and all(v is not None for v in values):
         # Unknown non-token charges cannot be certified free.
         charges=[_number(v) for k,v in pricing.items() if k not in {'discount'}]
@@ -177,7 +186,7 @@ def metadata(row, provider):
         cached=_number(pricing.get('input_cache_read'))
         rates=[values[0]*1e6,values[1]*1e6,(cached if cached is not None else values[0])*1e6]
     return {'id':identifier,'name':str(row.get('name',identifier))[:200], 'price_status':state,
-            'pricing':rates,'context_length':row.get('context_length'),
+            'pricing':rates,'price_note':price_note,'context_length':row.get('context_length'),
             'json_mode': 'response_format' in (row.get('supported_parameters') or []) if provider=='openrouter' else True,
             'structured_outputs':'structured_outputs' in (row.get('supported_parameters') or []),
             'tested': provider=='openrouter' and identifier==RECOMMENDED_FREE,
@@ -380,8 +389,16 @@ class SaveConnection(BaseModel):
 def install(app):
     import db
     @app.get('/local/providers')
-    async def status():
+    async def status(provider:str='',base_url:str=''):
         config=selection()
+        if provider:
+            if provider not in DEFINITIONS:raise HTTPException(422,'Choose a supported connection.')
+            try:url=validate_url(base_url) if provider=='custom' else DEFINITIONS[provider][1]
+            except ValueError as exc:raise HTTPException(422,str(exc)) from exc
+            profiles=json.loads(db.get_app_setting('ai_provider_profiles_v1','{}'))
+            profile=config if config.get('provider')==provider else profiles.get(provider,{})
+            if profile.get('base_url')!=url:profile={}
+            return {'key_saved':bool(read_key(provider,url)),'profile':profile}
         legacy=not config and bool(os.getenv('OPENAI_API_KEY'))
         active=config.get('provider','deepseek' if legacy else 'openrouter')
         scope='brief_only' if config.get('provider')=='openrouter' and (config.get('free_only') or config.get('model','').endswith(':free') or config.get('pricing')==[0,0,0]) else 'full'
@@ -436,7 +453,12 @@ def install(app):
                 'pricing':entry['pricing'] if entry else None,'json_mode':body.json_mode and (entry['json_mode'] if entry else True),'reasoning':body.reasoning,
                 'structured_outputs':body.json_mode and entry.get('structured_outputs',False) if entry else False,
                 'routes':routes}
+        profiles=json.loads(db.get_app_setting('ai_provider_profiles_v1','{}'))
+        previous=selection()
+        if previous.get('provider') in DEFINITIONS:profiles[previous['provider']]=previous
+        profiles[body.provider]=config
         db.set_app_setting('ai_connection_v1',json.dumps(config))
+        db.set_app_setting('ai_provider_profiles_v1',json.dumps(profiles))
         return {'message':'Connection saved. New study requests use this model; running workflows keep their original connection.','scope':'brief_only' if limited(snapshot()) else 'full'}
 
     @app.get('/local/providers/allowance')
