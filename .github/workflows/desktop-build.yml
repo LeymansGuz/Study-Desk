@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.9-beta.1
+        default: v0.2.9-beta.2
       publish:
         description: Publish checked installers as a prerelease
         type: boolean
@@ -26,7 +26,7 @@ jobs:
           - platform: windows
             runner: windows-latest
           - platform: macos-arm64
-            runner: macos-14
+            runner: macos-15
           - platform: macos-intel
             runner: macos-15-intel
           - platform: linux
