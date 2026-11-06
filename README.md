@@ -7,47 +7,60 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.11-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.11-beta.1).
+The current published beta is [v0.2.12-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.12-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
 **Study Desk** from its shortcut or the Start menu.
 
 **macOS:** open the DMG, drag **Study Desk** into **Applications**, eject the DMG,
-then open Study Desk from Applications. These beta builds are unsigned and not
-notarized. If macOS blocks opening, review [Apple's app-opening guidance](https://support.apple.com/en-hk/102445)
-before deciding whether to approve this app. Do not disable system-wide protection.
+then open Study Desk from Applications. Beta builds are **ad-hoc signed but not
+Apple-notarized**. If macOS says the app is damaged, the quarantine attribute is
+the cause, not a corrupt download. Run:
+
+```bash
+xattr -cr "/Applications/Study Desk.app"
+```
+
+Then launch it from Applications. Do not disable Gatekeeper system-wide. Intel
+and Apple Silicon DMGs use separate builds; do not mix them.
 
 **Linux DEB:** on Ubuntu/Debian, install the downloaded file with your package
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.11_amd64.deb
+sudo apt install ./Study-Desk_0.2.12_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.11_amd64.AppImage
-./Study-Desk_0.2.11_amd64.AppImage
+chmod +x ./Study-Desk_0.2.12_amd64.AppImage
+./Study-Desk_0.2.12_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
-libraries. If the AppImage reports missing FUSE support, use the DEB on a compatible
-distribution or install your distribution's FUSE compatibility package. Saving
-an API key needs an available system credential store, such as Secret Service.
+libraries, especially `libwebkit2gtk-4.1-0` and `libsecret-1-0`. If the AppImage
+reports missing FUSE support, install `libfuse2` or run it without FUSE:
+
+```bash
+./Study-Desk_0.2.12_amd64.AppImage --appimage-extract-and-run
+```
+
+Use the DEB for a system installation with package-managed dependencies. Saving
+an API key needs an available Secret Service or KWallet credential backend.
 
 ### First launch
 

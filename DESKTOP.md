@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.11-beta.1).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.12-beta.1).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -107,12 +107,14 @@ Desk before rebuilding: Windows can lock executables being packaged.
    regenerate the corresponding locks and repeat verification. The build manifest
    reads the version from `pyproject.toml`.
 
-The current beta installers are unsigned. Signing credentials
-are not supplied by this repository. For a publicly distributed release, arrange
-Windows code signing; macOS distribution also needs appropriate Apple signing
-and notarization. Configure signing secrets in CI only after obtaining them.
-The workflow publishes unsigned experimental prereleases. It refuses to overwrite
-an already published release; use a new beta tag for another attempt.
+The current beta installers are unsigned, except that macOS bundles are ad-hoc
+signed so a valid bundle can be opened after removing the quarantine attribute.
+They are not Apple-notarized. Signing credentials are not supplied by this
+repository. For a publicly distributed release, arrange Windows code signing;
+macOS distribution also needs an Apple Developer ID certificate and notarization.
+Configure signing secrets in CI only after obtaining them. The workflow publishes
+experimental prereleases and refuses to overwrite an already published release;
+use a new beta tag for another attempt.
 
 The macOS and Linux installers remain experimental until checked on real devices.
 Linux needs an available Secret Service or KWallet credential backend. Android

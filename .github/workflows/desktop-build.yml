@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.11-beta.1
+        default: v0.2.12-beta.1
       publish:
         description: Publish checked installers as a prerelease
         type: boolean
@@ -69,6 +69,29 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: uv run --frozen --group desktop-build python desktop/build.py
+      - name: Verify macOS signature and DMG
+        if: startsWith(matrix.platform, 'macos-')
+        shell: bash
+        run: |
+          app="desktop/src-tauri/target/release/bundle/macos/Study Desk.app"
+          test -d "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv --verbose=4 "$app" 2>&1 | grep -E 'Signature|Identifier|TeamIdentifier'
+          dmg="$(find desktop/src-tauri/target/release/bundle/dmg -name '*.dmg' -print -quit)"
+          test -f "$dmg"
+          hdiutil verify "$dmg"
+      - name: Verify Linux packages
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          deb="$(find desktop/src-tauri/target/release/bundle/deb -name '*.deb' -print -quit)"
+          test -f "$deb"
+          dpkg-deb --info "$deb"
+          appimage="$(find desktop/src-tauri/target/release/bundle/appimage -name '*.AppImage' -print -quit)"
+          test -f "$appimage"
+          chmod +x "$appimage"
+          "$appimage" --appimage-extract >/dev/null
+          test -x squashfs-root/usr/bin/study-desk
       - name: Save build provenance
         shell: python
         env:
