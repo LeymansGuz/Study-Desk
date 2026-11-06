@@ -90,7 +90,7 @@ async function explanation(data){
   host.querySelector('[data-evidence]')?.addEventListener('click',()=>sources({...data,question:data.markdown}));
   $('#test-understanding').onclick=()=>{
     if(local.practice&&!(window.confirm('Your current practice remains in saved sessions. Prepare practice for this concept?')))return;
-    $('#topic').value=data.topic;$('#scope').value='topic';$('#topic-field').hidden=false;$('#topic').required=true;$('#difficulty').value='medium';$('#practice-course').value=data.course_ids[0];view('practice');
+    $('#topic').value=data.topic;$('#scope').value='topic';$('#topic-field').hidden=false;$('#topic').required=true;$('#difficulty').value='medium';$('#practice-course').value=data.course_ids[0];pathControls();view('practice');
   };
   document.dispatchEvent(new CustomEvent('study-explanation',{detail:data}));
 }
