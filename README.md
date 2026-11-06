@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.10-beta.3](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.10-beta.3).
+The current published beta is [v0.2.11-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.11-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/Study-Desk_0.2.10_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/Study-Desk_0.2.10_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/Study-Desk_0.2.10_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/Study-Desk_0.2.10_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/Study-Desk_0.2.10_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/Study-Desk_0.2.11_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.3/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.11-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.10_amd64.deb
+sudo apt install ./Study-Desk_0.2.11_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.10_amd64.AppImage
-./Study-Desk_0.2.10_amd64.AppImage
+chmod +x ./Study-Desk_0.2.11_amd64.AppImage
+./Study-Desk_0.2.11_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -176,7 +176,8 @@ send relevant excerpts, questions and attempts to your selected provider (and
 OpenRouter hosting endpoint), consuming your account allowance and possibly
 incurring charges. The backend requires current acknowledgement; withdrawal in Settings
 blocks future AI requests. Upload only material you may lawfully process.
-Local study data and backups are not encrypted by the app.
+Working study data and ordinary local backups are unencrypted. Encrypted portable
+backups are available in Settings; their passphrase is not saved.
 See [compliance scope](COMPLIANCE.md) for remaining responsibilities.
 
 ## Platform support
@@ -300,7 +301,70 @@ all uploaded PDF pages. **Export review cards for Anki** downloads up to 200
 existing cards as a UTF-8 TSV file. Import it as tab-separated fields with HTML
 enabled. No AI call is made for search, sheet editing, export or daily planning.
 
+## Course planning and source tools
+
+These tools are included in the desktop application and local source checkout.
+
+**Progress → Course study plan** uses indexed source sections or your topic list.
+Choose the course, exam date and minutes per course study day. Missed topics roll
+forward automatically; the plan warns when work exceeds the remaining budget.
+**Mark reviewed** is self-reported progress, not a mastery grade. The next planned
+topic also appears in Today’s queue. Suggested practice uses local outcomes and
+course evidence, while preserving the normal generation checks. Harder recommendations require first-attempt success on distinct questions across different days; repeated same-question attempts do not establish retention. It does not infer prerequisites or certify mastery.
+
+**Learning tools → Course study library** keeps optional tools together:
+
+- **Course revision guide** compiles checked explanations and citations, excludes
+  personal edits, and shows source sections still to explain. New checked
+  explanations automatically update the guide. Each course keeps up to 20
+  checked sections independently of the ten-session history. Changes to cited documents or syllabus rules invalidate affected sections; unrelated course material preserves checked sections. Explain or refresh one section at a time using your paid
+  connection. Compilation and Markdown export make no model calls; the guide
+  does not automatically author a whole course textbook.
+- **Search document text** builds a local index on first search, searches
+  extracted text case-insensitively and opens the matching original page.
+  Changed sources require a refreshed index; stale results are withheld.
+  Diagrams without extracted text are not searchable. Results are capped at 25.
+- **Page bookmarks and notes** save one note per document/page, with up to 200
+  retained and ten shown per page. Original PDFs and OCR are unchanged.
+- **Import and export personal study work** transfers original documents in a
+  course ZIP, preserving document types and syllabus choices for Study Desk
+  bundles. Choose a target course first. Imports use the normal local indexing
+  queue and 50-file/500 MB batch and 200 MB individual-file limits. Bundled or
+  JSON-imported sheets are personal, unverified material. Verification flags and
+  trusted citations are never imported; imported items cannot enter the verified
+  question bank.
+- UTF-8 TSV imports accept plain-text front/back card pairs: up to 200 rows and
+  2 MB. Cards use FSRS. Capacity is checked before import and duplicates do not
+  consume another slot. **Manage review cards** removes cards without deleting
+  original practice results. Anki HTML and cloze directives are not interpreted
+  by this plain-text importer.
+
+The app retains up to 20 course plans, 20 guides and 20 local jobs. Search indexes
+allow up to 100,000 chunks per course and 40,000 characters per chunk; oversized
+indexes are rejected rather than silently published as complete. Search-index
+and backup jobs run one at a time, support queued cancellation and explicit
+retry after interruption, and make no model calls.
+
+**Settings → Backup protection** offers opt-in daily or weekly local backups
+while the app is open. It waits for document indexing and keeps up to ten
+unencrypted archives for 30 days. For an encrypted portable copy, expand
+**Encrypted portable backup** and choose a 12–256 character passphrase. Streaming
+AES-GCM encryption uses a scrypt-derived key and authenticated end marker to
+detect tampering or truncation. The passphrase is not saved and cannot be
+recovered. Provider keys remain in your system credential store and are excluded.
+Encrypted restores accept up to 256 MB, validate the archive/database and replace
+local study data on the next restart after confirmation.
+
+DeepSeek-V4.1-Flash remains the paid baseline for checked AI flows. This batch
+adds no mandatory generation calls. Free connections cannot generate practice or
+new guide sections. Reading checked content, personal notes, search, planning and
+transfer tools require no paid inference.
+
 ## Concept mastery and bank exams
+
+Bank exams additionally support topic-word filters and excluding questions
+already served to you. Filters can reduce availability; no new questions are
+generated to fill an empty selection.
 
 In **Practice a topic**, choose **Specific topic**, enter the topic, and choose a
 question type. **Concept mastery path** uses that same type throughout Foundation
@@ -358,44 +422,38 @@ Some complex questions can still be withheld or time out.
 
 ## Estimated reliability
 
-Latest measured DeepSeek live check: **3 November 2026**, version **0.2.3-beta.2**, runtime revision
-[`dacce90`](https://github.com/LeymansGuz/Study-Desk/commit/dacce908734f9b057295dfd70a411ce374c760c4),
-assessment policy 19, DeepSeek Flash with explicit non-thinking JSON stages.
-These results replace older runs as the basis of the estimates below.
+There is no measured universal success or correctness rate for this release.
+The **7 November 2026** development checks used DeepSeek Flash, frozen excerpts
+from five real courses, all seven question types and several difficulty levels.
+They used simplified lexical retrieval and disabled bank reuse, so they are not
+a representative end-to-end benchmark of normal traffic.
 
-| Dated DeepSeek check | Result |
-|---|---:|
-| Complete generation attempts | 9 |
-| Accepted by the production pipeline | 8 / 9 (88.9%) |
-| Timeouts | 1 (Medium essay, Solver stage) |
-| Mean time for accepted questions | 33.5 seconds |
-| Accepted questions with no additional model-review flags | 7 / 8 |
+An initial eight-workflow check accepted five questions; all five passed a fresh
+same-provider audit for topic, correctness, grounding, originality and difficulty.
+A later five-case targeted comparison accepted two and rejected/timed out three.
+The final Hard calculation retest passed in 41.5 seconds after correcting its
+writer output budget. Different development batches are not randomized paired
+trials, and these small samples do **not** establish an 85–90% success guarantee.
+They also do not show that every accepted answer is correct: same-provider
+agreement is not human or independent-model certification.
 
-The sample covered five courses and all seven question types, spanning Easy,
-Medium, Hard and Insane. One course used a copy of the real local vector index;
-the other four used frozen excerpts from real course files with simplified
-retrieval. Bank reuse was disabled. This is a small, selected generation and
-validation check, not a representative end-to-end benchmark of normal traffic.
-**88.9% is this sample's acceptance rate, not a guaranteed production rate.**
+Originality, independent solving, calculator/symbolic checks, public-premise and
+topic checks, source grounding, difficulty checks and OPA remain enforced. The
+app withholds incomplete or unverified results; complex requests can still fail
+or reach their 60/90-second processing deadline. Queue wait is separate. Inspect
+important answers independently, particularly proofs. Bank reuse avoids fresh
+generation when a current suitable verified item is available.
 
-Acceptance is not correctness. Further model review flagged one accepted biology
-item whose microscopy explanation used resolving-power material unsupported by
-the supplied passages; inspection of the retained passages confirmed the evidence
-gap. The answer itself was not flagged as false. All eight reviews considered
-their answers and working correct, but these are same-provider model judgements,
-not expert certification. There is no defensible universal correctness percentage.
-Originality screening also cannot guarantee the absence of every source clone.
-Check important answers independently, especially proofs.
-
-Requests may still reach the 60/90-second deadline; queue waiting is separate.
-Bank reuse avoids fresh generation. Offline regression tests establish software
-behaviour rather than live question quality.
+Software regression tests verify implementation behaviour, not universal LLM
+correctness. Settings Statistics records actual returned usage and local pipeline
+timings so your own course/model workload can be assessed without relying on a
+marketing reliability percentage.
 
 ## Estimated AI cost
 
 Study Desk charges no application subscription. AI requests consume your own
 provider allowance or balance. Free OpenRouter usage is limited; unknown model
-pricing is not estimated as zero. The **same dated DeepSeek live check** recorded:
+pricing is not estimated as zero. A historical **3 November 2026** DeepSeek check recorded:
 
 | Cost measure | Recorded USD |
 |---|---:|
@@ -413,7 +471,7 @@ roughly **$0.60**, or roughly **$1.20 at peak rates**, plus any unreported usage
 and follow-up costs. Different course context, retries and response lengths can
 change the result substantially. Nine attempts do not establish a stable average.
 
-The check made 82 provider requests: 74 production generation/validation calls
+That historical check made 82 provider requests: 74 production generation/validation calls
 and eight extra evaluation reviews. Including ten diagnostic requests before the
 model-mode correction, **92 of the authorized 100 requests** were used. All
 internal retries and validation calls counted toward that ceiling.
@@ -431,9 +489,6 @@ Opening bank questions or starting a bank exam makes no generation call, but
 grading can use AI. Local OCR, embedding/indexing and index rebuilding make no
 DeepSeek calls. **Settings → Local maintenance** shows recorded tokens, cached
 input and estimated costs; the provider dashboard is authoritative for billing.
-
-**Settings → Local maintenance** shows recorded tokens, cached
-input and estimated USD costs; the provider dashboard is authoritative for billing.
 
 **Settings → Local maintenance** shows the last 30 days of tokens and estimated
 USD cost, with five decimal places. Cached input is part of total input, not an

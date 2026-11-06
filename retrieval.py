@@ -432,12 +432,22 @@ def _publish_chunks(user_id, chunks, manifests, *, full=False, replacements=None
     try:
         import index_cache
         index_cache.notify(stage='index_copy', pages_done=0, pages_total=0)
-        pending = list(chunks)
+        pending = [dict(row) for row in chunks]
+        reusable={}
         if not full:
             for chunk_id, text, metadata, embedding in _all_records(_get_collection(user_id), include_embeddings=True):
                 identity = ((metadata or {}).get('course_id'), (metadata or {}).get('source_file'))
                 if identity not in (replacements or set()):
                     pending.append({'id': chunk_id, 'text': text, 'metadata': metadata, 'embedding': embedding})
+                elif embedding is not None:
+                    reusable[hashlib.sha256(text.encode()).digest()]=embedding
+        hits=0
+        if reusable:
+            for row in pending:
+                key=hashlib.sha256(row['text'].encode()).digest()
+                if row.get('embedding') is None and key in reusable:
+                    row['embedding']=reusable[key];hits+=1
+        index_cache.notify(embedding_cache_hits=hits)
         __import__('growth_limits').disk(len(pending) * 4096)
         for start in range(0, len(pending), 256):
             batch = pending[start:start + 256]

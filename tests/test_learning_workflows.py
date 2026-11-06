@@ -70,6 +70,21 @@ def add_bank(course,question,**updates):
     return store.bank_add(auth.OWNER_ID,payload,'flow-version')
 
 
+def test_bank_topic_and_unseen_filters_do_not_generate(client,course,monkeypatch):
+    question='Solve the linear equation $2x+1=5$ for real $x$.'
+    add_bank(course,question)
+    assert client.get('/bank-exams/availability',params={'course_id':course,'topic':'Equations'}).json()['available']==1
+    async def forbidden(*a,**k):raise AssertionError('Filtered bank exams must not generate')
+    monkeypatch.setattr(graph,'draft_question',forbidden)
+    assert client.post('/bank-exams',json={'course_id':course,'count':1,'topic':'Diffusion'}).status_code==409
+    store.mark_served(auth.OWNER_ID,question)
+    assert client.get('/bank-exams/availability',params={'course_id':course,'topic':'Equations','unseen_only':'true'}).json()['available']==0
+    assert client.post('/bank-exams',json={'course_id':course,'count':1,'topic':'Equations','unseen_only':True}).status_code==409
+    result=client.post('/bank-exams',json={'course_id':course,'count':1,'topic':'Equations'})
+    assert result.status_code==200,result.text
+    assert result.json()['question']['question']==question
+
+
 def test_bank_exam_never_calls_generation_and_hides_solutions(client,course,monkeypatch):
     add_bank(course,'Solve $2x+1=5$ for real $x$.')
     add_bank(course,'Solve $3x-2=4$ for real $x$.')

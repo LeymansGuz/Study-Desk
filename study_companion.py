@@ -75,6 +75,13 @@ def install(app,services):
     async def today(user=Depends(user_dep)):
         pref=store.get('study_plan',user['id'],user['id']) or {'minutes':15,'exam_date':None}
         queue=[]
+        from study_library import schedule_view
+        for saved_plan in store.listing('syllabus_plan',user['id'],20):
+            if not db.get_course(user['id'],saved_plan['course_id']) or saved_plan['version']!=curriculum.scope_version(user['id'],[saved_plan['course_id']]):continue
+            pending=schedule_view(saved_plan)['upcoming']
+            if pending:
+                task=pending[0]
+                queue.append({'kind':'planned_topic','id':task['id'],'course_id':saved_plan['course_id'],'topic':task['title'],'title':'Your next planned topic','detail':task['title'],'minutes':15});break
         cards=db.list_due_flashcards(user['id'],8)
         if cards:queue.append({'kind':'review','id':cards[0]['id'],'title':'Review due cards','detail':f'{len(cards)}'+('+' if len(cards)==8 else '')+(' due card' if len(cards)==1 else ' due cards')+' · spaced review','minutes':min(8,len(cards)*2)})
         summaries=store.session_summaries(user['id'])

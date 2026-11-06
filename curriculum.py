@@ -40,10 +40,14 @@ def query_terms(topic):
         result.update({'centroid', 'orthocentre', 'incentre', 'circumcentre'})
     return frozenset(result)
 
-def scope_version(user_id: str, course_ids: list[str]) -> str:
+def _legacy_scope_version(user_id: str, course_ids: list[str]) -> str:
     scopes = retrieval._course_scopes(user_id, course_ids)
     state = [(owner, sorted(courses or []), db.get_app_setting(f'index_collection:{owner}'), db.get_app_setting(f'corpus_revision:{owner}'), [(doc['id'], bool(doc.get('syllabus_enabled', 1))) for doc in db.list_documents(owner, courses)], [(cid, db.get_app_setting(f'concept_review:{owner}:{cid}')) for cid in courses or [c['id'] for c in db.list_courses(owner)]]) for owner, courses in scopes]
     return hashlib.sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()[:24]
+
+def scope_version(user_id: str, course_ids: list[str]) -> str:
+    import course_versions
+    return course_versions.version(user_id,course_ids,_legacy_scope_version)
 
 def scope_key(course_ids: list[str], version: str) -> str:
     return hashlib.sha256(json.dumps([sorted(course_ids), version]).encode()).hexdigest()[:24]

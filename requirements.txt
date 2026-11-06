@@ -209,7 +209,7 @@ numpy==2.5.4
     #   opencv-python
     #   rapidocr-onnxruntime
     #   shapely
-oauthlib==4.0.0
+oauthlib==4.0.1
     # via requests-oauthlib
 onnxruntime==1.23.2 ; platform_machine == 'x86_64' and sys_platform == 'darwin'
     # via

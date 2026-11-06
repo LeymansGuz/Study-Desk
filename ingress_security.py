@@ -56,6 +56,8 @@ class IngressSecurity:
         if method in {'POST', 'PUT', 'PATCH', 'DELETE'} and request.headers.get('sec-fetch-site') == 'cross-site':
             return await deny(403, 'Cross-site changes are not allowed.')
         limit = 2000000
+        if path=='/library/backups/restore' and method=='POST':
+            limit=256*1024*1024+1000000
         upload = path in {'/workspace/files', '/workspace/files/local', '/api/extract', '/api/extract/batch', '/admin/restore'} or path.endswith('/import-zip')
         if upload and method in {'POST', 'PUT', 'PATCH'}:
             user = auth.maybe_user(request)

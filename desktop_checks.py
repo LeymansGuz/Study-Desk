@@ -18,6 +18,11 @@ def run():
     checked=verify_claims([SolvedPart(kind='symbolic',answer='Identity',checks=[MathClaim(left='x+x',right='2*x')])])
     assert checked and checked[0]['status']=='passed',checked
     import chromadb
+    import sqlite3
+    with sqlite3.connect(':memory:') as connection:
+        connection.execute('CREATE VIRTUAL TABLE text_check USING fts5(body)')
+        connection.execute('INSERT INTO text_check VALUES(?)',('Case-insensitive source search',))
+        assert connection.execute("SELECT COUNT(*) FROM text_check WHERE text_check MATCH 'SOURCE'").fetchone()[0]==1
     with tempfile.TemporaryDirectory(prefix='study-desktop-check-',ignore_cleanup_errors=True) as tmp:
         client=chromadb.PersistentClient(path=tmp)
         collection=client.create_collection('release_check')

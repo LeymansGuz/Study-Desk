@@ -141,6 +141,8 @@ def install(api, services):
                         if prior['topic'].casefold() == topic.casefold() and prior['depth'] == req.depth and (sorted(prior['course_ids']) == sorted(courses)) and (prior['version'] == version):
                             accessible(user, prior)
                             learning_store.put('explain', prior['id'], user['id'], prior)
+                            from study_library import save_checked_section
+                            save_checked_section(user['id'],prior)
                             observability.describe(operation['id'], {'current_question': topic, 'question_type': 'explanation', 'bank_reused': True}, prior['id'])
                             return {**{k:v for k,v in prior.items() if k!='recall_context'}, 'cached': True, 'historical': False}
                     allowed = {s['chunk_id'] for unit in catalog['sections'] if not unit.get('excluded') for s in unit['sources'] if not s.get('quality_review_required')}
@@ -156,6 +158,8 @@ def install(api, services):
                     payload['recall_context']=retrieval.format_context(sources,max_chars=14000)
                     observability.describe(operation['id'], {'current_question': topic, 'question_type': 'explanation'}, identifier)
                     expired = learning_store.put('explain', identifier, user['id'], payload)
+                    from study_library import save_checked_section
+                    save_checked_section(user['id'],payload)
                     for item in expired:
                         if item['kind'] == 'tutor':
                             await services['graph'].checkpointer.adelete_thread(item['id'])

@@ -317,3 +317,17 @@ def test_false_proof_is_rejected_without_waiting_for_a_rewritten_claim(monkeypat
         canonical_answer='Every prime integer is odd.',solution='An invalid proposed proof that ignores the prime two.')
     with pytest.raises(tools.CandidateError,match='proof claim is false'):
         asyncio.run(tools._verify_draft(draft,independent=SimpleNamespace(missing_givens=[])))
+
+def test_valid_question_gets_fresh_blind_solve_without_reviewer_providing_a_solution(monkeypatch):
+    calls=[]
+    async def check(*a):pass
+    async def audit(*a,**k):
+        calls.append('audit')
+        return review(is_consistent=calls.count('audit')>1,issues='The selected key contradicts the public arithmetic.',corrected_solution='')
+    async def solve(question,options,**kwargs):
+        calls.append('solve');return tools.SolverAnswer(answer='A. 4',selected_option_index=0,worked_solution='Two plus two equals four.',parts=[])
+    import math_format
+    monkeypatch.setattr(math_format,'check',check);monkeypatch.setattr(tools,'_audit_draft',audit);monkeypatch.setattr(tools,'solve_independently',solve)
+    draft=tools.QuestionDraft(question='What is two plus two?',question_type='mcq',options=['4','5','6','7'],canonical_answer='B. 5',solution='An inconsistent proposed arithmetic answer.')
+    result=asyncio.run(tools._verify_draft(draft,independent=SimpleNamespace(missing_givens=[])))
+    assert result.canonical_answer=='A. 4' and calls==['audit','solve','audit']

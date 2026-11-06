@@ -11,6 +11,9 @@ def init_schema():
     with db.connect() as conn:
         conn.executescript('\n        CREATE TABLE IF NOT EXISTS learning_objects (\n          kind TEXT NOT NULL, id TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n          payload TEXT NOT NULL, updated REAL NOT NULL, PRIMARY KEY(kind,id));\n        CREATE INDEX IF NOT EXISTS learning_owner ON learning_objects(user_id,kind,updated);\n        CREATE TABLE IF NOT EXISTS learning_receipts (\n          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, key TEXT NOT NULL,\n          digest TEXT NOT NULL, status INTEGER NOT NULL, body TEXT NOT NULL, updated REAL NOT NULL,\n          PRIMARY KEY(user_id,key));\n        CREATE TABLE IF NOT EXISTS learning_exposures (\n          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, item_id TEXT NOT NULL,\n          created REAL NOT NULL, PRIMARY KEY(user_id,item_id));\n        CREATE TABLE IF NOT EXISTS learning_outcomes (\n          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, event TEXT NOT NULL,\n          skill TEXT NOT NULL, score REAL NOT NULL, attempt INTEGER NOT NULL, created REAL NOT NULL,\n          PRIMARY KEY(user_id,event,skill));\n        ')
 
+        if 'question_key' not in {row['name'] for row in conn.execute('PRAGMA table_info(learning_outcomes)')}:
+            conn.execute("ALTER TABLE learning_outcomes ADD COLUMN question_key TEXT NOT NULL DEFAULT ''")
+
 @stage_put
 def put(kind, identifier, user_id, payload):
     expired = []
@@ -78,24 +81,30 @@ def is_quarantined(text):
     value = get('quarantine', template_id(text))
     return bool(value and value.get('active'))
 
-def outcome(user_id, event, skill, score, attempt):
+def outcome(user_id, event, skill, score, attempt, question_key=''):
     if not skill:
         return
     with db.connect() as conn:
-        conn.execute('INSERT OR IGNORE INTO learning_outcomes VALUES(?,?,?,?,?,?)', (user_id, event, skill, max(0.0, min(1.0, score)), attempt, time.time()))
+        conn.execute('INSERT OR IGNORE INTO learning_outcomes(user_id,event,skill,score,attempt,created,question_key) VALUES(?,?,?,?,?,?,?)', (user_id, event, skill, max(0.0, min(1.0, score)), attempt, time.time(),question_key))
+        conn.execute('DELETE FROM learning_outcomes WHERE user_id=? AND rowid NOT IN (SELECT rowid FROM learning_outcomes WHERE user_id=? ORDER BY created DESC LIMIT 5000)',(user_id,user_id))
 
 def mastery(user_id):
     with db.connect() as conn:
         rows = conn.execute('SELECT * FROM learning_outcomes WHERE user_id=? ORDER BY created', (user_id,)).fetchall()
     result = {}
     for row in rows:
-        item = result.setdefault(row['skill'], {'skill_id': row['skill'], 'score': 0.5, 'attempts': 0, 'successes': 0})
+        item = result.setdefault(row['skill'], {'skill_id': row['skill'], 'score': 0.5, 'attempts': 0, 'successes': 0,'questions':set(),'success_times':set()})
+        if row['question_key']:item['questions'].add(row['question_key'])
+        if row['score']==1 and row['attempt']==1:item['success_times'].add(row['created'])
         weight = 0.4 if row['attempt'] == 1 else 0.12
         item['score'] = (1 - weight) * item['score'] + weight * row['score']
         item['attempts'] += 1
         item['successes'] += int(row['score'] == 1 and row['attempt'] == 1)
         interval = min(30, 2 ** min(5, item['successes'])) if row['score'] == 1 else 0.25
         item['due_at'] = row['created'] + interval * 86400
+    for item in result.values():
+        item['independent_questions']=len(item.pop('questions'))
+        times=item.pop('success_times');item['delayed_success']=bool(times and max(times)-min(times)>=86400)
     return result
 
 def priority(skill, mastery_scores):

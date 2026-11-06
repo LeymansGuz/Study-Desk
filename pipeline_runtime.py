@@ -18,7 +18,16 @@ TRACE = ContextVar('generation_trace', default=None)
 
 def mark_stage(stage):
     trace=TRACE.get()
-    if trace is not None:trace['stage']=stage
+    if trace is not None:
+        now=time.perf_counter()
+        if trace.get('stage_started') is not None:
+            name=trace.get('stage','retrieval')
+            trace.setdefault('stage_ms',{})[name]=trace.setdefault('stage_ms',{}).get(name,0)+(now-trace['stage_started'])*1000
+        trace['stage_started']=now;trace['stage']=stage
+        if not trace.get('root_id'):
+            import observability
+            current=observability.CURRENT.get() or {}
+            trace.update(root_id=current.get('root_id',''),session_id=current.get('session_id',''))
 
 LOCAL_CHECKS = ContextVar('generation_local_checks', default=None)
 COMPLEX_TIMEOUT_SECONDS = float(os.getenv('GENERATION_COMPLEX_TIMEOUT_SECONDS','90'))
@@ -42,6 +51,7 @@ async def generation_slot():
         yield
         return
     gate = current_gate()
+    queued=time.perf_counter()
     await gate.acquire()
     logger.info('pipeline generation_slot capacity=%s timeout_seconds=%s background=%s', gate.capacity, GENERATION_TIMEOUT_SECONDS, BACKGROUND.get())
     token = _OWNED.set(asyncio.Lock())
@@ -50,15 +60,24 @@ async def generation_slot():
     trace_token=TRACE.set(trace)
     import providers
     connection_token=providers.ACTIVE.set(providers.ACTIVE.get() or providers.snapshot())
+    outcome='success'
     try:
         async with providers.workflow_slot():
             async with asyncio.timeout(GENERATION_TIMEOUT_SECONDS) as timer:
                 trace.update(timer=timer,started=asyncio.get_running_loop().time())
+                trace.update(work_started=time.perf_counter(),queue_ms=(time.perf_counter()-queued)*1000,stage_started=time.perf_counter())
                 yield
     except BaseException as exc:
+        outcome='error'
         if not getattr(exc,'pipeline_stage',None):exc.pipeline_stage=trace['stage']
         raise
     finally:
+        if trace.get('work_started') is not None:
+            mark_stage(trace.get('stage','retrieval'))
+            try:
+                import monitoring,usage_log
+                monitoring.record_generation('pipeline_profile',usage_log.current_user_id(),outcome='profile',stage=trace['stage'],request_id=trace.get('root_id',''),session_id=trace.get('session_id',''),duration_ms=(time.perf_counter()-trace['work_started'])*1000,detail={'outcome':outcome,'queue_ms':round(trace['queue_ms'],2),'stage_ms':{k:round(v,2) for k,v in trace.get('stage_ms',{}).items()}})
+            except Exception:logger.warning('Pipeline timing could not be recorded',exc_info=True)
         providers.ACTIVE.reset(connection_token)
         TRACE.reset(trace_token)
         LOCAL_CHECKS.reset(checks_token)

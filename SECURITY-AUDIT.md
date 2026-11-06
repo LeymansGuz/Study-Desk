@@ -1,6 +1,35 @@
 # Local security and setup audit
 
-Latest addendum: **4 November 2026**. Baseline review: 2 November 2026.
+Latest addendum: **7 November 2026**. Baseline review: 2 November 2026.
+
+## 7 November 2026 local release review
+
+- Updated oauthlib 4.0.0 to patched 4.0.1 after the dependency audit reported
+  CVE-2026-49272 / GHSA-3jp2-3mrg-2vxc. Lock and requirements export agree.
+- Current Python audit still reports Chroma 1.5.9 advisory entries without listed
+  fixes. Embedded local use limits server/multi-tenant exposure but is not an
+  upstream patch or a risk-free certification. npm packaging audit reports zero
+  published vulnerabilities.
+- Course search publishes only a complete current index. Course deletion purges
+  derived search text, page notes, guide/plan metadata and scope snapshots.
+  Search jobs serialize with workspace edits to avoid publication/delete races.
+- Course ZIP checksums and archive budgets are enforced; queue failures clean up
+  newly imported files, registry entries and jobs. Imported sheets/cards never
+  become trusted bank questions or inherit external verification flags.
+- Encrypted exports use scrypt and per-block AES-GCM with an authenticated end
+  marker. Tampered, truncated or wrong-password archives are rejected and partial
+  plaintext is removed. Passphrases are not retained. Restores are staged, not
+  written over open databases. Export/restore routes are rate-limited.
+- Paid truncated outputs receive at most one compact retry; incomplete results
+  remain withheld. Free models stop at their output limit without quota-spiking
+  retries. Repair never bypasses the independent solve, review or OPA checks.
+- Panel padding, custom checkbox/radio styling, file controls, light/dark,
+  accessible field labels, keyboard PDF dismissal, draft preservation and
+  same-window source navigation are covered by the browser audit.
+
+This review does not certify universal model correctness or Mac/Linux device
+compatibility. The latest README reports live development-check limitations
+rather than presenting historical acceptance rates as current guarantees.
 
 Scope: ai-tutor-github only. Reviewed setup/process control, dependencies, local
 access, policy service, secrets, uploads, archives, storage, backups, rendering,

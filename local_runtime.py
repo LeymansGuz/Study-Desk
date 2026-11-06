@@ -60,6 +60,7 @@ def install_local(app):
         import observability
         result = await asyncio.to_thread(observability.statistics, 30, 1)
         result['generation'] = __import__('monitoring').generation_summary(24)
+        result['pipeline'] = __import__('monitoring').profile_summary(user['id'])
         return result
 
     @app.post('/local/backup')

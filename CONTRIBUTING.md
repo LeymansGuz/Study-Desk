@@ -51,3 +51,16 @@ Keep credentials, private course materials, temporary scripts, installers and
 evaluation reports out of commits. Private evaluation artifacts belong under
 ignored `audit/`. Add small original/anonymised regression fixtures to `tests/`.
 Security reports should follow SECURITY.md.
+# Local study-library modules
+
+`study_library.py` owns planning, checked-guide assembly, page notes and personal
+imports. `local_jobs.py` runs bounded local search-index/backup jobs; it must not
+make provider requests. `backup_tools.py` owns opt-in schedules and encrypted
+exports/restores. `course_bundle.py` transfers original files and unverified
+personal sheets through the existing ZIP importer. External verification claims
+must never be trusted on import. Checked guide writes join generation publication
+through the deferred transaction boundary.
+
+Keep optional controls inside existing views. Browser checks must assert panel
+padding as well as overflow, theme consistency and input preservation. Private
+harnesses, reports and screenshots belong under ignored `audit/`.

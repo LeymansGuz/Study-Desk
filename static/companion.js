@@ -15,6 +15,7 @@
       button.disabled=true;
       try{
         const q=queue[Number(button.dataset.today)];
+        if(q.kind==='planned_topic')window.libraryPractice(q.topic,q.course_id,'medium');
         if(q.kind==='review'){document.querySelector('#review-cards').scrollIntoView({behavior:'smooth',block:'center'});document.querySelector('#review-cards summary')?.focus();}
         if(q.kind==='resume')await resume('tutor',q.id);
         if(q.kind==='bank'){const exam=await post('/bank-exams',{course_id:q.id,count:1,difficulty:'any',question_type:'any'});view('learning');renderExam(exam);document.querySelector('#exam-result').scrollIntoView({behavior:'smooth',block:'start'});}

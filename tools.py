@@ -46,6 +46,9 @@ VERIFY_ANSWERS = os.getenv('TUTOR_VERIFY_ANSWERS', 'true').lower() in {'1', 'tru
 class TutorError(RuntimeError):
     """A recoverable tutor failure suitable for returning as HTTP 502."""
 
+class OutputLimitError(ValueError):
+    """A truncated response must never be interpreted as a complete result."""
+
 class CandidateError(TutorError):
     """A candidate needs a fresh question or supporting section."""
 
@@ -474,6 +477,7 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                     system_prompt += '\n' + FORMAT_GUIDANCE
                 if schema is Verification:
                     system_prompt+='\nEvidence quote fields are private reference data, not rendered Markdown. Preserve exact source substrings with JSON escaping only, even when the source OCR or math markup is imperfect. Do not use the course inventory as factual evidence. Evidence support covers required methods, not invented public problem data.'
+                    system_prompt+=' Each evidence_support item must contain method, source_ref (ONE literal S-ID), and quote. Never substitute a source_refs array, source, or citation for source_ref.'
                 model_input = complete_prompt
                 if system_prompt:
                     from langchain_core.messages import SystemMessage, HumanMessage
@@ -483,7 +487,7 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                     model_input = model_input if isinstance(model_input,list) else [__import__('langchain_core.messages',fromlist=['HumanMessage']).HumanMessage(content=model_input)]
                     from langchain_core.messages import HumanMessage
                     model_input.append(HumanMessage(content='Calculator contract: numeric expressions use numeric literals, pi/e, + - * / ** %, and only these functions: '+', '.join(sorted(FUNCTIONS))+'. Use comb(n,k), perm(n,k), factorial(n) for counting. No math. prefix, unknown names, implicit multiplication or unevaluated sum syntax. Symbolic statements belong in symbolic parts, never in numeric calculator strings.'))
-                max_output = (2600 if 'For INSANE, include method_plan' in prompt else 1800) if schema is QuestionSeed else 4500
+                max_output = (2600 if 'For INSANE, include method_plan' in prompt or 'For HARD include method_plan' in prompt else 1800) if schema is QuestionSeed else 4500
                 if schema.__name__ == 'SyntaxFix':
                     max_output = 512
                 elif schema.__name__ == 'PublicValidity':
@@ -509,8 +513,10 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                     response = await llm.ainvoke(model_input, max_tokens=limit, **provider_kwargs)
                     usage_known = any(_usage_numbers(response))
                     call_id = record_response_usage(response, schema.__name__, (time.perf_counter() - started) * 1000)
-                    if connection is not None and response.response_metadata.get('finish_reason') in {'length','max_tokens'}:
-                        raise providers.ProviderError('The model exhausted its response budget before completing the required result. Choose a more suitable model or simpler task.',422)
+                    if response.response_metadata.get('finish_reason') in {'length','max_tokens'} and providers.limited(connection):
+                        raise providers.ProviderError('The free model exhausted its response budget. No incomplete explanation was accepted; choose a suitable paid model.',422)
+                    if response.response_metadata.get('finish_reason') in {'length','max_tokens'}:
+                        raise OutputLimitError('The model reached this stage’s output limit before completing its result.')
                 finally:
                     token_budget.finish(reservation, usage_known)
             if uid and (not db_user_active(uid)):
@@ -548,6 +554,10 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
             if status in {400, 401, 403, 404, 413, 422}:
                 raise TutorError('The model service rejected the request; check its configuration.') from exc
             logger.warning('Model stage %s failed (attempt %s): %s', schema.__name__, attempt + 1, type(exc).__name__)
+            length_failure = isinstance(exc,OutputLimitError) or type(exc).__name__ == 'LengthFinishReasonError'
+            if length_failure and attempt>=1:
+                from generation_errors import StageFailure
+                raise StageFailure('provider','The model could not complete a compact result within this stage’s output budget. No incomplete question was accepted.') from exc
             if hasattr(exc, 'errors'):
                 logger.info('pipeline schema_failure stage=%s fields=%s', schema.__name__, [(str(e['loc']), e['type']) for e in exc.errors(include_input=False, include_url=False)][:8])
             if attempt == retry_count - 1:
@@ -564,7 +574,6 @@ async def _invoke_json(prompt: str, temperature: float, schema: type[BaseModel])
                     raise StageFailure(stage,reason) from exc
                 raise TutorError('The model service could not complete this step. Please retry.') from exc
             transient = status in {408, 409, 429, 500, 502, 503, 504} or isinstance(exc, (TimeoutError, ConnectionError)) or type(exc).__name__ in {'OpenAIConnectionError', 'APIConnectionError', 'APITimeoutError', 'RateLimitError', 'InternalServerError'}
-            length_failure = type(exc).__name__ == 'LengthFinishReasonError'
             if not isinstance(exc, (ValueError, TypeError)) and (not transient) and (not length_failure):
                 raise TutorError('The model step could not be completed safely. Please retry.') from exc
             if length_failure:
@@ -755,7 +764,8 @@ async def _verify_draft(draft, sources=None, course_context='', requested_topic=
             independent = await solve_independently(draft.question, draft.options, repair_feedback=review.issues + ' The reviewer correction was not a valid calculator plan. ' + review.correction_parse_error)
             await _use_solution_checked(draft, independent)
             continue
-        if attempt == 0 and (not (review.is_consistent and review.givens_complete and (not calculator_evidence(draft.answer_parts) or review.calculations_match))) and (review.corrected_solution.strip() or review.corrected_options):
+        can_resolve=review.public_claim_valid and review.givens_complete and review.is_on_topic and review.is_grounded and review.topic_methods_match and review.difficulty_matches
+        if attempt == 0 and can_resolve and (not (review.is_consistent and (not calculator_evidence(draft.answer_parts) or review.calculations_match))):
             if review.corrected_options:
                 _review_options(draft,review.corrected_options)
                 independent = await solve_independently(draft.question, draft.options)
@@ -767,7 +777,7 @@ async def _verify_draft(draft, sources=None, course_context='', requested_topic=
         if not review.givens_complete:
             reject('Essential information is missing or ambiguous. Add the missing givens or diagram relationships before solving.', review=review)
         if requires_proof and (not review.proof_is_valid):
-            if attempt == 0 and review.corrected_solution.strip() and review.corrected_parts:
+            if attempt == 0 and can_resolve:
                 logger.info('Applying a complete proof correction and re-auditing')
                 independent = await solve_independently(draft.question, draft.options, repair_feedback='Independently repair the proof under the unchanged public hypotheses: '+review.issues)
                 await _use_solution_checked(draft, independent)
@@ -1177,8 +1187,8 @@ async def _finish_seed(seed, topic, sources, difficulty, avoid_questions, course
             raise exc
     from math_format import check
     import generation_progress
-    await ensure_topic_alignment(topic,seed.question,seed.options)
     await check(seed.question, *seed.options)
+    await ensure_topic_alignment(topic,seed.question,seed.options)
     # Screen the public claim before paying for a full solution. The same cached
     # finding is still checked by both final audits; uncertainty is never approval.
     if seed.question_type in {'long_answer','essay','proof'} or difficulty in {'hard','insane'}:

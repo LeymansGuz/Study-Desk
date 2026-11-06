@@ -32,7 +32,9 @@ def test_insane_is_dependent_reasoning_not_more_parts():
     assert 'change the solution strategy' in text
     assert 'later reasoning must use an earlier conclusion' in text
     assert 'MAXIMUM of 2 parts' in text
-    assert contract('medium',[])==''
+    medium=contract('medium',[])
+    assert 'at most two dependent reasoning decisions' in medium
+    assert 'one coherent setup' in medium
 
 def test_independent_checker_rejects_wrong_integral(monkeypatch):
     from math_checks import verify_claims

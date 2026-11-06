@@ -79,8 +79,14 @@ async def lifespan(_: FastAPI):
     if backup.apply_pending_restore():
         logger.info('A pending backup restore was applied before startup')
     db.init_db()
+    import course_versions
+    await asyncio.to_thread(course_versions.initialize)
+    await asyncio.to_thread(course_versions.warm)
     pass
     index_cache.initialize()
+    await asyncio.to_thread(local_jobs.initialize)
+    library_worker = asyncio.create_task(local_jobs.worker(globals()))
+    backup_scheduler = asyncio.create_task(backup_tools.scheduler())
     await chunk_uploads.start()
     learning_store.prune_sessions()
     production_default = 'true' if db.DB_PATH.resolve() == (PROJECT_DIR / 'data/app.db').resolve() else 'false'
@@ -106,6 +112,10 @@ async def lifespan(_: FastAPI):
                     logger.info('Queued extraction-coverage upgrade for %s legacy files', len(missing))
     logger.info('Study Desk starting | model=%s', public_settings().get('model', 'not configured'))
     yield
+    local_jobs.STOP.set()
+    backup_scheduler.cancel()
+    library_worker.cancel()
+    await asyncio.gather(backup_scheduler,library_worker,return_exceptions=True)
     if maintenance_task:
         maintenance_task.cancel()
         await asyncio.gather(maintenance_task, return_exceptions=True)
@@ -1035,6 +1045,7 @@ async def delete_course(course_id: str, user: dict[str, Any]=Depends(require_use
         if directory.is_relative_to(root) and directory.is_dir():
             shutil.rmtree(directory)
         db.delete_course(user['id'], course_id)
+        study_library.purge_course(user['id'],course_id)
         LAST_INGEST[user['id']] = datetime.now(timezone.utc).isoformat(timespec='seconds')
     return {'status': 'deleted', 'course_id': course_id}
 
@@ -1322,12 +1333,22 @@ async def import_course_zip(course_id: str, request: Request, file: UploadFile=F
             raise HTTPException(413,'The ZIP exceeds its file-count or extracted-size limit.')
     except zipfile.BadZipFile as exc:
         raise HTTPException(status_code=422, detail='This is not a valid zip archive.') from exc
+    import course_bundle
+    manifest=course_bundle.read_manifest(archive)
+    if manifest:
+        from math_format import validate as validate_math
+        if len(learning_store.listing('revision_sheet',user['id'],20))+len(manifest['sheets'])>20:raise HTTPException(409,'Import would exceed 20 revision sheets. Export and remove older sheets first.')
+        try:
+            for sheet in manifest['sheets']:await asyncio.to_thread(validate_math,sheet['markdown'])
+        except ValueError:raise HTTPException(422,'A personal sheet has invalid math formatting. Fix its delimiters before importing.')
     directory = course_workspace(user['id'], course_id)
     directory.mkdir(parents=True, exist_ok=True)
     records = []
     index_names = []
     wrote = []
     extracted_bytes = 0
+    imported_sheets=[]
+    job=None
     try:
         with archive:
             for member in archive.infolist():
@@ -1347,6 +1368,8 @@ async def import_course_zip(course_id: str, request: Request, file: UploadFile=F
                 except HTTPException:
                     continue
                 target = (directory / validated['filename']).resolve()
+                file_meta=manifest['files'].get(validated['filename']) if manifest else None
+                if manifest and (not file_meta or hashlib.sha256(payload).hexdigest()!=file_meta['sha256']):raise HTTPException(422,'A course document does not match its manifest checksum. No files were imported.')
                 if not target.is_relative_to(directory.resolve()):
                     continue
                 if target.exists():
@@ -1355,21 +1378,33 @@ async def import_course_zip(course_id: str, request: Request, file: UploadFile=F
                 target.write_bytes(payload)
                 wrote.append(target)
                 index_names.append(validated['filename'])
-                records.append({'course_id': course_id, 'course_name': course['name'], 'filename': validated['filename'], 'sha256': hashlib.sha256(payload).hexdigest(), 'size': len(payload), 'page_count': int(validated.get('page_count', 0) or 0), 'doc_type': doc_type})
+                records.append({'course_id': course_id, 'course_name': course['name'], 'filename': validated['filename'], 'sha256': hashlib.sha256(payload).hexdigest(), 'size': len(payload), 'page_count': int(validated.get('page_count', 0) or 0), 'doc_type': file_meta['doc_type'] if file_meta else doc_type})
                 if len(records) >= MAX_BATCH_FILES:
                     break
         if not records:
             raise HTTPException(status_code=422, detail='No supported documents were found in the zip.')
         db.sync_documents(user['id'], records, prune=False)
+        if manifest:
+            with db.connect() as c:
+                for record in records:c.execute('UPDATE documents SET syllabus_enabled=? WHERE user_id=? AND course_id=? AND filename=?',(int(manifest['files'][record['filename']]['syllabus_enabled']),user['id'],course_id,record['filename']))
+            imported_sheets=course_bundle.restore_personal(user['id'],course_id,manifest)
         job = db.add_index_job(user['id'], course_id, index_names, doc_type)
         await _enqueue_index_job(job)
     except HTTPException:
         for path in wrote:
             path.unlink(missing_ok=True)
+        for record in records:db.delete_document(user['id'],record['filename'],course_id)
+        for key in imported_sheets:learning_store.remove('revision_sheet',key,user['id'])
+        if job:
+            with db.connect() as c:c.execute('DELETE FROM index_jobs WHERE id=? AND user_id=?',(job['id'],user['id']))
         raise
     except Exception:
         for path in wrote:
             path.unlink(missing_ok=True)
+        for record in records:db.delete_document(user['id'],record['filename'],course_id)
+        for key in imported_sheets:learning_store.remove('revision_sheet',key,user['id'])
+        if job:
+            with db.connect() as c:c.execute('DELETE FROM index_jobs WHERE id=? AND user_id=?',(job['id'],user['id']))
         logger.exception('ZIP import failed')
         raise HTTPException(status_code=422, detail='Could not import this zip archive.')
     docs = {doc['filename']: doc for doc in db.list_documents(user['id'], [course_id])}
@@ -1510,3 +1545,8 @@ import providers
 providers.install(app)
 import study_companion
 study_companion.install(app,globals())
+import local_jobs,study_library,backup_tools
+study_library.install(app,globals())
+backup_tools.install(app,globals())
+import course_bundle
+course_bundle.install(app,globals())

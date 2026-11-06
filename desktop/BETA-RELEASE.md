@@ -1,46 +1,38 @@
-Study Desk desktop beta — local study planning, revision sheets, recall checkpoints and smaller signed update downloads.
+Study Desk desktop beta — private, course-grounded study with your own AI key.
 
-Progress includes a daily queue with a study-time budget and optional exam
-countdown. Save checked explanations as revision sheets with editable Markdown,
-personal notes, source references and a practice bridge. Recall checkpoints
-assess your explanation against course evidence with independent review.
-Learning tools includes saved-work search and Anki TSV export.
+Includes Practice, Explain, Ask a question, Workspace, spaced review, checked
+revision sheets, recall checkpoints and verified-bank exams with paper summaries.
+Progress offers course plans, workload warnings and suggestions based on distinct
+question outcomes across days. Learning tools combines checked guide sections,
+document-text search, page notes and portable course/personal-study transfer.
+Optional controls are collapsed inside the existing views.
 
-Updates reuse verified matching blocks from cached or interrupted packages when
-available. Missing/corrupt acceleration metadata, little reuse or unsupported
-byte ranges trigger a full signed download. A full download seeds the cache when
-none is available. Installation still uses the complete signed package, an idle
-app and a verified study-data backup. Windows uses individually compressed files
-to improve reuse; the initial installer can be larger.
+Source changes invalidate the relevant course and cited guide sections, preserving
+unrelated checked work. Reindexing reuses vectors for identical text; changed
+text is embedded locally and the complete replacement is checked before serving.
+The local queue supports recoverable search-index and backup jobs. Settings
+includes opt-in scheduled local backups and encrypted portable backup/restore.
 
-Study Desk desktop beta — configure your own AI provider key in Settings. Free OpenRouter models are experimental and restricted to verified brief concept explanations; use a suitable paid model for question generation and tutoring.
+Paid Flash stages have bounded compact-response repair without relaxing solving,
+source, originality, difficulty or OPA gates. Free models remain restricted.
+Some fresh-generation requests still fail or time out. Small development checks
+do not establish a universal success/correctness percentage; inspect important
+answers independently. See README for the dated evaluation limits and costs.
 
-AI connection settings retain each provider’s secure key and last saved model.
-Switch back without re-entering the key. Save is disabled while models or hosting
-endpoints load, with refresh and recovery after lookup failures. Direct DeepSeek
-models are labelled Paid and show Flash/Pro peak/off-peak token prices checked
-6 November 2026. Pro cost estimates use Pro rates.
+Windows x64 uses the setup executable; Apple Silicon and Intel Macs (macOS 14+)
+use their matching DMG; Linux x64 uses the DEB or AppImage. The build checks each
+packaged backend, source revision, architecture, signed update metadata and hashes.
+These are not physical-device GUI compatibility certificates. macOS/Linux builds
+remain experimental pending device testing. Installers are not OS-code-signed or
+notarized, so operating-system trust checks can prevent opening them.
 
-This beta includes drag/drop and screenshot paste, visible file queues, bounded
-larger Workspace batches, multi-attachment questions, local OCR review/cache,
-and signed in-app updates. Windows uses per-file LZMA installer compression;
-the installed runtime remains complete. AI context budgets remain bounded and
-attachment reading makes no paid model request. See README for exact limits.
+In-app updates reconstruct a complete signed installer from verified cached
+blocks when possible, otherwise use a full signed download. Applying an update
+requires an idle app and a verified data backup. Provider keys stay in the system
+credential store and are not included in backups. Never upload material you are
+not entitled to process; selected excerpts go to your configured AI provider.
 
-Download the installer for your computer:
-
-- Windows x64: setup executable.
-- Apple Silicon Mac, macOS 14+: aarch64/arm64 DMG.
-- Intel Mac, macOS 14+: x64 DMG. This compatibility build uses ONNX Runtime 1.23.2; it requires separate testing on Intel hardware.
-- Linux x64: DEB or AppImage. The build targets Ubuntu 22.04; other distributions may need additional system libraries and a working Secret Service/KWallet keyring.
-
-The pipeline checks each native build and its packaged backend, then validates architecture, source commit, file format and checksums before publication. This is not a GUI/device compatibility certification. macOS/Linux installers are experimental; test installation, key storage, indexing, generation and shutdown on your own devices. Installers are unsigned and macOS builds are not notarized, so operating-system trust checks can prevent opening them.
-
-AI questions and solutions can contain mistakes, particularly difficult proofs. Automated verification does not guarantee correctness. Study data stays on your computer; relevant excerpts are sent to your selected provider and hosting endpoint for AI requests. No developer key or course documents are included.
-
-See the [current README](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application)
-for installation, updates and backups. SHA256SUMS.txt covers every installer and
-build manifest attached to this release. Remaining Chroma and Linux GTK dependency
-risks are documented in the [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
-
-AI connections: secure separate provider keys, refreshable text-model catalogs, hosting selection, free-only price caps, allowance handling and a plain provider-charge notice. DeepSeek, OpenRouter, OpenAI API, Claude API and custom compatible endpoints are available; eligibility and model quality vary. Existing connections are retained.
+Source, installation and limitations: [README](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application).
+Security findings and residual Chroma/GTK dependency risks: [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
+SHA256SUMS.txt and four build manifests accompany the release. Five signed block
+maps support differential transport; savings depend on the actual package changes.

@@ -74,7 +74,7 @@ class DurableGraph:
                 if saved.get('user_attempts', 0):
                     parts = saved.get('part_results') or []
                     score = sum(({'correct': 1.0, 'partial': 0.5}.get(p.get('verdict'), 0) for p in parts)) / len(parts) if parts else float(saved['status'] == 'correct')
-                    store.outcome(saved['user_id'], f"{self._id(config)}:{saved['user_attempts']}", saved.get('skill_id', ''), score, saved['user_attempts'])
+                    store.outcome(saved['user_id'], f"{self._id(config)}:{saved['user_attempts']}", saved.get('skill_id', ''), score, saved['user_attempts'],question_key=store.fingerprint(saved.get('current_question','')))
             except Exception:
                 logger.exception('Optional bank/mastery update failed; the durable study session is saved')
         return result

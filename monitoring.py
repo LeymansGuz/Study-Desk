@@ -58,6 +58,15 @@ def generation_summary(hours=24):
         total = c.execute('SELECT COUNT(*) FROM generation_events WHERE created>=?', (since,)).fetchone()[0]
     return {'hours': hours, 'events': total, 'outcomes': rows, 'rejection_reasons': reasons}
 
+def profile_summary(user_id):
+    """Bounded timings only: no question content, prompts, or source excerpts."""
+    with db.connect() as c:rows=c.execute("SELECT duration_ms,detail_json FROM generation_events WHERE user_id=? AND outcome='profile' ORDER BY created DESC LIMIT 100",(user_id,)).fetchall()
+    stages={};queues=[];totals=[]
+    for row in rows:
+        value=json.loads(row['detail_json']);queues.append(value.get('queue_ms',0));totals.append(row['duration_ms'] or 0)
+        for name,elapsed in value.get('stage_ms',{}).items():stages.setdefault(name,[]).append(elapsed)
+    return {'workflows':len(rows),'mean_queue_ms':sum(queues)/max(1,len(queues)),'mean_processing_ms':sum(totals)/max(1,len(totals)),'stages':[{'stage':name,'observations':len(values),'mean_ms':sum(values)/len(values)} for name,values in sorted(stages.items())],'note':'Last 100 pipeline workflows, including failed and reused work. Queue wait is separate; these timings are not a question-quality benchmark.'}
+
 def candidate(user_id, sources, skill_id, event):
     if not user_id or not db.get_user_by_id(user_id):
         return

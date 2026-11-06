@@ -18,6 +18,8 @@ class ExamRequest(BaseModel):
     count: int = Field(default=5, ge=1, le=10)
     difficulty: Difficulty | Literal['any'] = 'any'
     question_type: QuestionType | Literal['any'] = 'any'
+    topic: str = Field(default='',max_length=200)
+    unseen_only: bool = False
 
 
 def load(identifier, user_id):
@@ -38,6 +40,18 @@ def check_session(values, user_id):
     exam = load(values['exam_id'], user_id)
     if values.get('path_step', 0) > exam['index']:
         raise HTTPException(409, 'Complete the preceding bank question first.')
+
+
+def eligible(req,user_id):
+    if not db.get_course(user_id,req.course_id):raise HTTPException(404,'Choose an available course.')
+    items=[q for q in store.bank_items(user_id,req.course_id) if (req.difficulty=='any' or q['difficulty']==req.difficulty) and (req.question_type=='any' or q['question_type']==req.question_type)]
+    if req.topic.strip():
+        words=curriculum.query_terms(req.topic)
+        items=[q for q in items if words and words<=curriculum.terms(str(q.get('topic',''))+' '+q['current_question'])]
+    if req.unseen_only:
+        with db.connect() as c:seen={r[0] for r in c.execute('SELECT item_id FROM learning_exposures WHERE user_id=?',(user_id,))}
+        items=[q for q in items if user_id+':'+store.fingerprint(q['current_question']) not in seen]
+    return items
 
 
 def install(app, ns):
@@ -119,17 +133,20 @@ def install(app, ns):
 
     @app.post('/bank-exams')
     async def start(req:ExamRequest, request:Request, user=Depends(require_user)):
-        if not db.get_course(user['id'],req.course_id):
-            raise HTTPException(404,'Choose an available course.')
-        items = [q for q in store.bank_items(user['id'],req.course_id)
-            if (req.difficulty=='any' or q['difficulty']==req.difficulty)
-            and (req.question_type=='any' or q['question_type']==req.question_type)]
+        items=eligible(req,user['id'])
         if len(items)<req.count:
             raise HTTPException(409,f'Only {len(items)} verified questions match. Choose fewer questions or broaden the filters.')
         exam = {'source':'verified_bank','user_id':user['id'],'course_ids':[req.course_id],
             'version':curriculum.scope_version(user['id'],[req.course_id]),
             'items':secrets.SystemRandom().sample(items,req.count),'threads':[],'index':0,'topic':'Verified bank exam'}
         return await atomic_generation(lambda:prepare(uuid.uuid4().hex,exam,0,user))
+
+    @app.get('/bank-exams/availability')
+    async def availability(course_id:str,difficulty:str='any',question_type:str='any',topic:str='',unseen_only:bool=False,user=Depends(require_user)):
+        from pydantic import ValidationError
+        try:req=ExamRequest(course_id=course_id,difficulty=difficulty,question_type=question_type,topic=topic,unseen_only=unseen_only,count=1)
+        except ValidationError:raise HTTPException(422,'Choose valid bank filters.')
+        return {'available':len(eligible(req,user['id']))}
 
     @app.get('/bank-exams/{identifier}')
     async def resume(identifier:str,user=Depends(require_user)):
