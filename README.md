@@ -82,7 +82,8 @@ If installation cannot finish, reopen the app and check its installed version
 before retrying. Backups support recovery; they do not guarantee automatic
 database downgrades.
 
-Updates are manual, with full downloads rather than changed-file downloads.
+Updates are manual. Cached package blocks can reduce the download, with a full
+download as the safe fallback described below.
 If your installed version has no **App updates** section, install the current
 release manually from the links above.
 On Linux, the AppImage must be writable by your user; DEB updates may request
