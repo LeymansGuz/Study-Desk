@@ -10,14 +10,14 @@ const types={syllabus:'Syllabus / learning outcomes',notes:'Notes',past_paper:'P
 async function api(path,options={}) {
   const headers={...options.headers};
   if(options.body&&!(options.body instanceof FormData))headers['Content-Type']='application/json';
-  if(options.method==='POST'&&/^\/(ask|answer|explain|bank-exams)/.test(path))headers['Idempotency-Key']=crypto.randomUUID();
+  if(options.method==='POST'&&/^\/(ask|answer|explain|bank-exams|study\/recall)/.test(path))headers['Idempotency-Key']=crypto.randomUUID();
   let response;try{response=await fetch(path,{cache:'no-store',...options,headers});}catch(_){throw Error('Study Desk cannot be reached. Reopen your workspace; your input has been kept.');}
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(typeof data.error==='string'?data.error:typeof data.detail==='string'?data.detail:Array.isArray(data.detail)?data.detail.map(x=>x.msg).join('; '):'The request could not be completed.');
   return data;
 }
 const post=(path,body={})=>api(path,{method:'POST',body:JSON.stringify(body)});
-function status(selector,text,error=false){const el=$(selector);el.textContent=text;el.classList.toggle('local-error',error);}
+function status(selector,text,error=false){const el=typeof selector==='string'?$(selector):selector;if(!el)return;el.textContent=text;el.classList.toggle('local-error',error);}
 function fail(error){$('#global-error').hidden=false;$('#global-error').textContent=error.message;}
 async function task(name,form,selector,fn){
   if(local.busy.has(name))return;
@@ -39,6 +39,7 @@ function view(name){
   if(name==='progress')progress().catch(fail);
   if(name==='learning')learning().catch(fail);
   if(name==='settings')statistics().catch(fail);
+  document.dispatchEvent(new CustomEvent('study-view',{detail:name}));
 }
 function theme(value){document.documentElement.dataset.theme=value;localStorage.setItem('study-theme',value);$('#setting-theme').value=value;}
 async function courses(){
@@ -91,8 +92,10 @@ async function explanation(data){
     if(local.practice&&!(window.confirm('Your current practice remains in saved sessions. Prepare practice for this concept?')))return;
     $('#topic').value=data.topic;$('#scope').value='topic';$('#topic-field').hidden=false;$('#topic').required=true;$('#difficulty').value='medium';$('#practice-course').value=data.course_ids[0];view('practice');
   };
+  document.dispatchEvent(new CustomEvent('study-explanation',{detail:data}));
 }
 async function sources(data){
+  data={...data,sources:(data.sources||[]).map(s=>({...s,source_file:s.source_file||s.file}))};
   const dialog=$('#source-dialog');$('#source-question').innerHTML=rich(data.question);$('#source-select').innerHTML=(data.sources||[]).map((s,i)=>`<option value="${i}">${esc(s.ref)} · ${esc(s.source_file)} · p. ${esc(s.page)}</option>`).join('');
   const files=(await api('/workspace/files')).files||[];
   const update=()=>{
@@ -155,9 +158,10 @@ async function progress(){
   $$('[data-resolve]').forEach(b=>b.onclick=async()=>{await post('/progress/mistakes/'+b.dataset.resolve+'/resolve');await progress();});
   const card=data.flashcards?.[0];$('#review-cards').innerHTML=card?`<article class="local-item"><h3>Due review card</h3><div class="rich-text">${rich(card.front||card.question)}</div><details><summary>Show answer</summary><div class="rich-text">${rich(card.back||card.answer)}</div><div class="local-actions">${['again','hard','good','easy'].map(r=>`<button class="quiet-button" data-rating="${r}">${r}</button>`).join('')}</div></details></article>`:'<p class="hint">No review cards due.</p>';
   $$('[data-rating]').forEach(b=>b.onclick=async()=>{try{await post('/progress/flashcards/'+card.id+'/review',{rating:b.dataset.rating});await progress();}catch(e){fail(e);}});
+  document.dispatchEvent(new Event('study-progress-updated'));
 }
 async function statistics(){const data=await api('/local/statistics');const metrics={...(data.period||{})};if(metrics.missing_usage)metrics.cost_usd=null;$('#statistics').innerHTML='<h3>Last 30 days</h3>'+table([metrics])+'<p class="hint">Cached input is included in input tokens. Cached counts and per-question details cover retained provider traces. Costs are estimates in USD; — means usage is unknown.</p><h3>Recent question operations</h3>'+table((data.operations||[]).map(r=>({kind:r.kind,outcome:r.failures?'Failed':'Completed',input:r.input_tokens,cached_input:r.cached_input_tokens,output:r.output_tokens,cost_usd:r.missing_usage?null:r.cost_usd,seconds:Math.round(Number(r.latency_ms||0)/100)/10})));}
-function pathControls(){const any=$('#scope').value==='syllabus';$('#start-path').disabled=any;$('#path-guidance').textContent=any?'Choose Specific topic to start a mastery path.':'Mastery path uses the topic and question type above: Foundation → Application → Synthesis. Each checked question is prepared only when you reach it.';}
+function pathControls(){const any=$('#scope').value==='syllabus',limited=local.providerScope==='brief_only';$('#start-path').disabled=any||limited;for(const [id,name] of [['practice-form','practice'],['ask-form','ask']])$('#'+id+' button[type=submit]').disabled=limited||local.busy.has(name);$('#path-guidance').textContent=limited?'Choose a suitable paid connection in Settings for question generation and mastery paths.':any?'Choose Specific topic to start a mastery path.':'Mastery path uses the topic and question type above: Foundation → Application → Synthesis. Each checked question is prepared only when you reach it.';}
 function examNext(data){const host=$('#exam-result .path-next');if(data.completed){const summary=data.summary;if(!summary){host.textContent='Bank exam completed.';return;}host.innerHTML=`<section aria-label="Paper summary"><h2>Paper summary</h2><p><strong>${summary.solved} / ${summary.total} solved (${summary.solved_percent}%)</strong> · ${summary.first_attempt_correct} correct on the first attempt · ${summary.needs_review} to revisit</p><p class="hint">${esc(summary.scoring_note)}</p>${table(summary.questions.map(q=>({Question:q.number,Difficulty:q.difficulty,Type:questionLabels[q.question_type]||q.question_type,Result:q.status==='correct'?'Solved':q.status==='revealed'?'Solution shown':'Not solved',Attempts:q.attempts}))) }<div class="local-actions">${summary.questions.map(q=>`<button type="button" class="quiet-button" data-exam-review="${esc(q.thread_id)}">Review Q${q.number}</button>`).join('')}<a class="quiet-button" href="/bank-exams/${encodeURIComponent(data.id)}/summary/export">Download paper summary</a></div><div id="exam-review"></div></section>`;host.querySelectorAll('[data-exam-review]').forEach(b=>b.onclick=async()=>{try{const q=await api('/session/'+b.dataset.examReview);$('#exam-review').innerHTML='<h3>Question review</h3><div class="rich-text">'+rich(q.question)+rich(q.last_feedback||'')+'</div>';}catch(e){fail(e);}});return;}if(data.can_advance){host.innerHTML='<button class="primary-button" id="exam-next">Next bank question</button>';$('#exam-next').onclick=()=>task('exam-next',host,'#exam-status',async()=>renderExam(await post('/bank-exams/'+local.exam.id+'/next')));}}
 function renderExam(data){renderQuestion('exam',{...data.question,status:data.current_status||data.question.status,history:data.history||[]},true);local.exam=data;$('#exam-result').insertAdjacentHTML('afterbegin',`<p>Verified bank exam · question ${data.index+1} / ${data.count}</p>`);examNext(data);}
 

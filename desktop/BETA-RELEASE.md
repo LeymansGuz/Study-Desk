@@ -1,3 +1,18 @@
+Study Desk desktop beta — local study planning, revision sheets, recall checkpoints and smaller signed update downloads.
+
+Progress includes a daily queue with a study-time budget and optional exam
+countdown. Save checked explanations as revision sheets with editable Markdown,
+personal notes, source references and a practice bridge. Recall checkpoints
+assess your explanation against course evidence with independent review.
+Learning tools includes saved-work search and Anki TSV export.
+
+Updates reuse verified matching blocks from cached or interrupted packages when
+available. Missing/corrupt acceleration metadata, little reuse or unsupported
+byte ranges trigger a full signed download. A full download seeds the cache when
+none is available. Installation still uses the complete signed package, an idle
+app and a verified study-data backup. Windows uses individually compressed files
+to improve reuse; the initial installer can be larger.
+
 Study Desk desktop beta — configure your own AI provider key in Settings. Free OpenRouter models are experimental and restricted to verified brief concept explanations; use a suitable paid model for question generation and tutoring.
 
 AI connection settings retain each provider’s secure key and last saved model.
@@ -8,7 +23,7 @@ models are labelled Paid and show Flash/Pro peak/off-peak token prices checked
 
 This beta includes drag/drop and screenshot paste, visible file queues, bounded
 larger Workspace batches, multi-attachment questions, local OCR review/cache,
-and signed in-app updates. Windows uses stronger installer archive compression;
+and signed in-app updates. Windows uses per-file LZMA installer compression;
 the installed runtime remains complete. AI context budgets remain bounded and
 attachment reading makes no paid model request. See README for exact limits.
 

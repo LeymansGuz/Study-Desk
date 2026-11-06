@@ -25,8 +25,10 @@ document.addEventListener('study-ready',async()=>{
   }
   function applyScope(scope){
     const limited=scope==='brief_only';
+    local.providerScope=scope;
+    document.dispatchEvent(new CustomEvent('study-provider-scope',{detail:scope}));
     for(const id of ['practice-form','ask-form']){const panel=document.getElementById(id);if(!panel)continue;panel.querySelector('button[type=submit]').disabled=limited;let note=panel.querySelector('[data-provider-scope]');if(!note){note=document.createElement('p');note.className='hint';note.dataset.providerScope='';panel.prepend(note);}note.hidden=!limited;note.textContent='The selected free model supports brief concept explanations only. Choose a suitable paid connection in Settings for question generation or tutoring.';}
-    document.querySelector('#start-path').disabled=limited;
+    pathControls();
     const depth=document.querySelector('#depth');depth.querySelector('option[value=deep]').disabled=limited;if(limited)depth.value='brief';
     let note=document.querySelector('#explain-form [data-provider-scope]');if(!note){note=document.createElement('p');note.className='hint';note.dataset.providerScope='';document.querySelector('#explain-form').prepend(note);}note.hidden=!limited;note.textContent='Free model: brief explanations only. These models performed substantially worse than the tested paid DeepSeek Flash setup for question generation. Explanations still require source and correctness checks.';
   }

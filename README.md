@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.9-beta.2](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.9-beta.2).
+The current published beta is [v0.2.10-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.10-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/Study-Desk_0.2.9_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/Study-Desk_0.2.9_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/Study-Desk_0.2.9_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/Study-Desk_0.2.9_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/Study-Desk_0.2.9_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/Study-Desk_0.2.10_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/Study-Desk_0.2.10_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/Study-Desk_0.2.10_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/Study-Desk_0.2.10_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/Study-Desk_0.2.10_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.9-beta.2/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.10-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -33,15 +33,15 @@ before deciding whether to approve this app. Do not disable system-wide protecti
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.9_amd64.deb
+sudo apt install ./Study-Desk_0.2.10_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.9_amd64.AppImage
-./Study-Desk_0.2.9_amd64.AppImage
+chmod +x ./Study-Desk_0.2.10_amd64.AppImage
+./Study-Desk_0.2.10_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -73,7 +73,7 @@ Linux graphical behaviour remains experimental and needs testing on your device.
 ### Updates inside the app
 
 In **Settings → App updates**, choose **Check for updates**, then **Download update**.
-The app downloads a full package from the official GitHub release and verifies
+The app prepares a complete package from the official GitHub release and verifies
 its signature and signed version. Choose **Install and restart** when requests,
 uploads and indexing are finished. Study Desk creates and verifies a local backup
 before replacing the program. Documents, progress and your system credential stay
@@ -88,6 +88,27 @@ release manually from the links above.
 On Linux, the AppImage must be writable by your user; DEB updates may request
 administrator permission. On macOS, run from Applications rather than the DMG.
 Update signatures do not remove OS warnings about unsigned/not-notarized apps.
+
+### Smaller update downloads
+
+The updater uses a signed content-defined block map to reuse matching bytes
+from its last verified package or an interrupted download. Only missing blocks
+are requested. It verifies block hashes, reconstructs a complete package and
+checks its version-bound signature before allowing installation. The normal
+installer then applies that complete verified version; running app files are
+never patched by the downloader. The pre-install backup and idle checks apply.
+
+Without a usable cache, the first download is a full package. A full download is
+also used when reuse would save little, the server cannot supply byte ranges,
+or acceleration metadata is unavailable. Download status distinguishes bytes
+downloaded from bytes reused. Actual savings depend on how much the release
+changes. Windows files are compressed individually to preserve reusable blocks;
+this can make the initial installer larger than a solid compressed archive.
+
+The app-data `update-cache` keeps one verified package and one partial download,
+separate from study files and backups. Removing that cache while the app is
+closed is safe; the next update may need a full download. Leave enough disk
+space for the cached/staged packages and installation.
 
 ### AI providers, free allowance and model choice
 
@@ -233,6 +254,51 @@ retries; the server text cache is bounded and expires for reuse after 30 minutes
 The normal Solver/Verifier pipeline runs once for the combined question. Context
 limits are unchanged, and excess text is rejected rather than silently cut off.
 Future AI requests still require the current data-use acknowledgement.
+
+## Daily study, revision sheets and recall
+
+**Progress → Today’s study queue** combines due FSRS cards, unfinished practice,
+recoverable mistakes, a verified bank question and a recent revision sheet.
+Choose **Start next** to open the activity in place. **Time and exam date** sets
+a 5–180 minute daily budget and an optional exam countdown. The queue is rebuilt
+from current saved work each time you review; its times are estimates. Planning
+makes no AI calls. This is a daily queue and countdown, not a complete multi-week
+syllabus timetable.
+
+After a checked explanation, choose **Save revision sheet**. The checked text
+and source references are reused without another generation call. In **Learning
+tools**, open the sheet to edit Markdown alongside its preview, add personal
+notes, view original source evidence, export Markdown or prepare practice for
+the concept. Save controls remain visible while editing. Unsaved edits are kept
+when changing views and you are warned before discarding them. Saving persists
+them across restarts. Local edits are labelled as not independently checked.
+
+The 20 most recently saved sheets are retained, shown five per page. Source
+changes mark a sheet historical. Prepare a fresh explanation and save it to
+refresh that topic; replacing local edits requires confirmation, preserves
+personal notes and checks for changes made in another window. Export important
+sheets if you need a separate permanent archive.
+
+**Recall checkpoint** sits below an explanation. Describe the concept in your
+own words; the tutor identifies correct ideas and specific gaps. Corrections
+need valid source references, rendered mathematics must compile, and a separate
+review checks grounding, accuracy and fair assessment before feedback is shown.
+Marking uses the checked explanation and its course evidence, never personal
+sheet edits. A source change blocks a new check until the explanation is fresh.
+The ten latest successful recall results are saved; the latest result for the
+concept can be resumed. Switching views preserves the current typed draft.
+
+Recall assessment sends the typed answer and relevant evidence to the selected
+AI provider. It uses an assessment and independent review, and bounded repairs
+can add requests. Calls and returned token usage appear in local Statistics.
+Free connections remain limited to brief explanations and cannot grade recall.
+Automated assessment can still make mistakes; passing review is not a guarantee.
+
+**Search saved study work** searches saved explanations, revision sheets,
+personal sheet notes and recent session titles. It is not a full-text search of
+all uploaded PDF pages. **Export review cards for Anki** downloads up to 200
+existing cards as a UTF-8 TSV file. Import it as tab-separated fields with HTML
+enabled. No AI call is made for search, sheet editing, export or daily planning.
 
 ## Concept mastery and bank exams
 

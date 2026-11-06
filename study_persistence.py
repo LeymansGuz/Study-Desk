@@ -16,6 +16,11 @@ def replay_access(user, path, payload):
     import app as application
     import learning_store
     from fastapi import HTTPException
+    if path=='/study/recall':
+        import curriculum
+        value=learning_store.get('recall',payload.get('id',''),user['id'])
+        if not value or application._course_access_lost(user['id'],value.get('course_ids')) or value.get('version')!=curriculum.scope_version(user['id'],value['course_ids']):
+            raise HTTPException(409,'The recall result is no longer current. Check the concept again.')
     if path.startswith('/ask/path'):
         value = learning_store.get('path', payload.get('id', ''), user['id'])
         if not value:

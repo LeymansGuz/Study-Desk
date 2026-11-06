@@ -5,6 +5,9 @@ import sys
 def main():
     import multiprocessing
     multiprocessing.freeze_support()
+    if '--update-download' in sys.argv:
+        from update_blocks import worker
+        worker(sys.argv[sys.argv.index('--update-download')+1]);return
     if '--self-check' in sys.argv:
         from desktop_checks import run
         run();return

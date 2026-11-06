@@ -3,7 +3,7 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 import db
-LEARNING = {'tutor': 10, 'explain': 10, 'path': 10, 'exam': 10, 'bank': 500, 'quarantine': 100, 'benchmark_run': 8}
+LEARNING = {'tutor': 10, 'explain': 10, 'path': 10, 'exam': 10, 'bank': 500, 'quarantine': 100, 'benchmark_run': 8,'revision_sheet':20,'recall':10,'study_plan':1}
 
 def initialize():
     with db.connect() as c:

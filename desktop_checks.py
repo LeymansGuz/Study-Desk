@@ -34,4 +34,13 @@ def run():
     ImageDraw.Draw(image).text((20,25),'STUDY DESK 12345',fill='black',font=ImageFont.load_default(size=36))
     result,_=RapidOCR(intra_op_num_threads=1,inter_op_num_threads=1)(np.array(image))
     assert result and '12345' in ' '.join(row[1] for row in result),result
-    print(json.dumps({'katex':True,'symbolic_worker':True,'vector_database':True,'office_extractor':True,'ocr':True,'provider_calls':0}))
+    from update_blocks import make_map,reconstruct
+    with tempfile.TemporaryDirectory(prefix='study-update-check-') as tmp:
+        import random
+        folder=Path(tmp);raw=random.Random(13).randbytes(1024*1024)
+        old=folder/'old';old.write_bytes(raw)
+        target=folder/'new';target.write_bytes(b'new script'+raw)
+        expected=target.read_bytes()
+        stats=reconstruct(make_map(target,'0.0.1'),old,folder/'staged',lambda offset,size:expected[offset:offset+size])
+        assert (folder/'staged').read_bytes()==expected and stats['reused']>len(raw)*.7
+    print(json.dumps({'katex':True,'symbolic_worker':True,'vector_database':True,'office_extractor':True,'ocr':True,'differential_reconstruction':True,'provider_calls':0}))

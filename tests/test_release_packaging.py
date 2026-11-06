@@ -82,11 +82,15 @@ def test_signed_release_requires_every_platform_signature(builds,tmp_path,monkey
         folder=builds/platform
         if platform.startswith('macos'):(folder/('Study-Desk_'+platform+'_0.2.2.app.tar.gz')).write_bytes(b'fixture app archive')
         updates=[p for p in folder.iterdir() if p.suffix in {'.exe','.AppImage','.deb'} or p.name.endswith('.app.tar.gz')]
-        for payload in updates:payload.with_name(payload.name+'.sig').write_text(sign(payload.read_bytes()))
+        from update_blocks import make_map
+        for payload in updates:
+            payload.with_name(payload.name+'.sig').write_text(sign(payload.read_bytes()))
+            blockmap=payload.with_name(payload.name+'.blocks.json');blockmap.write_text(json.dumps(make_map(payload,'0.2.2')))
+            blockmap.with_name(blockmap.name+'.sig').write_text(sign(blockmap.read_bytes()))
         (folder/'SHA256SUMS.txt').write_text('\n'.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in folder.iterdir() if p.name!='SHA256SUMS.txt'))
     destination=tmp_path/'signed-release'
     release.collect(builds,destination,'0.2.2','same-commit',signed=True,tag='v0.2.2-beta.1')
     manifest=json.loads((destination/'latest.json').read_text())
     assert len(manifest['platforms'])==5
-    next((builds/'macos-intel').glob('*.sig')).unlink()
+    next((builds/'macos-intel').glob('*.app.tar.gz.sig')).unlink()
     with pytest.raises(ValueError,match='signature'):release.collect(builds,tmp_path/'bad-release','0.2.2','same-commit',signed=True,tag='v0.2.2-beta.1')

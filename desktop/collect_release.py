@@ -76,6 +76,16 @@ def collect(source, destination, release_version, revision, *, signed=False, tag
                 verify(payload,signature.read_text(encoding='utf-8').strip(),public_key,release_version)
                 if payload not in installers:extras.append(payload)
                 extras.append(signature)
+                from update_blocks import validate_map
+                blockmap=payload.with_name(payload.name+'.blocks.json')
+                block_signature=blockmap.with_name(blockmap.name+'.sig')
+                if not blockmap.is_file() or not block_signature.is_file():raise ValueError('Missing differential metadata: '+platform)
+                for file in [blockmap,block_signature]:
+                    if checksums.get(file.name)!=hashlib.sha256(file.read_bytes()).hexdigest():raise ValueError('Corrupt differential metadata')
+                verify(blockmap,block_signature.read_text().strip(),public_key,release_version)
+                published=re.sub(r'[^A-Za-z0-9._-]+','-',payload.name).strip('.-')
+                validate_map(json.loads(blockmap.read_text()),f'https://github.com/LeymansGuz/Study-Desk/releases/download/{tag}/{published}',release_version)
+                extras.extend([blockmap,block_signature])
                 published=re.sub(r'[^A-Za-z0-9._-]+','-',payload.name).strip('.-')
                 target={'windows':'windows-x86_64-nsis','macos-arm64':'darwin-aarch64-app','macos-intel':'darwin-x86_64-app','linux':'linux-x86_64-'+('deb' if payload.suffix=='.deb' else 'appimage')}[platform]
                 platforms[target]={'url':f'https://github.com/LeymansGuz/Study-Desk/releases/download/{tag}/{published}','signature':signature.read_text(encoding='utf-8').strip()}

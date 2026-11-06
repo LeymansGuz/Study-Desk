@@ -94,6 +94,15 @@ def main():
             if version in name:shutil.copy2(source,output/name)
     if not any(p.suffix in {'.exe','.msi','.dmg','.deb','.AppImage'} and version in p.name for p in output.iterdir()):
         raise RuntimeError('No installer for this release version was produced.')
+    # Content-defined maps are separately signed and allow the next updater to
+    # reuse unchanged bytes from its last verified package, even after offsets shift.
+    sys.path.insert(0,str(ROOT))
+    from update_blocks import make_map
+    payloads=[p for p in output.iterdir() if p.suffix in {'.exe','.deb','.AppImage'} or p.name.endswith('.app.tar.gz')]
+    for payload in payloads:
+        blockmap=payload.with_name(payload.name+'.blocks.json')
+        blockmap.write_text(json.dumps(make_map(payload,version),separators=(',',':')),encoding='utf-8')
+        subprocess.run([npm,'exec','--','tauri','signer','sign','--app-version',version,str(blockmap)],cwd=ROOT/'desktop',check=True,stdout=subprocess.DEVNULL)
     lines=[hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in output.iterdir() if p.is_file() and p.name!='SHA256SUMS.txt']
     (output/'SHA256SUMS.txt').write_text('\n'.join(lines)+'\n',encoding='utf-8')
     print('Release artifacts:',output)

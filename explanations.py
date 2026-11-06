@@ -119,7 +119,7 @@ def install(api, services):
         if not saved:
             raise HTTPException(404, 'Saved explanation not found.')
         accessible(user, saved)
-        return {**saved, 'historical': saved['version'] != curriculum.scope_version(user['id'], saved['course_ids'])}
+        return {**{k:v for k,v in saved.items() if k!='recall_context'}, 'historical': saved['version'] != curriculum.scope_version(user['id'], saved['course_ids'])}
 
     @api.post('/explain', tags=['tutor'])
     @generation_limit
@@ -142,7 +142,7 @@ def install(api, services):
                             accessible(user, prior)
                             learning_store.put('explain', prior['id'], user['id'], prior)
                             observability.describe(operation['id'], {'current_question': topic, 'question_type': 'explanation', 'bank_reused': True}, prior['id'])
-                            return {**prior, 'cached': True, 'historical': False}
+                            return {**{k:v for k,v in prior.items() if k!='recall_context'}, 'cached': True, 'historical': False}
                     allowed = {s['chunk_id'] for unit in catalog['sections'] if not unit.get('excluded') for s in unit['sources'] if not s.get('quality_review_required')}
                     ranked = await asyncio.to_thread(retrieval.search, topic, user['id'], 24, None, courses, list(curriculum.CONTENT_TYPES))
                     sources = retrieval.relabel_sources(retrieval.pack_sources([s for s in ranked if s['chunk_id'] in allowed], max_chars=14000))[:8]
@@ -153,12 +153,13 @@ def install(api, services):
                     if services['_course_access_lost'](user['id'], courses) or curriculum.scope_version(user['id'], courses) != version:
                         raise tools.TutorError('Course material changed. Request a fresh explanation.')
                     payload = {'id': identifier, 'topic': topic, 'current_question': topic, 'depth': req.depth, 'course_ids': courses, 'version': version, 'markdown': text, 'sources': services['_source_summary'](sources, refs), 'status': 'explained', 'historical': False}
+                    payload['recall_context']=retrieval.format_context(sources,max_chars=14000)
                     observability.describe(operation['id'], {'current_question': topic, 'question_type': 'explanation'}, identifier)
                     expired = learning_store.put('explain', identifier, user['id'], payload)
                     for item in expired:
                         if item['kind'] == 'tutor':
                             await services['graph'].checkpointer.adelete_thread(item['id'])
-                    return payload
+                    return {k:v for k,v in payload.items() if k!='recall_context'}
         except tools.TutorError as exc:
             raise HTTPException(422, str(exc)) from exc
         except ValueError as exc:

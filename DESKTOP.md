@@ -9,7 +9,7 @@ Local text embeddings may download their model on first use.
 ## Installing and using releases
 
 1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.9-beta.2).
+   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.10-beta.1).
    On Windows, run the setup executable for your Windows user. On macOS, drag
    the app from the DMG into Applications. On Linux, install the DEB or make
    the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
@@ -42,7 +42,7 @@ Study data is separate from installation files:
 | macOS | `~/Library/Application Support/link.spookelgoose.studydesk` |
 | Linux | `$XDG_DATA_HOME/link.spookelgoose.studydesk`, usually `~/.local/share/link.spookelgoose.studydesk` |
 
-Use Settings → App updates to check, download and install a signed full-package update. Installation requires an idle workspace and a verified backup, then restarts the app. The first updater-enabled release needs a manual install. Uninstalling preserves study data and the system credential. See README for platform permissions and recovery limits.
+Use Settings → App updates to check, download and install a signed update. Matching cached blocks reduce downloads when available; installation uses a complete verified package. Installation requires an idle workspace and a verified backup, then restarts the app. Uninstalling preserves study data and the system credential. See README for platform permissions and recovery limits.
 
 To transfer a source-edition workspace, stop both editions first. Back up its
 `data` folder, then copy its contents into the desktop data directory before
@@ -158,3 +158,24 @@ take longer. Runtime libraries and OCR capabilities remain bundled. macOS/Linux
 packaging retains its existing supported compression. HTML drag/drop is enabled
 inside the native window; clipboard-button availability depends on the WebView,
 with standard keyboard paste available as the fallback.
+
+
+## Differential update transport
+
+Native update authority stays in Rust. The bundled backend’s isolated
+`--update-download` worker accepts only an official versioned release URL. It
+verifies a signed `.blocks.json` manifest and its announced version, reuses
+content-defined cached blocks, and resumes verified partial blocks. A complete
+version-bound signature is checked before a download becomes installable; the
+native installer verifies again. Failed verification cannot promote a partial
+package. Unsupported range requests or ineffective reuse fall back to the full
+signed package. The worker exits if its parent desktop app exits.
+
+`desktop/build.py` creates and signs block maps for every updater payload.
+`desktop/collect_release.py` checks all maps, signatures, payload checksums,
+platforms and source commits before publishing. Windows uses a small NSIS hook
+to select non-solid LZMA; the standard upstream installer remains in use. Data
+backups exclude the download cache. Cache retention is one previous verified
+package and one staging file; an initial full download is necessary when neither
+can supply matching bytes. Test real installation on each target operating
+system in addition to offline reconstruction tests.

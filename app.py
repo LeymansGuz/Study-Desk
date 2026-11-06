@@ -1508,3 +1508,5 @@ import attachment_batch
 attachment_batch.install(app,globals())
 import providers
 providers.install(app)
+import study_companion
+study_companion.install(app,globals())

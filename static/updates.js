@@ -13,7 +13,7 @@ document.addEventListener('study-ready',async()=>{
       if(state.total>0){progress.max=state.total;progress.value=state.received;}else progress.removeAttribute('value');
       const allowed={check:['idle','current','available','downloaded','error'],download:['available'],install:['downloaded']};
       buttons.forEach(button=>button.disabled=pending||!allowed[button.dataset.update].includes(state.state));
-      panel.querySelector('[data-transfer]').textContent=state.state==='downloading'&&state.received?`${(state.received/1048576).toFixed(1)} MB${state.total?' / '+(state.total/1048576).toFixed(1)+' MB':''}`:'';
+      panel.querySelector('[data-transfer]').textContent=state.state==='downloading'&&state.received?`Prepared ${(state.received/1048576).toFixed(1)} MB${state.total?' / '+(state.total/1048576).toFixed(1)+' MB':''}`:'';
     }catch(error){panel.querySelector('[data-status]').textContent='The app may be restarting. If it does not reopen, start Study Desk again.';}
   }
   buttons.forEach(button=>button.onclick=async()=>{

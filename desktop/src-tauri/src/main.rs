@@ -5,6 +5,11 @@ use tauri_plugin_opener::OpenerExt;
 mod updates;
 
 struct Backend { child: Mutex<Option<Child>>, port: u16, secret: String }
+fn official_page(url: &reqwest::Url) -> bool {
+    url.scheme()=="https" && url.username().is_empty() && url.password().is_none() &&
+      (matches!(url.host_str(),Some("cdn.deepseek.com"|"platform.deepseek.com"|"api-docs.deepseek.com"|"openrouter.ai"|"platform.openai.com"|"platform.claude.com")) ||
+      (url.host_str()==Some("github.com") && (url.path()=="/LeymansGuz/Study-Desk" || url.path().starts_with("/LeymansGuz/Study-Desk/"))))
+}
 impl Backend {
     fn request(&self, path: &str, method: &str) -> bool {
         let Ok(mut stream) = TcpStream::connect_timeout(&([127,0,0,1],self.port).into(), Duration::from_millis(500)) else { return false };
@@ -61,7 +66,7 @@ fn main() {
           .disable_drag_drop_handler()
           .title("Study Desk").inner_size(1280.0,860.0).min_inner_size(800.0,620.0)
           .on_navigation(move |url| {
-              if url.scheme()=="https" && url.username().is_empty() && url.password().is_none() && (url.host_str()==Some("cdn.deepseek.com") || url.host_str()==Some("openrouter.ai") || (url.host_str()==Some("github.com") && (url.path()=="/LeymansGuz/Study-Desk" || url.path().starts_with("/LeymansGuz/Study-Desk/")))) {
+              if official_page(url) {
                   let _=external.opener().open_url(url.as_str(),None::<&str>);
                   return false;
               }
@@ -87,4 +92,14 @@ fn main() {
             if let Some(state)=engine.lock().unwrap().as_ref(){state.stop();}
         }
     });
+}
+
+#[cfg(test)]
+mod link_tests {
+    use super::*;
+    #[test]
+    fn provider_key_links_open_only_on_official_hosts() {
+        for url in ["https://platform.deepseek.com/api_keys","https://platform.openai.com/api-keys","https://platform.claude.com/settings/keys","https://openrouter.ai/keys"] {assert!(official_page(&url.parse().unwrap()));}
+        for url in ["https://platform.deepseek.com.evil.test/api_keys","https://secret@platform.deepseek.com/api_keys","http://platform.deepseek.com/api_keys","https://github.com/another/project"] {assert!(!official_page(&url.parse().unwrap()));}
+    }
 }

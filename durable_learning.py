@@ -92,7 +92,7 @@ class StudyRequests:
 
     async def __call__(self, scope, receive, send):
         path = scope.get('path', '')
-        if scope['type'] != 'http' or scope['method'] not in {'POST', 'DELETE'} or (not (path in {'/ask', '/ask/question', '/answer', '/explain', '/ask/path'} or (path.startswith('/progress/flashcards/') and path.endswith('/review')) or path.startswith('/ask/path/') or path.startswith('/practice/follow-up/') or path == '/bank-exams' or path.startswith('/bank-exams/'))):
+        if scope['type'] != 'http' or scope['method'] not in {'POST', 'DELETE'} or (not (path in {'/ask', '/ask/question', '/answer', '/explain', '/ask/path','/study/recall'} or (path.startswith('/progress/flashcards/') and path.endswith('/review')) or path.startswith('/ask/path/') or path.startswith('/practice/follow-up/') or path == '/bank-exams' or path.startswith('/bank-exams/'))):
             return await self.app(scope, receive, send)
         from auth import current_user
         request = Request(scope, receive)

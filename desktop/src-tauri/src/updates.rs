@@ -4,7 +4,7 @@ use std::{sync::Arc, thread, time::Duration};
 use serde_json::{json, Value};
 use tauri_plugin_updater::UpdaterExt;
 use tauri::Manager;
-use std::io::Write;
+use std::io::{Write, BufRead, BufReader};
 use crate::Backend;
 
 const FEED: &str = "https://raw.githubusercontent.com/LeymansGuz/Study-Desk/main/desktop/update-manifest.json";
@@ -45,6 +45,36 @@ fn report(client: &reqwest::blocking::Client, backend: &Backend, state: &str, me
     });
 }
 
+fn prepare_download(app: &tauri::AppHandle, backend: &Backend, client: &reqwest::blocking::Client, url: &str, signature: &str, version: &str) -> Result<(Vec<u8>,u64,u64),String> {
+    let data=std::env::var_os("STUDY_DESKTOP_DATA_DIR").map(std::path::PathBuf::from).unwrap_or(app.path().app_data_dir().map_err(|e|e.to_string())?);
+    let cache=data.join("update-cache");std::fs::create_dir_all(&cache).map_err(|e|e.to_string())?;
+    let config:Value=serde_json::from_str(include_str!("../tauri.conf.json")).map_err(|e|e.to_string())?;
+    let request=cache.join("request.json");
+    std::fs::write(&request,serde_json::to_vec(&json!({"url":url,"signature":signature,"version":version,"public_key":config["plugins"]["updater"]["pubkey"],"cache":cache,"parent_pid":std::process::id()})).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;
+    let helper=app.path().resource_dir().map_err(|e|e.to_string())?.join("backend").join(if cfg!(windows){"StudyDeskBackend.exe"}else{"StudyDeskBackend"});
+    let mut command=std::process::Command::new(helper);
+    command.arg("--update-download").arg(&request).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::null());
+    #[cfg(windows)] { use std::os::windows::process::CommandExt;command.creation_flags(0x08000000); }
+    let mut child=command.spawn().map_err(|e|e.to_string())?;
+    let mut completed=false;let mut reused_bytes=0;let mut downloaded_bytes=0;
+    for line in BufReader::new(child.stdout.take().ok_or("Update helper unavailable")?).lines() {
+        let line=line.map_err(|e|e.to_string())?;
+        if line.len()>8192 {let _=child.kill();return Err("Invalid updater response".into())}
+        let Ok(message)=serde_json::from_str::<Value>(&line) else {continue};
+        if let Some(state)=message.get("progress") {
+            let received=state["received"].as_u64().unwrap_or(0);let reused=state["reused"].as_u64().unwrap_or(0);
+            let note=if state["fallback"].as_bool()==Some(true){"Using a full signed download; differential reuse was unavailable.".into()}else{format!("Downloading update · {:.1} MB downloaded · {:.1} MB reused",received as f64/1048576.0,reused as f64/1048576.0)};
+            report(client,backend,"downloading",&note,version,received+reused,state["total"].as_u64().unwrap_or(0));
+        }
+        if let Some(done)=message.get("complete"){completed=true;reused_bytes=done["reused"].as_u64().unwrap_or(0);downloaded_bytes=done["received"].as_u64().unwrap_or(0);}
+    }
+    let status=child.wait().map_err(|e|e.to_string())?;let _=std::fs::remove_file(request);
+    if !status.success() || !completed {return Err("Update reconstruction or signature verification failed".into())}
+    let path=cache.join("previous.package");
+    if std::fs::metadata(&path).map_err(|e|e.to_string())?.len()>1_500_000_000{return Err("Update package too large".into())}
+    std::fs::read(path).map(|bytes|(bytes,reused_bytes,downloaded_bytes)).map_err(|e|e.to_string())
+}
+
 pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
     thread::spawn(move || {
         let Ok(client) = reqwest::blocking::Client::builder().no_proxy().timeout(Duration::from_secs(5)).build() else { return };
@@ -80,18 +110,11 @@ pub fn start(app: tauri::AppHandle, backend: Arc<Backend>) {
                 },
                 "download" => {
                     if let Some(update) = candidate.as_ref() {
-                        let mut received = 0u64;
-                        let mut last = std::time::Instant::now();
-                        let result = tauri::async_runtime::block_on(update.download(|chunk,total| {
-                            received += chunk as u64;
-                            if last.elapsed() > Duration::from_millis(500) {
-                                report(&client,&backend,"downloading","Downloading the update…",&update.version,received,total.unwrap_or(0));
-                                last = std::time::Instant::now();
-                            }
-                        }, || {}));
+                        let result = prepare_download(&app,&backend,&client,update.download_url.as_str(),&update.signature,&update.version);
                         match result {
-                            Ok(bytes) => {
-                                report(&client,&backend,"downloaded","Signature verified. Install and restart when your study work is finished.",&update.version,bytes.len() as u64,bytes.len() as u64);
+                            Ok((bytes,reused,downloaded)) => {
+                                let note=format!("Signature verified · {:.1} MB downloaded · {:.1} MB reused. Install and restart when ready.",downloaded as f64/1048576.0,reused as f64/1048576.0);
+                                report(&client,&backend,"downloaded",&note,&update.version,bytes.len() as u64,bytes.len() as u64);
                                 package=Some(bytes);
                             },
                             Err(error) => {
