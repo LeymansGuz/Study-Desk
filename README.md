@@ -454,7 +454,18 @@ marketing reliability percentage.
 
 Study Desk charges no application subscription. AI requests consume your own
 provider allowance or balance. Free OpenRouter usage is limited; unknown model
-pricing is not estimated as zero. A historical **3 November 2026** DeepSeek check recorded:
+pricing is not estimated as zero.
+
+In the **7 November 2026** final Hard calculation retest, the successful production
+workflow used ten provider calls and took 41.5 seconds. Returned tokens imply
+approximately **$0.01016 at Flash peak rates**, or **$0.00508 at off-peak rates**,
+including its repairs and validation but excluding earlier failed attempts and
+the extra evaluation audit. This is one example, not a measured average. Across
+that day's 160 development/evaluation requests, returned usage implies roughly
+**$0.19070 at peak rates**; five requests had unavailable/cancelled usage and may
+add charges. Provider billing remains authoritative.
+
+A historical **3 November 2026** DeepSeek check recorded:
 
 | Cost measure | Recorded USD |
 |---|---:|
