@@ -6,6 +6,11 @@ from pydantic import ValidationError
 import tools
 from calc import evaluate
 
+@pytest.fixture(scope='module',autouse=True)
+def initialize_isolated_database():
+    import db
+    db.init_db()
+
 def test_grounding_requires_real_passage_quotes_not_a_boolean_or_inventory_claim():
     sources=[{'ref':'S1','text':'The rate of oxygen consumption is used to measure respiration.'}]
     candidate=review(used_source_refs=['S1'])
@@ -67,11 +72,11 @@ def test_confirmed_false_claim_is_still_withheld(monkeypatch):
         asyncio.run(tools.ensure_public_validity('Prove every prime integer is odd (negative control).'))
 
 def test_overlong_diagnostics_are_bounded_without_changing_semantic_payloads():
-    payload={'feedback':'x'*2500,'feasible':False,'difficulty_issue':'too_hard'}
-    bounded=tools.normalize_diagnostics(payload,tools.TaskDesignReview)
-    review=tools.TaskDesignReview.model_validate(bounded)
-    assert review.feasible is False and len(review.feedback)==1100
-    assert payload['feedback']=='x'*2500
+    payload={'reason':'x'*2500,'verdict':'uncertain'}
+    bounded=tools.normalize_diagnostics(payload,tools.PublicValidity)
+    review=tools.PublicValidity.model_validate(bounded)
+    assert review.verdict=='uncertain' and len(review.reason)==700
+    assert payload['reason']=='x'*2500
     public={'question':'x'*20000,'feasibility_witness':'Full argument','options':['A','B']}
     assert tools.normalize_diagnostics(public,tools.QuestionSeed)==public
 
@@ -122,7 +127,7 @@ def test_mcq_calculator_metadata_does_not_overwrite_the_option_key():
     draft=tools.QuestionDraft(question='How many distinct arrangements has LEVEL?',question_type='mcq',
         options=['30','60','120','20'],canonical_answer='pending',solution='A solution will be computed independently.')
     solved=tools.SolverAnswer(answer='30',reasoning='There are five letters with two repeated pairs, so divide 120 by four.',
-        parts=[SolvedPart(label='answer',kind='numeric',answer='$30$',expression='factorial(5)/(factorial(2)*factorial(2))')])
+        parts=[SolvedPart(label='answer',kind='numeric',answer='$30$',expression='factorial(5)/(factorial(2)*factorial(2))')],option_evaluations=[tools.OptionEvaluation(index=i,option_text=v,finding='Checked against the derived count.',is_correct=i==0) for i,v in enumerate(draft.options)])
     tools._use_solution(draft,solved)
     assert draft.canonical_answer=='A. 30'
     assert draft.answer_parts[0].value==30
@@ -207,13 +212,14 @@ def test_truncated_writer_retry_keeps_writer_schema_instead_of_solver_task(monke
 
 
 def test_invalid_public_claim_is_screened_before_expensive_solving(monkeypatch):
-    import math_format
+    import math_format,question_preflight
     async def no_op(*args,**kwargs):pass
     async def reject(*args,**kwargs):raise tools.CandidateError('Confirmed impossible public claim.')
     async def must_not_solve(*args,**kwargs):pytest.fail('Invalid public claim reached the Solver')
     monkeypatch.setattr(tools,'ensure_topic_alignment',no_op)
     monkeypatch.setattr(math_format,'check',no_op)
     monkeypatch.setattr(tools,'ensure_public_validity',reject)
+    monkeypatch.setattr(question_preflight,'check',reject)
     monkeypatch.setattr(tools,'solve_independently',must_not_solve)
     seed=tools.QuestionSeed(question='Prove every prime integer is odd.',question_type='proof')
     with pytest.raises(tools.CandidateError,match='Confirmed impossible'):
@@ -221,7 +227,7 @@ def test_invalid_public_claim_is_screened_before_expensive_solving(monkeypatch):
 
 
 def test_rejected_figure_does_not_pay_for_a_second_audit(monkeypatch):
-    import math_figures,math_format,originality
+    import math_figures,math_format,originality,question_preflight
     async def no_op(*args,**kwargs):pass
     calls=[]
     async def audit(*args,**kwargs):
@@ -235,6 +241,7 @@ def test_rejected_figure_does_not_pay_for_a_second_audit(monkeypatch):
     monkeypatch.setattr(math_format,'check',no_op)
     monkeypatch.setattr(tools,'ensure_public_validity',no_op)
     monkeypatch.setattr(tools,'_audit_draft',audit)
+    monkeypatch.setattr(question_preflight,'check',no_op)
     with pytest.raises(tools.CandidateError,match='difficulty'):
         asyncio.run(math_figures.draft_visual('Area',[{'ref':'S1','text':'Area methods.'}],'hard',['calculation'],[],''))
     assert len(calls)==1
@@ -323,11 +330,15 @@ def test_valid_question_gets_fresh_blind_solve_without_reviewer_providing_a_solu
     async def check(*a):pass
     async def audit(*a,**k):
         calls.append('audit')
-        return review(is_consistent=calls.count('audit')>1,issues='The selected key contradicts the public arithmetic.',corrected_solution='')
+        return review(is_consistent=calls.count('audit')>1,issues='The selected key contradicts the public arithmetic.' if calls.count('audit')==1 else '',corrected_solution='')
+
     async def solve(question,options,**kwargs):
-        calls.append('solve');return tools.SolverAnswer(answer='A. 4',selected_option_index=0,worked_solution='Two plus two equals four.',parts=[])
+        calls.append('solve');return tools.SolverAnswer(answer='A. 4',selected_option_index=0,worked_solution='Two plus two equals four.',parts=[],option_evaluations=[tools.OptionEvaluation(index=i,option_text=v,finding='Checked against the sum.',is_correct=i==0) for i,v in enumerate(['4','5','6','7'])])
     import math_format
     monkeypatch.setattr(math_format,'check',check);monkeypatch.setattr(tools,'_audit_draft',audit);monkeypatch.setattr(tools,'solve_independently',solve)
     draft=tools.QuestionDraft(question='What is two plus two?',question_type='mcq',options=['4','5','6','7'],canonical_answer='B. 5',solution='An inconsistent proposed arithmetic answer.')
     result=asyncio.run(tools._verify_draft(draft,independent=SimpleNamespace(missing_givens=[])))
     assert result.canonical_answer=='A. 4' and calls==['audit','solve','audit']
+
+def test_positive_audit_cannot_also_report_a_material_defect():
+    with pytest.raises(ValidationError,match='approved audit'):review(issues='The keyed option is wrong and no option is correct.')

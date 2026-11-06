@@ -320,6 +320,8 @@ async def draft_visual(topic, sources, difficulty, types, avoid_questions, cours
             raise CandidateError(issue)
     from math_format import check
     await check(draft.question, *draft.options, draft.canonical_answer, draft.solution)
+    from question_preflight import check as preflight
+    await preflight(topic,draft.question,draft.options,sources)
     independent = None
     if draft.question_type in {'long_answer','proof'} or difficulty in {'hard','insane'}:
         from tools import ensure_public_validity

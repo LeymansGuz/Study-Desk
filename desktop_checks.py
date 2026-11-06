@@ -17,14 +17,14 @@ def run():
     from math_checks import verify_claims
     checked=verify_claims([SolvedPart(kind='symbolic',answer='Identity',checks=[MathClaim(left='x+x',right='2*x')])])
     assert checked and checked[0]['status']=='passed',checked
-    import chromadb
+    from vector_store import Client
     import sqlite3
     with sqlite3.connect(':memory:') as connection:
         connection.execute('CREATE VIRTUAL TABLE text_check USING fts5(body)')
         connection.execute('INSERT INTO text_check VALUES(?)',('Case-insensitive source search',))
         assert connection.execute("SELECT COUNT(*) FROM text_check WHERE text_check MATCH 'SOURCE'").fetchone()[0]==1
     with tempfile.TemporaryDirectory(prefix='study-desktop-check-',ignore_cleanup_errors=True) as tmp:
-        client=chromadb.PersistentClient(path=tmp)
+        client=Client(tmp)
         collection=client.create_collection('release_check')
         collection.add(ids=['one'],documents=['Document storage test'],embeddings=[[1.,0.,1.]])
         assert collection.query(query_embeddings=[[1.,0.,1.]],n_results=1)['ids']==[['one']]

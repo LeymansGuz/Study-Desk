@@ -23,10 +23,10 @@ class Calculation(BaseModel):
         return self
 
 class MathClaim(BaseModel):
-    kind: Literal['equivalence', 'derivative', 'root', 'integral', 'definite_integral', 'matrix'] = 'equivalence'
+    kind: Literal['equivalence', 'derivative', 'root', 'integral', 'definite_integral', 'matrix','boolean'] = 'equivalence'
     left: str = Field(min_length=1, max_length=600)
     right: str = Field(min_length=1, max_length=600)
-    variables: list[str] = Field(default_factory=lambda: ['x'], max_length=3)
+    variables: list[str] = Field(default_factory=lambda: ['x'], max_length=8)
     samples: list[float] = Field(default_factory=lambda: [-2, -1, 0, 0.5, 1, 2], max_length=16)
     bounds: list[list[str]] = Field(default_factory=list, max_length=3)
     purpose: str = Field(default='', max_length=300)
@@ -52,7 +52,7 @@ class SolvedPart(BaseModel):
     checks: list[MathClaim] = Field(default_factory=list, max_length=4)
     value: float | None = None
     calculations: list[Calculation] = Field(default_factory=list, max_length=8)
-    kind: Literal['numeric', 'conceptual', 'symbolic', 'mixed'] = 'conceptual'
+    kind: Literal['numeric', 'conceptual', 'symbolic', 'mixed'] = Field(default='conceptual',description='Classify the requested final output. Equations/loci, parameter formulas, matrices and proofs are symbolic, even with numeric constants. Numeric requires a substituted calculation for a requested scalar result. Mixed means both explanation and a requested calculated scalar result, not merely prose containing a number.')
 
     @model_validator(mode='before')
     @classmethod
@@ -69,7 +69,7 @@ class SolvedPart(BaseModel):
         if self.expression.strip() and self.equation.strip():
             raise ValueError('Use either an arithmetic expression or an equation for a result.')
         if self.kind in {'numeric', 'mixed'} and (not self.expression.strip()) and (not self.equation.strip()) and (not self.calculations):
-            raise ValueError('Numeric/mixed parts require an expression or calculations (including an equation and bracket for roots).')
+            raise ValueError('Numeric/mixed parts require a substituted expression or calculations for the requested scalar result. For a locus/equation, formula, matrix or proof use kind=symbolic instead; constants inside an argument do not make it numeric. Never invent a scalar value to satisfy the schema.')
         return self
 
 class PartAssessment(BaseModel):
@@ -151,6 +151,43 @@ def canonical_from_parts(parts: list[SolvedPart], fallback: str) -> str:
         raise ValueError('A solution part has no answer.')
     rows = [f'({part.label}) {answer}' if len(parts) > 1 else answer for part, answer in zip(parts, answers)]
     return '; '.join(rows)
+
+def numeric_binding_issues(parts, fallback=''):
+    """Detect contradictory reported/calculated outputs before key assembly.
+
+    This is a conservative check of parseable final-answer expressions, not an
+    NLP solver. Unparseable formula/prose still requires the independent audits.
+    Do not interpret fraction denominators or coordinate components as unrelated
+    numeric literals; compare whole evaluable expressions.
+    """
+    from working_checks import numeric_expression
+    issues=[]
+    for part in parts:
+        calculated=([part.value] if part.value is not None else [])+[c.value for c in part.calculations]
+        if not calculated:continue
+        answer=part.answer.strip() or (fallback if len(parts)==1 else '')
+        expressions=re.findall(r'\$\$?(.*?)\$\$?',answer,re.S) or [answer]
+        reported=[]
+        for expression in expressions:
+            expression=re.sub(r'\\(?:mathrm|text)\{[^}]*\}','',expression)
+            expression=expression.replace('\\left','').replace('\\right','')
+            expression=re.sub(r'\\[,;!: ]','',expression).replace('\\%','%')
+            expression=numeric_expression(expression)
+            for piece in re.split(r'=|,|;|:|\\approx|\\simeq',expression):
+                candidate=piece.strip().rstrip('.% °')
+                candidate=re.sub(r'\s+[A-Za-z][A-Za-z /]*$','',candidate)
+                while candidate.startswith('(') and candidate.count('(')>candidate.count(')'):candidate=candidate[1:]
+                while candidate.endswith(')') and candidate.count(')')>candidate.count('('):candidate=candidate[:-1]
+                value=evaluate(candidate)
+                if value is None:continue
+                decimal=re.fullmatch(r'[-+]?\d+\.(\d+)',candidate)
+                tolerance=.50001*10**(-len(decimal[1])) if decimal else max(1e-9,abs(value)*1e-9)
+                reported.append((value,tolerance))
+        if reported:
+            for value in calculated:
+                if not any(abs(value-number)<=tolerance for number,tolerance in reported):
+                    issues.append(f'Part {part.label}: calculated output {value:.10g} conflicts with the parseable reported answer. Re-derive the requested outputs; do not append an unrelated intermediate value.')
+    return issues
 
 def calculator_evidence(parts: list[SolvedPart]) -> str:
     rows = []

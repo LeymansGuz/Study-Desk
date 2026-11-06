@@ -20,7 +20,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import chromadb
+from vector_store import Client as VectorClient
 from dotenv import load_dotenv
 from langsmith import traceable
 from pypdf import PdfReader
@@ -75,7 +75,7 @@ def collection_name(user_id: str) -> str:
 @lru_cache(maxsize=4)
 def _client():
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-    return chromadb.PersistentClient(path=str(CHROMA_DIR))
+    return VectorClient(CHROMA_DIR)
 
 def chroma_heartbeat() -> int:
     return int(_client().heartbeat())

@@ -31,6 +31,21 @@ def test_hard_writer_has_room_for_the_required_method_plan(monkeypatch):
     requests=model_fixture(monkeypatch,[AIMessage(content='{"question":"Calculate two plus two.","question_type":"calculation"}',response_metadata={'finish_reason':'stop'})])
     asyncio.run(tools._invoke_json('For HARD include method_plan with exactly two or three dependent decisions.',0,tools.QuestionSeed))
     assert requests[0][1]['max_tokens']==2600
+    assert tools.GENERATOR_SYSTEM in requests[0][0][0].content
+
+def test_solver_reports_final_selection_after_its_worked_solution():
+    fields=list(tools.SolverAnswer.model_fields)
+    assert fields.index('reasoning')<fields.index('selected_option_index')<fields.index('answer')
+    assert 'never unasked intermediate' in tools.SolverAnswer.SYSTEM_PROMPT
+    alias=tools.SolverAnswer.model_validate({'final_answer':'4','worked_solution':'The complete addition gives four.','parts':[]})
+    assert alias.answer=='4'
+
+def test_solver_receives_one_complete_user_task_not_a_trailing_rules_only_message(monkeypatch):
+    requests=model_fixture(monkeypatch,[AIMessage(content='{"answer":"4","worked_solution":"Adding two and two gives four.","parts":[]}',response_metadata={'finish_reason':'stop'})])
+    asyncio.run(tools._invoke_json('PUBLIC QUESTION: What is two plus two?',0,tools.SolverAnswer))
+    users=[message for message in requests[0][0] if message.type=='human']
+    assert len(users)==1
+    assert 'Calculator contract:' in users[0].content and users[0].content.endswith('PUBLIC QUESTION: What is two plus two?')
 
 def test_invalid_math_is_rejected_before_paying_for_topic_check(monkeypatch):
     import math_format

@@ -431,12 +431,14 @@ a representative end-to-end benchmark of normal traffic.
 
 An initial eight-workflow check accepted five questions; all five passed a fresh
 same-provider audit for topic, correctness, grounding, originality and difficulty.
-A later five-case targeted comparison accepted two and rejected/timed out three.
-The final Hard calculation retest passed in 41.5 seconds after correcting its
-writer output budget. Different development batches are not randomized paired
-trials, and these small samples do **not** establish an 85–90% success guarantee.
-They also do not show that every accepted answer is correct: same-provider
-agreement is not human or independent-model certification.
+A baseline batch accepted 18/25 (72%); the first workflow revision accepted only
+15/25 (60%); the corrected baseline accepted 17/25 (68%). The final unseen sample
+accepted 14/20 (70%), and one final Hard calculation retest passed in 41.5 seconds.
+Different development batches are not randomized paired trials, and these small
+samples do **not** establish an 85–90% success guarantee. They also do not show
+that every accepted answer is correct: same-provider agreement is not human or
+independent-model certification. The 14/20 unseen sample is the current measured
+result, not a target that was met.
 
 Originality, independent solving, calculator/symbolic checks, public-premise and
 topic checks, source grounding, difficulty checks and OPA remain enforced. The

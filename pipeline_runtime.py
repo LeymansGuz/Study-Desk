@@ -34,7 +34,7 @@ COMPLEX_TIMEOUT_SECONDS = float(os.getenv('GENERATION_COMPLEX_TIMEOUT_SECONDS','
 
 def set_generation_profile(difficulty,question_types):
     trace=TRACE.get()
-    if trace and difficulty=='insane' and any(t in {'proof','long_answer'} for t in question_types or []):
+    if trace and difficulty in {'hard','insane'} and any(t in {'proof','long_answer'} for t in question_types or []):
         trace['timer'].reschedule(trace['started']+max(GENERATION_TIMEOUT_SECONDS,COMPLEX_TIMEOUT_SECONDS))
 
 GENERATION_TIMEOUT_SECONDS = float(os.getenv('GENERATION_TIMEOUT_SECONDS', '60'))
@@ -130,8 +130,28 @@ class ModelGate:
 async def model_slot(stage):
     owned = _OWNED.get()
     if owned is not None:
-        async with owned:
-            yield
+        # Each workflow already reserves one global slot. Independent checks
+        # may borrow a spare slot; if none is free they share their owned slot.
+        # Racing both avoids deadlock when all five workflows are active.
+        gate=current_gate()
+        own_task=asyncio.create_task(owned.acquire());extra_task=asyncio.create_task(gate.acquire())
+        selected=None
+        try:
+            await asyncio.wait([own_task,extra_task],return_when=asyncio.FIRST_COMPLETED)
+            selected='owned' if own_task.done() and not own_task.cancelled() and own_task.exception() is None else 'extra'
+            await (own_task if selected=='owned' else extra_task)
+        finally:
+            for task in [own_task,extra_task]:
+                if not task.done():task.cancel()
+            await asyncio.gather(own_task,extra_task,return_exceptions=True)
+            own_acquired=own_task.done() and not own_task.cancelled() and own_task.exception() is None
+            extra_acquired=extra_task.done() and not extra_task.cancelled() and extra_task.exception() is None
+            if own_acquired and selected!='owned':owned.release()
+            if extra_acquired and selected!='extra':gate.release()
+        try:yield
+        finally:
+            if selected=='owned':owned.release()
+            elif selected=='extra':gate.release()
         return
     gate = current_gate()
     started = time.perf_counter()

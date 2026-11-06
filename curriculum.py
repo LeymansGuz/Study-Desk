@@ -131,6 +131,26 @@ def assessment_support(catalog, unit, query, allowed):
                 best[kind] = (overlap, row)
     return [row for _, row in sorted(best.values(), key=lambda item: item[0], reverse=True)[:3]]
 
+def topical_evidence(catalog,unit,query,allowed,semantic):
+    """Fuse topical lexical/vector ranks before spending context on neighbours.
+
+    Adjacent exam questions often concern unrelated methods. Preserve the chosen
+    coverage anchor, but retrieve substantive support across the whole course.
+    """
+    rows={}
+    for section in catalog['sections']:
+        if section.get('excluded') or section['course_id']!=unit['course_id'] or section['doc_type'] not in allowed:continue
+        for row in section['sources']:
+            if not row.get('quality_review_required'):rows[row['chunk_id']]=row
+    target=set(query) or set(unit['keywords'][:8])
+    tokens={key:terms(row['text']) for key,row in rows.items()}
+    frequency=Counter(term for values in tokens.values() for term in values)
+    lexical={key:sum(math.log(1+len(rows)/(1+frequency[t])) for t in target & values)/math.sqrt(20+len(values)) for key,values in tokens.items()}
+    ranks={key:1/(10+i) for i,key in enumerate(sorted(lexical,key=lexical.get,reverse=True)) if lexical[key]>0}
+    for i,row in enumerate(semantic):
+        if row['chunk_id'] in rows:ranks[row['chunk_id']]=ranks.get(row['chunk_id'],0)+1.2/(10+i)
+    return [rows[key] for key in sorted(ranks,key=ranks.get,reverse=True)[:7]]
+
 def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False, doc_types=None, count=1, exclude_skill_ids=None, figure_mode='none', target_skill_id=None):
     catalog = course_map(user_id, course_ids)
     if whole:
@@ -220,7 +240,9 @@ def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False
         same_document = [source for section in catalog['sections'] if not section.get('excluded') and section['course_id'] == unit['course_id'] and (section['source_file'] == unit['source_file']) for source in section['sources'] if not source.get('quality_review_required')]
         neighbors = sorted(same_document, key=lambda row: (abs(row['page'] - anchor['page']) * 10000 + abs(row.get('chunk_index', 0) - anchor.get('chunk_index', 0)), row['page'], row.get('chunk_index', 0)))
         companions = assessment_support(catalog, unit, query, allowed)
-        evidence = retrieval.pack_sources([anchor, *neighbors[:2], *companions, *neighbors[2:8]], max_chars=10000)
+        topical=topical_evidence(catalog,unit,query,allowed,semantic)
+        continuation=[row for row in neighbors if row['page']==anchor['page'] and row['chunk_id']!=anchor['chunk_id']][:1]
+        evidence = retrieval.pack_sources([anchor,*continuation,*topical,*companions,*neighbors[:2]], max_chars=10000)
         evidence.sort(key=lambda row: (row['page'], row.get('chunk_index', 0)))
         evidence = retrieval.relabel_sources(evidence)
         target = 'A covered concept from: ' + ', '.join(unit['keywords'][:6])

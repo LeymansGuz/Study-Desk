@@ -47,7 +47,8 @@ verification stays enabled, with current trusted CA roots. Windows prerequisite
 installation uses WinGet. Keys use hidden input and are not process arguments.
 Providers receive relevant excerpts when you request generation. Tracing is off.
 
-Chroma is used through its embedded PersistentClient, not an exposed HTTP server.
-Known upstream dependency advisories remain documented in SECURITY-AUDIT.md.
-Do not expose the app's service or Chroma through a tunnel or network. Review
-updates and re-run setup/tests when changing the dependency lock.
+Course retrieval used to depend on Chroma. It now uses a local SQLite vector store
+with the same pinned embedding model and exact cosine retrieval. The migration
+preserves the copied index and the original data; no vector HTTP server is used.
+Do not expose the app's service through a tunnel or network. Review updates and
+re-run setup/tests when changing the dependency lock.

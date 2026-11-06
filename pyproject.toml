@@ -5,7 +5,9 @@ description = "Local document-grounded study tutor"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "chromadb>=1.5.9",
+    "numpy>=2.2,<3",
+    "tokenizers>=0.22,<1",
+    "tzdata>=2026.5; sys_platform == 'win32'",
     "certifi>=2026.10.23",
     "cryptography>=50.0.2",
     "python-docx>=1.2",

@@ -9,8 +9,8 @@ _ENCODER_LOCK = threading.Lock()
 
 @lru_cache(maxsize=1)
 def encoder():
-    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-    return DefaultEmbeddingFunction()
+    from local_embeddings import Encoder
+    return Encoder()
 
 def normalized(text):
     return re.sub('\\b\\d+(?:\\.\\d+)?\\b', 'NUMBER', text.lower())

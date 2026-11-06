@@ -53,7 +53,42 @@ def safe_expression(text, names):
         raise ValueError('Unsupported mathematical syntax.')
     return visit(tree.body)
 
+def boolean_claim(claim):
+    """Exhaustive finite truth tables using a non-executing AST interpreter."""
+    import itertools
+    variables=claim.get('variables',[])
+    if len(set(variables))!=len(variables) or not 1<=len(variables)<=8 or any(not re_name(name) for name in variables):raise ValueError('Invalid Boolean variables.')
+    if claim.get('assumptions'):return {'status':'unresolved','kind':'boolean','domain_review_required':True,'reason':'Encode public hypotheses explicitly as implications.'}
+    def parse(text):
+        tree=ast.parse(text,mode='eval')
+        if len(text)>600 or len(list(ast.walk(tree)))>100:raise ValueError('Boolean expression is too complex.')
+        return tree.body
+    left,right=parse(claim['left']),parse(claim['right'])
+    def visit(node,names):
+        if isinstance(node,ast.Constant) and type(node.value) is bool:return node.value
+        if isinstance(node,ast.Name) and node.id in names:return names[node.id]
+        if isinstance(node,ast.UnaryOp) and isinstance(node.op,ast.Not):return not visit(node.operand,names)
+        if isinstance(node,ast.BoolOp) and isinstance(node.op,(ast.And,ast.Or)):
+            values=[visit(v,names) for v in node.values];return all(values) if isinstance(node.op,ast.And) else any(values)
+        if isinstance(node,ast.Call) and isinstance(node.func,ast.Name) and not node.keywords:
+            name=node.func.id;values=[visit(v,names) for v in node.args]
+            if name=='Not' and len(values)==1:return not values[0]
+            if name=='Implies' and len(values)==2:return not values[0] or values[1]
+            if 2<=len(values)<=8:
+                if name=='And':return all(values)
+                if name=='Or':return any(values)
+                if name=='Xor':return sum(values)%2==1
+                if name=='Equivalent':return len(set(values))==1
+        raise ValueError('Unsupported Boolean syntax.')
+    for values in itertools.product([False,True],repeat=len(variables)):
+        names=dict(zip(variables,values))
+        if visit(left,names)!=visit(right,names):return {'status':'failed','kind':'boolean','counterexample':names}
+    return {'status':'passed','kind':'boolean','valuations':2**len(variables)}
+
+def re_name(name):return isinstance(name,str) and name.isalpha() and len(name)<=8 and name not in {'True','False'}
+
 def check_claim(claim):
+    if claim.get('kind')=='boolean':return boolean_claim(claim)
     import sympy as s
     import math
     variables = claim.get('variables', ['x'])
@@ -166,6 +201,7 @@ from collections import OrderedDict
 import threading
 _PASSED_CACHE = OrderedDict()
 _CACHE_LOCK = threading.Lock()
+_PENDING = {}
 
 def verify_claims(parts):
     from pipeline_runtime import LOCAL_CHECKS
@@ -176,11 +212,22 @@ def verify_claims(parts):
     with _CACHE_LOCK:
         if key in local:
             return json.loads(local[key])
-    result = _verify_claims(parts)
-    with _CACHE_LOCK:
-        if len(local) < 32:
-            local[key] = json.dumps(result)
-    return result
+        from concurrent.futures import Future
+        identity=(id(local),key)
+        pending=_PENDING.get(identity)
+        owner=pending is None
+        if owner:pending=Future();_PENDING[identity]=pending
+    if not owner:return json.loads(pending.result(timeout=8))
+    try:
+        result = _verify_claims(parts);encoded=json.dumps(result)
+        with _CACHE_LOCK:
+            if len(local) < 32:local[key]=encoded
+        pending.set_result(encoded)
+        return result
+    except BaseException as exc:
+        pending.set_exception(exc);raise
+    finally:
+        with _CACHE_LOCK:_PENDING.pop(identity,None)
 
 def _verify_claims(parts):
     claims = [claim.model_dump() for part in parts for claim in getattr(part, 'checks', [])]

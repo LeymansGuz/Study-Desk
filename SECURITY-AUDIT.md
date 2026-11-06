@@ -6,10 +6,12 @@ Latest addendum: **7 November 2026**. Baseline review: 2 November 2026.
 
 - Updated oauthlib 4.0.0 to patched 4.0.1 after the dependency audit reported
   CVE-2026-49272 / GHSA-3jp2-3mrg-2vxc. Lock and requirements export agree.
-- Current Python audit still reports Chroma 1.5.9 advisory entries without listed
-  fixes. Embedded local use limits server/multi-tenant exposure but is not an
-  upstream patch or a risk-free certification. npm packaging audit reports zero
-  published vulnerabilities.
+- Chroma was removed from the runtime dependency graph and replaced with a
+  local-only SQLite vector store using the pinned MiniLM embedding model. The
+  copied index retained all 371 records, the tested vectors matched exactly and
+  three retrieval comparisons returned identical top-ten results. The current
+  Python dependency audit reports no known vulnerabilities. npm packaging audit
+  reports zero published vulnerabilities.
 - Course search publishes only a complete current index. Course deletion purges
   derived search text, page notes, guide/plan metadata and scope snapshots.
   Search jobs serialize with workspace edits to avoid publication/delete races.
@@ -86,15 +88,13 @@ LLM reasoning error has been found.
 
 ## Remaining dependency risk
 
-The final OSV scan checked **136 installed packages/vendor components**. It still
-reports Chroma 1.5.9 advisories. No newer PyPI release was available at the check.
-The affected HTTP-server/multi-tenant surfaces are not used: this single-owner app
-uses embedded Chroma and starts no Chroma HTTP server. This limits exposure but
-is not an upstream fix. Re-check before enabling a Chroma server or supporting
-multiple untrusted users. The OS-user/file-access boundary is described in SECURITY.md.
+The final local dependency audit reports no known vulnerabilities for the
+runtime environment after Chroma removal. This is a point-in-time scan, not a
+guarantee against unknown vulnerabilities. The app uses a local SQLite vector
+store with no HTTP vector server, no tenant/RBAC layer and no remote embedding
+configuration. The OS-user/file-access boundary is described in SECURITY.md.
 
-Primary references: [Chroma HTTP-server advisory](https://osv.dev/vulnerability/GHSA-f4j7-r4q5-qw2c),
-[pypdf fixed-release advisory](https://osv.dev/vulnerability/GHSA-5849-834g-hvw5),
+Primary references: [pypdf fixed-release advisory](https://osv.dev/vulnerability/GHSA-5849-834g-hvw5),
 [OPA security configuration](https://www.openpolicyagent.org/docs/security).
 Full dependency, lifecycle and browser evidence is retained locally in audit/.
 
@@ -139,20 +139,18 @@ paper summaries, backup verification and safe failure messages. There were no
 uncaught page errors. Generated study content in this pass used isolated
 fixtures; these results do not measure LLM correctness or acceptance rates.
 
-The current Windows offline regression suite passed **106 tests**. The tracked
+The current Windows offline regression suite passed **237 tests**. The tracked
 source check found no local databases, build output, audit evidence or configured
 provider credentials in the 157 tracked files. Documentation links and version
 consistency checks also passed.
 
-The current Python dependency audit reports five advisory entries for Chroma
-1.5.9 (four distinct advisories, including a duplicate entry). No fixed version
-is listed by the scanner. The app still uses embedded `PersistentClient` and
-does not expose Chroma's HTTP API or accept remote embedding configurations.
-The upstream HTTP-server and multi-tenant risks therefore remain documented,
-rather than being described as fixed. The npm audit of the desktop lock,
-including build dependencies, reports no known vulnerabilities. These scans
-are point-in-time checks, not a guarantee against unknown vulnerabilities or a
-full audit of every platform-specific native library.
+The current Python dependency audit reports no known vulnerabilities after the
+Chroma runtime dependency was replaced with the local SQLite vector store. The
+store uses bound SQL values, inert JSON metadata, an explicit embedding model
+pin and no HTTP server or remote model configuration. The npm audit of the
+desktop lock, including build dependencies, reports no known vulnerabilities.
+These scans are point-in-time checks, not a guarantee against unknown
+vulnerabilities or a full audit of every platform-specific native library.
 
 An additional OSV check covered 444 registry packages in `Cargo.lock` and the
 Intel Mac's ONNX Runtime 1.23.2. The Intel runtime had no advisory match. The

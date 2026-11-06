@@ -10,10 +10,10 @@ datas=[(str(root/'static'),'static'),(str(root/'scripts/check-math.cjs'),'script
 datas += [(str(root/name),'.') for name in ['PRIVACY.md','TERMS.md','THIRD-PARTY-NOTICES.md']]
 binaries=[]
 hidden=[p.stem for p in root.glob('*.py') if not p.stem.startswith(('test_','evaluate_')) and p.stem not in {'run','service_host','local_app','desktop_backend'}]
-for package in ['chromadb','rapidocr_onnxruntime','extractous','keyring.backends']:
+for package in ['rapidocr_onnxruntime','extractous','keyring.backends']:
     data,native,modules=collect_all(package)
     datas+=data;binaries+=native;hidden+=modules
-for package in ['langchain_core','langchain_openai','langgraph','langsmith','chromadb','fsrs','keyring','onnxruntime','tokenizers']:
+for package in ['langchain_core','langchain_openai','langgraph','langsmith','fsrs','keyring','onnxruntime','tokenizers']:
     datas+=copy_metadata(package,recursive=True)
 for package in ['langgraph','langchain_openai','uvicorn','onnxruntime']:
     hidden+=collect_submodules(package,filter=lambda name:'.tests' not in name)
