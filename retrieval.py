@@ -1,10 +1,10 @@
-"""Per-user, per-course ChromaDB ingestion and retrieval with page lineage.
+"""Per-user, per-course local vector ingestion and retrieval with page lineage.
 
 Storage layout:
     data/users/<user_id>/courses/<course_id>/<files>
 
-Each user gets an isolated Chroma collection. Course ids are stored in chunk
-metadata so a full-course exam can select one or several courses.
+Each user gets an isolated SQLite vector collection. Course ids are stored in
+chunk metadata so a full-course exam can select one or several courses.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -77,9 +77,6 @@ def _client():
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
     return VectorClient(CHROMA_DIR)
 
-def chroma_heartbeat() -> int:
-    return int(_client().heartbeat())
-
 def _get_collection(user_id: str):
     user = db.get_user_by_id(user_id)
     if not user or user.get('deleting'):
@@ -134,7 +131,7 @@ def _merge_sources(sources: list[dict[str, Any]], limit: int) -> list[dict[str, 
         source['ref'] = f'S{index}'
     return unique
 
-@traceable(run_type='retriever', name='chroma_search')
+@traceable(run_type='retriever', name='local_vector_search')
 def search(query: str, user_id: str, k: int | None=None, min_score: float | None=None, course_ids: list[str] | None=None, doc_types: list[str] | None=None) -> list[dict[str, Any]]:
     """Retrieve relevant chunks from owned and currently shared courses."""
     threshold = MIN_RELEVANCE_SCORE if min_score is None else min_score
@@ -235,7 +232,7 @@ def update_file_identity(user_id: str, course_id: str, filename: str, *, new_cou
         return len(ids)
 
 def update_course_name(user_id: str, course_id: str, course_name: str) -> int:
-    """Keep Chroma course_name metadata in sync after an admin rename."""
+    """Keep local vector course_name metadata in sync after a rename."""
     with INGEST_LOCK:
         collection = _get_collection(user_id)
         result = collection.get(where={'course_id': course_id}, include=['metadatas'])

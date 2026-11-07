@@ -44,7 +44,7 @@ from auth import current_user as require_user
 from extraction import extract_assignment_file
 from graph import graph, initial_state
 from policy import decide, opa_ready, close_policy_client
-from retrieval import TOP_K, collection_count, chroma_heartbeat, corpus_documents, course_workspace, delete_file, delete_user_collection, ingest_files, search, update_course_name, update_file_doc_type, update_file_identity, user_workspace, format_lineage
+from retrieval import TOP_K, collection_count, corpus_documents, course_workspace, delete_file, delete_user_collection, ingest_files, search, update_course_name, update_file_doc_type, update_file_identity, user_workspace, format_lineage
 from security import ALLOWED_CORPUS_EXTENSIONS, MAX_ASSIGNMENT_CHARS, MAX_UPLOAD_BYTES, SlidingWindowLimiter, enforce_rate_limit, extract_office_text, sanitize_filename, sanitize_text, security_headers, validate_upload
 from tools import Assessment, Difficulty, MAX_ATTEMPTS, QuestionType, TutorError, choice_answer_correct, generate_choice_hint, public_settings
 from study_catalog import DOC_TYPES, DocumentType
@@ -1472,8 +1472,6 @@ import chunk_uploads
 chunk_uploads.install(app, globals())
 import rate_limits
 rate_limits.install(app)
-pass
-pass
 import explanations
 explanations.install(app, globals())
 import learning_api

@@ -15,7 +15,7 @@ Latest addendum: **7 November 2026**. Baseline review: 2 November 2026.
   a withdrawn allegation requires a fresh solve and full reviews. Confirmed or
   uncertain defects remain withheld. Numerical/schema normalization does not
   change the public givens, source evidence or correctness decisions.
-- **258 offline tests passed**, including response filtering, malformed private
+- **270 offline tests passed**, including response filtering, malformed private
   metadata, wrong numeric answers, changed loci, invalid proofs and publication
   rollback. Four browser captures cover safe errors and input preservation at two
   desktop widths in light/dark themes, with no page errors or inference calls.
@@ -164,7 +164,7 @@ paper summaries, backup verification and safe failure messages. There were no
 uncaught page errors. Generated study content in this pass used isolated
 fixtures; these results do not measure LLM correctness or acceptance rates.
 
-The current Windows offline regression suite passed **237 tests**. The tracked
+The current Windows offline regression suite passed **270 tests**. The tracked
 source check found no local databases, build output, audit evidence or configured
 provider credentials in the 157 tracked files. Documentation links and version
 consistency checks also passed.

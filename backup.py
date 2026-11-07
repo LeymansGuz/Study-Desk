@@ -1,7 +1,7 @@
 """Portable backups for the local Study Desk data directory.
 
-A backup contains a consistent SQLite copy plus the user document and Chroma
-trees.  Restores are staged and applied on the next process start, so the live
+A backup contains a consistent SQLite copy plus the user document and local
+vector-index trees. Restores are staged and applied on the next process start, so the live
 database is never overwritten underneath open connections.
 """
 from __future__ import annotations
