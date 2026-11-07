@@ -23,9 +23,19 @@ successful compilation is not a device compatibility guarantee.
   never be represented as free. Preserve server-side free-model restrictions.
 - Document readers: `extraction.py`, `pdf_text.py`, `document_ocr.py`. Keep OCR
   selective and cached; preserve page references and cancellation limits.
+- Difficulty and workload: `assessment_level.py` is the shared Writer/Verifier
+  policy. Match covered learning objectives; never infer scope from a course name.
+  Do not add minimum subpart counts, metadata-row quotas or repeated difficulty
+  rules in other prompts. Stem length is only an outer verbosity limit.
 - Question validation: `tools.py`, `math_checks.py`, `originality.py`. Preserve
   blind solving, grounding, originality, workload checks and atomic publication.
   A higher acceptance rate is not evidence of higher correctness.
+  Calculus checks declare `with_respect_to` separately from all free symbols.
+  Equation rearrangements use `equation_equivalence` with zero residuals, not
+  identities over arbitrary points. Unknown checks require independent scrutiny.
+  Keep MCQ key, ordinal/letter references and part requirements consistent when
+  shuffling. Public verification receipts must pass `verification_metadata.py`;
+  never include private keys, indices or reviewer text in them, including resumes.
 - Study tools: `study_companion.py`, `static/companion.js`. Planning and revision
   sheet saving are local operations. Recall assessments use quoted course
   evidence plus independent review. Personal edits are not a marking authority.
@@ -50,6 +60,10 @@ Validate source freshness before publishing generated study content.
 Keep credentials, private course materials, temporary scripts, installers and
 evaluation reports out of commits. Private evaluation artifacts belong under
 ignored `audit/`. Add small original/anonymised regression fixtures to `tests/`.
+For live evaluations freeze each code revision, cap every provider HTTP request
+(including retries, reviews and cancelled requests), and report all attempts by
+difficulty and type. Separate production costs from evaluation-only audits.
+Keep intermediate regressions in the report rather than selecting the best run.
 Security reports should follow SECURITY.md.
 # Local study-library modules
 

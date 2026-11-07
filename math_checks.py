@@ -92,8 +92,11 @@ def check_claim(claim):
     import sympy as s
     import math
     variables = claim.get('variables', ['x'])
-    if len(variables) > 3 or any((not name.isalpha() or len(name) > 8 for name in variables)):
+    if not 1 <= len(variables) <= 3 or len(set(variables)) != len(variables) or any((not name.isalpha() or len(name) > 8 for name in variables)):
         raise ValueError('Invalid variables.')
+    calculus_variable = claim.get('with_respect_to') or variables[0]
+    if calculus_variable not in variables:
+        raise ValueError('The calculus variable must be declared in variables.')
     names = {name: s.Symbol(name, real=True) for name in variables}
     assumptions=claim.get('assumptions',[])
     if len(assumptions)>6:
@@ -163,10 +166,23 @@ def check_claim(claim):
             if any((entry.is_number and entry.is_finite and (abs(float(entry)) > 1e-08) for entry in evaluated)):
                 return {'status': 'failed', 'kind': kind, 'counterexample': sample}
         return {'status': 'unresolved', 'kind': kind}
+    if kind == 'equation_equivalence':
+        # Each expression is a residual set equal to zero, not an identity
+        # claimed for arbitrary coordinates. A nonzero CONSTANT multiple has
+        # exactly the same zeros. Variable multipliers can add/remove roots.
+        if left == 0 or right == 0:
+            return {'status':'unresolved', 'kind':kind,
+                    'reason':'An equation check needs two substantive residuals.'}
+        ratio = s.cancel(left / right)
+        if not ratio.free_symbols and ratio.is_number and ratio.is_finite and ratio != 0:
+            return {'status':'passed', 'kind':kind,
+                    'domain_review_required':domain_signature(claim['left']) != domain_signature(claim['right'])}
+        return {'status':'unresolved', 'kind':kind,
+                'reason':'Equation equivalence is not established by a nonzero constant multiple.'}
     if kind == 'derivative':
-        left = s.diff(left, names[variables[0]])
+        left = s.diff(left, names[calculus_variable])
     elif kind == 'integral':
-        right = s.diff(right, names[variables[0]])
+        right = s.diff(right, names[calculus_variable])
     elif kind == 'root':
         if len(variables) != 1:
             raise ValueError('Root checks need one variable.')

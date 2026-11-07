@@ -318,6 +318,10 @@ def test_false_proof_is_rejected_without_waiting_for_a_rewritten_claim(monkeypat
     async def check(*a):pass
     async def audit(*a,**k):return review(public_claim_valid=False,is_consistent=False,proof_is_valid=False,corrected_question='')
     import math_format
+    import question_preflight
+    async def confirm(*a):
+        return tools.PremiseChallenge(reason='The prime two is an admissible counterexample.',verdict='confirmed_defect')
+    monkeypatch.setattr(question_preflight,'challenge_defect',confirm)
     monkeypatch.setattr(math_format,'check',check)
     monkeypatch.setattr(tools,'_audit_draft',audit)
     draft=tools.QuestionDraft(question='Prove that every prime integer is odd.',question_type='proof',

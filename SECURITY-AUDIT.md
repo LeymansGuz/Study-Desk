@@ -2,6 +2,31 @@
 
 Latest addendum: **7 November 2026**. Baseline review: 2 November 2026.
 
+## 7 November 2026 generation-publication hardening
+
+- Public verification receipts have a typed allowlist. New and resumed practice,
+  mastery-path and bank-exam responses exclude private shuffle indices, keys and
+  reviewer payloads. Private marking data remains behind the answer-disclosure
+  policy; an MCQ key is not verification telemetry.
+- Shuffling remaps ordinal references as well as option letters and per-part
+  requirements. Discarded proof-search transcripts trigger bounded working repair
+  and rechecking rather than publication.
+- Independent challenges of alleged premise defects cannot approve a question:
+  a withdrawn allegation requires a fresh solve and full reviews. Confirmed or
+  uncertain defects remain withheld. Numerical/schema normalization does not
+  change the public givens, source evidence or correctness decisions.
+- **258 offline tests passed**, including response filtering, malformed private
+  metadata, wrong numeric answers, changed loci, invalid proofs and publication
+  rollback. Four browser captures cover safe errors and input preservation at two
+  desktop widths in light/dark themes, with no page errors or inference calls.
+- The rebuilt Windows backend passed its packaged self-check and isolated startup,
+  session boundary, persistence, study routes and shutdown checks. No GitHub release
+  or hosted-app deployment was performed. Mac/Linux graphical testing remains due.
+
+This addendum adds no runtime dependency or external service. It is not a new
+dependency-vulnerability scan or a guarantee of model correctness; see the dated
+README evaluation and the platform limitations below.
+
 ## 7 November 2026 local release review
 
 - Updated oauthlib 4.0.0 to patched 4.0.1 after the dependency audit reported

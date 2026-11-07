@@ -2,6 +2,7 @@
 from __future__ import annotations
 import math
 import re
+import ast
 from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from calc import evaluate, solve_equation
@@ -23,10 +24,11 @@ class Calculation(BaseModel):
         return self
 
 class MathClaim(BaseModel):
-    kind: Literal['equivalence', 'derivative', 'root', 'integral', 'definite_integral', 'matrix','boolean'] = 'equivalence'
+    kind: Literal['equivalence', 'equation_equivalence', 'derivative', 'root', 'integral', 'definite_integral', 'matrix','boolean'] = 'equivalence'
     left: str = Field(min_length=1, max_length=600)
     right: str = Field(min_length=1, max_length=600)
-    variables: list[str] = Field(default_factory=lambda: ['x'], max_length=8)
+    variables: list[str] = Field(default_factory=lambda: ['x'], max_length=8, description='All free symbols in both expressions. For calculus, list parameters too and set with_respect_to explicitly.')
+    with_respect_to: str = Field(default='', max_length=8, description='For derivative/integral checks, the differentiation variable, e.g. y for a partial derivative in y. Must occur in variables. Empty uses variables[0] for older saved checks.')
     samples: list[float] = Field(default_factory=lambda: [-2, -1, 0, 0.5, 1, 2], max_length=16)
     bounds: list[list[str]] = Field(default_factory=list, max_length=3)
     purpose: str = Field(default='', max_length=300)
@@ -173,7 +175,24 @@ def numeric_binding_issues(parts, fallback=''):
             expression=expression.replace('\\left','').replace('\\right','')
             expression=re.sub(r'\\[,;!: ]','',expression).replace('\\%','%')
             expression=numeric_expression(expression)
-            for piece in re.split(r'=|,|;|:|\\approx|\\simeq',expression):
+            pieces = re.split(r'=|;|:|\\approx|\\simeq',expression)
+            # Function arguments such as f_xy(1,2) are not reported outputs.
+            # Coordinate tuples are outputs: split those through the inert AST
+            # rather than splitting every comma, including nested arguments.
+            if len(pieces) > 1:
+                pieces = pieces[1:]
+            candidates = []
+            for piece in pieces:
+                try:
+                    node = ast.parse(piece.strip(), mode='eval').body
+                except (SyntaxError, ValueError, RecursionError):
+                    candidates.append(piece)
+                else:
+                    if isinstance(node, ast.Tuple):
+                        candidates.extend(ast.unparse(item) for item in node.elts)
+                    else:
+                        candidates.append(piece)
+            for piece in candidates:
                 candidate=piece.strip().rstrip('.% °')
                 candidate=re.sub(r'\s+[A-Za-z][A-Za-z /]*$','',candidate)
                 while candidate.startswith('(') and candidate.count('(')>candidate.count(')'):candidate=candidate[1:]

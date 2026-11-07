@@ -254,8 +254,16 @@ class PolicyDecision(BaseModel):
     decided_at: str
     latency_ms: float | None = None
 
-class AskResponse(BaseModel):
+class PublicStudyResponse(BaseModel):
     verification: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator('verification', mode='before')
+    @classmethod
+    def safe_verification(cls, value):
+        from verification_metadata import public_fields
+        return public_fields(value)
+
+class AskResponse(PublicStudyResponse):
     practice_context: dict[str, Any] = Field(default_factory=dict)
     criteria: list[dict[str, str]] = Field(default_factory=list)
     figure: dict[str, Any] | None = None
@@ -295,8 +303,7 @@ class AnswerResponse(BaseModel):
     sources: list[Source]
     policy_decisions: list[PolicyDecision]
 
-class SessionResponse(BaseModel):
-    verification: dict[str, Any] = Field(default_factory=dict)
+class SessionResponse(PublicStudyResponse):
     criteria: list[dict[str, str]] = Field(default_factory=list)
     figure: dict[str, Any] | None = None
     rubric: list[dict[str, str]] = Field(default_factory=list)

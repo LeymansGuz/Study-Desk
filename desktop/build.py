@@ -9,6 +9,9 @@ def main():
     version=tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
     parser=argparse.ArgumentParser();parser.add_argument('--backend-only',action='store_true');parser.add_argument('--shell-only',action='store_true')
     options=parser.parse_args()
+    cargo=shutil.which('cargo')
+    if not cargo:
+        raise SystemExit('Install Rust stable and make cargo available on PATH before building, including --backend-only (native licence inventory requires it).')
     if not options.shell_only:
         sys.path.insert(0,str(ROOT));import local_app
         private=ROOT/'build/native';private.mkdir(parents=True,exist_ok=True)
@@ -42,7 +45,7 @@ def main():
             shutil.copy2(ROOT/name,notice.parent/name)
     # Native dependency notices must travel inside the packaged backend too.
     native_licenses=ROOT/'dist/backend/StudyDeskBackend/licenses/Rust';native_licenses.mkdir(parents=True,exist_ok=True)
-    metadata=json.loads(subprocess.check_output(['cargo','metadata','--locked','--format-version','1','--manifest-path',str(ROOT/'desktop/src-tauri/Cargo.toml')],cwd=ROOT,text=True,encoding='utf-8'))
+    metadata=json.loads(subprocess.check_output([cargo,'metadata','--locked','--format-version','1','--manifest-path',str(ROOT/'desktop/src-tauri/Cargo.toml')],cwd=ROOT,text=True,encoding='utf-8'))
     inventory=[]
     for package in metadata['packages']:
         inventory.append({k:package.get(k) for k in ['name','version','license','repository']})

@@ -11,11 +11,12 @@ def has_draft_working(question,solution):
     """Reject abandoned computation transcripts, not legitimate error-analysis tasks."""
     if re.search(r'\b(?:find|identify|explain|correct|diagnose)\b.{0,55}\b(?:error|mistake|flaw|incorrect)\b|\bcritique\b',question,re.I):
         return False
-    return bool(re.search(r'\b(?:a cleaner (?:route|approach)|this is not yet (?:the|a) clean|so this (?:expansion|calculation|solution) is wrong|recompute:|correct candidate is|let me (?:recalculate|recompute|correct)|oops\b|wait[,:;!])',solution,re.I))
+    return bool(re.search(r'\b(?:a cleaner (?:route|approach)|this is not yet (?:the|a) clean|so this (?:expansion|calculation|solution) is wrong|recompute:|correct candidate is|let me (?:recalculate|recompute|correct)|oops\b|wait[,:;!])|\bactually\b[^.\n]{0,100}\?|\bthis does not (?:break|show|establish|prove)\b',solution,re.I))
 
 
 def numeric_expression(text):
     text=text.strip().replace('−','-').replace('\\left','').replace('\\right','')
+    text=text.replace('\\dfrac','\\frac').replace('\\tfrac','\\frac')
     text=text.replace('\\times','*').replace('\\cdot','*').replace('\\,','').replace('\\!','')
     for _ in range(4):
         text=re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}',r'((\1)/(\2))',text)

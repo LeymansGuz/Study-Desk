@@ -29,7 +29,7 @@ def test_incorrect_supplied_integral_shortcut_is_detected():
 def test_insane_is_dependent_reasoning_not_more_parts():
     text=contract('insane',[],question_type='long_answer')
     assert POLICY_VERSION>=12
-    assert 'change the solution strategy' in text
+    assert 'one bounded insight' in text
     assert 'later reasoning must use an earlier conclusion' in text
     assert 'MAXIMUM of 2 parts' in text
     medium=contract('medium',[])

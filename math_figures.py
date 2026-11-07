@@ -328,7 +328,7 @@ async def draft_visual(topic, sources, difficulty, types, avoid_questions, cours
         await ensure_public_validity(draft.question,draft.options)
     if draft.question_type == 'proof':
         from tools import solve_independently
-        independent = await solve_independently(draft.question, draft.options)
+        independent = await solve_independently(draft.question, draft.options,question_type=draft.question_type)
         if independent.missing_givens:
             raise CandidateError('The figure proof has missing or ambiguous givens.')
         draft.solution += '\n\nIndependent derivation:\n' + independent.reasoning
@@ -342,7 +342,6 @@ async def draft_visual(topic, sources, difficulty, types, avoid_questions, cours
     valid = {s['ref'] for s in sources}
     if assessment and (not (review.difficulty_matches and review.topic_methods_match)):
         raise CandidateError('The independent audit did not approve the requested course difficulty or tested methods. No weaker substitute was returned.')
-    from answer_parts import calculator_evidence
     arithmetic_ok = not calculator_evidence(draft.answer_parts) or review.calculations_match
     if not (review.public_claim_valid and review.givens_complete and review.is_consistent and arithmetic_ok and review.is_on_topic and review.is_grounded and (not review.answer_leaked) and review.used_source_refs and (set(review.used_source_refs) <= valid)):
         import logging

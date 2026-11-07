@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.12-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.12-beta.1).
+The current published beta is [v0.2.13-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.13-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/Study-Desk_0.2.12_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.12-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -26,8 +26,10 @@ and build manifests. For your own local build, installer files are in `dist/inst
 
 **macOS:** open the DMG, drag **Study Desk** into **Applications**, eject the DMG,
 then open Study Desk from Applications. Beta builds are **ad-hoc signed but not
-Apple-notarized**. If macOS says the app is damaged, the quarantine attribute is
-the cause, not a corrupt download. Run:
+Apple-notarized**. If macOS blocks it, first verify the download against
+`SHA256SUMS.txt` and check that you chose the matching architecture. A damaged-app
+warning can also indicate a bad download or signing problem; do not assume it is
+harmless. For a verified, trusted beta download blocked by quarantine, run:
 
 ```bash
 xattr -cr "/Applications/Study Desk.app"
@@ -40,15 +42,15 @@ and Apple Silicon DMGs use separate builds; do not mix them.
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.12_amd64.deb
+sudo apt install ./Study-Desk_0.2.13_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.12_amd64.AppImage
-./Study-Desk_0.2.12_amd64.AppImage
+chmod +x ./Study-Desk_0.2.13_amd64.AppImage
+./Study-Desk_0.2.13_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -56,7 +58,7 @@ libraries, especially `libwebkit2gtk-4.1-0` and `libsecret-1-0`. If the AppImage
 reports missing FUSE support, install `libfuse2` or run it without FUSE:
 
 ```bash
-./Study-Desk_0.2.12_amd64.AppImage --appimage-extract-and-run
+./Study-Desk_0.2.13_amd64.AppImage --appimage-extract-and-run
 ```
 
 Use the DEB for a system installation with package-managed dependencies. Saving
@@ -231,9 +233,14 @@ been live-tested in this release. The commands below are the supported path.
   a final paper summary, in-place question review and Markdown export.
 - Light/dark themes, cached-token and five-decimal USD cost diagnostics, and local backups.
 
-Documents define the permitted methods. Insane adds one meaningful reasoning
-extension without unlimited subparts or arithmetic. The independent checks
-increase confidence; they cannot guarantee every generated answer is correct.
+Documents define the permitted methods and course-relative depth. Easy is a
+direct application; Medium adds a small interpretation or method choice; Hard
+requires a meaningful application or justification. Insane adds one bounded
+insight within the selected objective, without stacking extensions or lengthy
+arithmetic. There is no minimum subpart count: a long answer can be one coherent
+worked task or at most two connected parts. Essay answers develop an argument
+in paragraphs. The independent checks increase confidence; they cannot guarantee
+every generated answer is correct.
 
 ## Files, screenshots and local reading
 
@@ -420,7 +427,7 @@ Technical traces and provider responses stay in local diagnostics. An unsuccessf
 generation preserves existing study work and does not publish a partial question.
 
 The generation deadline starts after acquiring a concurrency slot. The default
-is 60 seconds; Insane proof and long-answer requests have a 90-second ceiling,
+is 60 seconds; Hard/Insane proof and long-answer requests have a 90-second ceiling,
 measured from the same start time. Configure `GENERATION_TIMEOUT_SECONDS` and
 `GENERATION_COMPLEX_TIMEOUT_SECONDS` in the source edition's `.env`, then restart
 its services. Desktop installers do not load the source checkout's `.env`. These are
@@ -436,91 +443,71 @@ Some complex questions can still be withheld or time out.
 
 ## Estimated reliability
 
-There is no measured universal success or correctness rate for this release.
-The **7 November 2026** development checks used DeepSeek Flash, frozen excerpts
-from five real courses, all seven question types and several difficulty levels.
-They used simplified lexical retrieval and disabled bank reuse, so they are not
-a representative end-to-end benchmark of normal traffic.
+These **7 November 2026** measurements describe the development source checkout
+(assessment policy 21), not an independently certified correctness rate. Tests used
+DeepSeek Flash, actual question-generation routes and OPA, local semantic retrieval
+over frozen excerpts from five real courses, and all seven types at all four levels.
+Bank reuse was disabled; caches could warm. They exclude uploading/OCR time and are
+not a representative user-traffic or multi-user load benchmark.
 
-An initial eight-workflow check accepted five questions; all five passed a fresh
-same-provider audit for topic, correctness, grounding, originality and difficulty.
-A baseline batch accepted 18/25 (72%); the first workflow revision accepted only
-15/25 (60%); the corrected baseline accepted 17/25 (68%). The final unseen sample
-accepted 14/20 (70%), and one final Hard calculation retest passed in 41.5 seconds.
-Different development batches are not randomized paired trials, and these small
-samples do **not** establish an 85–90% success guarantee. They also do not show
-that every accepted answer is correct: same-provider agreement is not human or
-independent-model certification. The 14/20 unseen sample is the current measured
-result, not a target that was met.
+The final confirmation accepted **25/28 (89.3%)**,
+averaging **29.2 seconds** per accepted question.
+Extra same-provider audits marked **25/25** content-clean
+and **24/25** clean including difficulty.
 
-Originality, independent solving, calculator/symbolic checks, public-premise and
-topic checks, source grounding, difficulty checks and OPA remain enforced. The
-app withholds incomplete or unverified results; complex requests can still fail
-or reach their 60/90-second processing deadline. Queue wait is separate. Inspect
-important answers independently, particularly proofs. Bank reuse avoids fresh
-generation when a current suitable verified item is available.
+| Difficulty | Accepted / attempted | Mean accepted time |
+|---|---:|---:|
+| Easy | 7/7 (100.0%) | 23.9s |
+| Medium | 7/7 (100.0%) | 32.4s |
+| Hard | 6/7 (85.7%) | 28.7s |
+| Insane | 5/7 (71.4%) | 32.6s |
 
-Software regression tests verify implementation behaviour, not universal LLM
-correctness. Settings Statistics records actual returned usage and local pipeline
-timings so your own course/model workload can be assessed without relying on a
-marketing reliability percentage.
+
+The baseline accepted 22/28 (78.6%). Intermediate revisions accepted 20/28, 42/56
+and 45/56; a later 56-case difficulty-policy run accepted 52/56 but its extra audit
+flagged two worked solutions and one difficulty mismatch. The final confirmation
+followed fixes for those publication defects. Each final difficulty/type cell has
+only one attempt, so this table cannot establish stable per-category percentages.
+
+Acceptance does not guarantee correctness, appropriate difficulty or originality.
+Same-provider reviewers can share mistakes. The app retains independent solving,
+calculator/symbolic checks, source-clone screening, grounding and OPA gates; uncertain
+or rejected work is withheld. Important answers still deserve independent checking.
+The 60/90-second ceilings start after slot acquisition; queue waiting is separate.
+Normal use may reuse a current verified bank item instead of generating afresh.
 
 ## Estimated AI cost
 
-Study Desk charges no application subscription. AI requests consume your own
-provider allowance or balance. Free OpenRouter usage is limited; unknown model
-pricing is not estimated as zero.
+Study Desk charges no application subscription. Requests use your own provider
+allowance/balance. Free-model allowances and features are restricted; unknown
+pricing is never treated as zero. Settings records actual returned token usage,
+cached input and estimated USD cost to five decimal places.
 
-In the **7 November 2026** final Hard calculation retest, the successful production
-workflow used ten provider calls and took 41.5 seconds. Returned tokens imply
-approximately **$0.01016 at Flash peak rates**, or **$0.00508 at off-peak rates**,
-including its repairs and validation but excluding earlier failed attempts and
-the extra evaluation audit. This is one example, not a measured average. Across
-that day's 160 development/evaluation requests, returned usage implies roughly
-**$0.19070 at peak rates**; five requests had unavailable/cancelled usage and may
-add charges. Provider billing remains authoritative.
+The **7 November 2026 final 28-attempt confirmation** returned the following
+price-normalized estimates (including failures and repairs):
 
-A historical **3 November 2026** DeepSeek check recorded:
+| Measure | Off-peak USD | Peak USD |
+|---|---:|---:|
+| All production generation attempts | $0.14277 | $0.28554 |
+| Production cost per attempted question | $0.00510 | $0.01020 |
+| Production cost per accepted question, including failed attempts | $0.00571 | $0.01142 |
+| Extra evaluation-only audits, excluded from production figures | $0.01164 | $0.02327 |
 
-| Cost measure | Recorded USD |
-|---|---:|
-| Medium MCQ generation example | $0.00250 |
-| Mean successful generation operation | $0.00504 |
-| Successful generation operation range | $0.00250–$0.00637 |
-| All nine generation attempts combined | $0.04795 |
-| Generation spending divided by eight accepted questions, including the failed attempt | $0.00599 |
-| Extra evaluation-only reviews, excluded from generation figures | $0.00396 |
+Production returned 1,001,468 input tokens, including
+487,680 cached input tokens, and 107,061 output tokens.
+There were 0 missing-usage production records;
+unknown/cancelled requests may still be billed. Estimates use the run's configured
+peak rates of USD 0.30/M uncached input, 0.006/M cached input and 1.20/M output;
+off-peak assumptions are half these rates. Simpler tasks, cache hits and off-peak
+pricing can make individual Settings entries much cheaper than this mixed-difficulty
+average. These are dated calculation assumptions, not a promise of current tariffs.
+Check [DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/) and your
+provider dashboard for applicable rates and authoritative charges. Cached input is
+already part of total input; do not add it twice. Other providers/models can differ.
 
-One timed-out provider call has missing token usage, so these totals are
-**incomplete recorded estimates**, not provider invoices or spending caps.
-At this sample's off-peak rates and workload, 100 accepted questions would record
-roughly **$0.60**, or roughly **$1.20 at peak rates**, plus any unreported usage
-and follow-up costs. Different course context, retries and response lengths can
-change the result substantially. Nine attempts do not establish a stable average.
-
-That historical check made 82 provider requests: 74 production generation/validation calls
-and eight extra evaluation reviews. Including ten diagnostic requests before the
-model-mode correction, **92 of the authorized 100 requests** were used. All
-internal retries and validation calls counted toward that ceiling.
-
-Rates verified on 3 November 2026: off-peak Flash input costs $0.15 per million
-uncached tokens or $0.003 per million cached tokens; output costs $0.60 per
-million tokens. Peak rates are twice these figures. Cached input is already part
-of total input, not an extra category to add twice. Confirm
-[DeepSeek's current pricing](https://api-docs.deepseek.com/quick_start/pricing/)
-before topping up. These figures apply to `deepseek-flash`, not other providers
-or models, and are not a new evaluation of the provider integrations.
-
-Answer feedback, hints and concept explanations can incur additional AI charges.
-Opening bank questions or starting a bank exam makes no generation call, but
-grading can use AI. Local OCR, embedding/indexing and index rebuilding make no
-DeepSeek calls. **Settings → Local maintenance** shows recorded tokens, cached
-input and estimated costs; the provider dashboard is authoritative for billing.
-
-**Settings → Local maintenance** shows the last 30 days of tokens and estimated
-USD cost, with five decimal places. Cached input is part of total input, not an
-additional charge. Cached counts and question details cover retained provider
-traces; daily cost totals may cover a longer window when detailed traces expire.
+Hints, grading and explanations can add costs. Bank selection makes no generation
+call, although grading can use AI. Local OCR, embeddings and reindexing make no
+DeepSeek inference calls. Model-catalog refreshes contact the selected provider.
 
 ## Desktop use
 
@@ -540,8 +527,9 @@ the complete source-edition service lifecycle still need target-device testing.
 - A modern browser. The app serves only `127.0.0.1`; it is not a public server.
 
 No Docker or separate database server is required. AI generation requires your
-own provider API key. The desktop application uses DeepSeek; the source edition
-defaults to DeepSeek and can configure a compatible provider.
+own provider API key. Both editions support the providers in Settings. The source
+`.env` example uses DeepSeek; a suitable paid text model is required for question
+generation. Eligible free OpenRouter models support verified brief explanations.
 
 ---
 

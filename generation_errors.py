@@ -5,6 +5,19 @@ PUBLIC_REASONS = frozenset({'The worked solution contains discarded draft reason
 LABELS={'recall':'Recall check','premise':'Question consistency','topic':'Topic alignment','writer':'Question drafting','solver':'Independent solution','verifier':'Answer verification','calculator':'Mathematical checks','formatting':'Math formatting','retrieval':'Course evidence','publication':'Saving the question','provider':'AI service','generation':'Question generation','policy':'Policy checks'}
 
 PUBLIC_REASONS |= frozenset({'Choose an AI provider and save its key and model in Settings before using AI study tools.','Add this provider’s API key in Settings before using AI study tools.'})
+PUBLIC_REASONS |= frozenset({
+    'The public task needs methods not supported by the retrieved course passages.',
+    'The required methods could not be linked to exact course evidence.',
+    'The reported numeric answer disagrees with its calculated outputs.',
+    'The independent Solver returned conflicting MCQ selections.',
+    'The independent Solver did not evaluate all four public options.',
+    'The option evaluations rewrote a public option.',
+    'The public MCQ does not have exactly one defensible option.',
+    'The option evaluations disagree with the final selection.',
+    'Keep one focused task; extended answers may have at most two connected parts. Do not add unrelated or hidden subparts.',
+    *(f'Keep the public question within {limit} words and its focused workload ceiling. Supply helpful intermediate values instead of repetitive requests.' for limit in (180,300,400)),
+})
+LABELS['adversarial_review'] = 'Additional answer verification'
 
 class StageFailure(RuntimeError):
     """A deliberately constructed, public-safe diagnosis, never a raw provider error."""
@@ -20,10 +33,13 @@ def describe(exc):
     stage=next((getattr(e,'pipeline_stage','') for e in chain if getattr(e,'pipeline_stage','')), 'generation')
     reason=next((e.public_reason for e in chain if isinstance(e,StageFailure)), '')
     reason=reason or next((str(e) for e in chain if str(e) in PUBLIC_REASONS), '')
+    if reason in {'The public task needs methods not supported by the retrieved course passages.',
+                  'The required methods could not be linked to exact course evidence.'}:
+        stage='retrieval'
     timed_out=any(isinstance(e,TimeoutError) or isinstance(e,HTTPException) and e.status_code==504 for e in chain)
     if reason:
         lower=reason.lower()
-        if 'calculator' in lower or 'arithmetic' in lower or 'symbolic' in lower or 'numeric plan' in lower or 'displayed calculation' in lower or 'worked interpretation' in lower:stage='calculator'
+        if 'calculator' in lower or 'arithmetic' in lower or 'symbolic' in lower or 'numeric plan' in lower or 'numeric answer' in lower or 'displayed calculation' in lower or 'worked interpretation' in lower:stage='calculator'
         elif 'source' in lower and ('evidence' in lower or 'section' in lower):stage='retrieval' if stage in {'generation','retrieval'} else stage
     # Formatting diagnostics contain user text after KaTeX's colon: expose only known safe categories.
     formatting=' '.join(str(e).lower() for e in chain)

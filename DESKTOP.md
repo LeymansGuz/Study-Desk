@@ -81,7 +81,10 @@ installer appears in `dist/installers` with `SHA256SUMS.txt`; generated build an
 release files are ignored by Git. Installers are large because they include the
 native OCR, document and Python dependencies.
 
-For backend-only diagnosis, use `--backend-only`. Once a backend is ready,
+For backend-only diagnosis, use `--backend-only`.
+Rust/Cargo must also be on PATH for backend-only builds because they include the
+native dependency licence inventory. Missing Cargo is checked before packaging.
+Once a backend is ready,
 `--shell-only` rebuilds the native shell/installer. Close all test copies of Study
 Desk before rebuilding: Windows can lock executables being packaged.
 
@@ -107,9 +110,11 @@ Desk before rebuilding: Windows can lock executables being packaged.
    regenerate the corresponding locks and repeat verification. The build manifest
    reads the version from `pyproject.toml`.
 
-The current beta installers are unsigned, except that macOS bundles are ad-hoc
-signed so a valid bundle can be opened after removing the quarantine attribute.
-They are not Apple-notarized. Signing credentials are not supplied by this
+The current beta has no Windows publisher certificate; macOS bundles are ad-hoc
+signed and are not Apple-notarized. Verify the checksum and architecture before
+following the README's quarantine instructions for a trusted download. A signing
+or corruption warning must not automatically be treated as harmless.
+Signing credentials are not supplied by this
 repository. For a publicly distributed release, arrange Windows code signing;
 macOS distribution also needs an Apple Developer ID certificate and notarization.
 Configure signing secrets in CI only after obtaining them. The workflow publishes

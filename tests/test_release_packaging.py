@@ -5,6 +5,17 @@ from pathlib import Path
 from desktop.collect_release import PLATFORMS, check_tag, collect
 
 
+def test_backend_build_fails_before_packaging_if_cargo_is_missing(monkeypatch):
+    from desktop import build
+    monkeypatch.setattr(build.sys,'argv',['build.py','--backend-only'])
+    monkeypatch.setattr(build.shutil,'which',lambda name:None)
+    calls=[]
+    monkeypatch.setattr(build.subprocess,'run',lambda *a,**k:calls.append(1))
+    with pytest.raises(SystemExit,match='Install Rust stable'):
+        build.main()
+    assert not calls
+
+
 @pytest.fixture
 def builds(tmp_path):
     source=tmp_path/'builds'

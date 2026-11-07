@@ -10,7 +10,8 @@ PDF_LOCK = threading.Lock()
 
 async def public_verification(values, elapsed):
     from graph import decide
-    metadata = dict(values.get('verification') or {})
+    from verification_metadata import public_fields
+    metadata = public_fields(values.get('verification'))
     cap = values.get('max_attempts', 3)
     hint, reveal = await asyncio.gather(decide('generate_hint', attempts=0, max_attempts=cap), decide('reveal_answer', attempts=0, max_attempts=cap))
     metadata.update(opa_passed=bool(hint['allow'] and (not reveal['allow']) and (hint.get('engine') == 'opa') and (reveal.get('engine') == 'opa')), latency=elapsed)

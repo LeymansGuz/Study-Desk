@@ -1,5 +1,4 @@
 """Blind public-task checks before solving; no proposed key or Writer witness."""
-from functools import lru_cache
 from typing import ClassVar,Literal
 import hashlib,json,asyncio
 from pydantic import BaseModel,Field
@@ -53,7 +52,21 @@ async def check(topic,question,options,sources):
 async def solve_checked(seed,topic,sources):
     import tools
     await check(topic,seed.question,seed.options,sources)
-    return await tools.solve_independently(seed.question,seed.options)
+    return await tools.solve_independently(seed.question,seed.options,question_type=seed.question_type)
+
+
+async def challenge_defect(question, options, allegation):
+    """A negative reviewer is evidence, not authority over the public givens."""
+    import tools
+    prompt = (wrap_untrusted('public_task',question,max_chars=16000) + '\nOptions: ' +
+              json.dumps(options or []) + '\n' +
+              wrap_untrusted('untrusted_allegation',allegation,max_chars=1800) +
+              '\nCheck the alleged PUBLIC-premise defect independently from the literal givens. '
+              'Recompute its arithmetic, signs and counterexample. A wrong proposed answer or '
+              'wrong reviewer calculation does not make a well-posed question false. '
+              'Confirm only a real contradiction, false prove-X conclusion or missing indispensable datum. '
+              'Withdraw an invalid allegation; uncertainty is not approval. Do not change the task.')
+    return await tools._invoke_json(prompt,0,tools.PremiseChallenge)
 
 async def paired_audits(draft,sources,course_context,topic,independent):
     import tools
