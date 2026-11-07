@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.14-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.14-beta.1).
+The current published beta is [v0.2.15-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.15-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/Study-Desk_0.2.15_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/Study-Desk_0.2.15_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/Study-Desk_0.2.15_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/Study-Desk_0.2.15_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/Study-Desk_0.2.15_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.15-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -42,15 +42,15 @@ and Apple Silicon DMGs use separate builds; do not mix them.
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.14_amd64.deb
+sudo apt install ./Study-Desk_0.2.15_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.14_amd64.AppImage
-./Study-Desk_0.2.14_amd64.AppImage
+chmod +x ./Study-Desk_0.2.15_amd64.AppImage
+./Study-Desk_0.2.15_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -58,7 +58,7 @@ libraries, especially `libwebkit2gtk-4.1-0` and `libsecret-1-0`. If the AppImage
 reports missing FUSE support, install `libfuse2` or run it without FUSE:
 
 ```bash
-./Study-Desk_0.2.14_amd64.AppImage --appimage-extract-and-run
+./Study-Desk_0.2.15_amd64.AppImage --appimage-extract-and-run
 ```
 
 Use the DEB for a system installation with package-managed dependencies. Saving
@@ -242,6 +242,41 @@ worked task or at most two connected parts. Essay answers develop an argument
 in paragraphs. The independent checks increase confidence; they cannot guarantee
 every generated answer is correct.
 
+### Repeated study requests
+
+| Workflow | What stays consistent and what changes |
+|---|---|
+| Any syllabus topic | Prefer less-used eligible sections and primary chunks; course reindexing does not reset practice avoidance. |
+| Specific-topic practice, mastery paths and follow-ups | Keep the requested concept and covered methods; change the task/inference, not only its numbers. Known repeats are withheld. |
+| Explain and revision guides | Use stable, representative evidence and reuse a checked explanation for the same topic, depth and current course/check version. Do not randomly replace a thorough explanation with a niche fragment. |
+| Ask a question | Preserve the supplied task and option order. Repeated input should receive a consistent verified answer, not an invented variant. |
+| Bank exams and spaced review | These deliberately revisit verified material. Bank exams prefer less-practised items; the existing unseen-only filter prevents reuse. |
+| Recall, marking and hints | Judge the current answer consistently, preserve previously correct parts and adapt hints to the student's actual error and attempt. |
+| Plans, recommendations, search and source reading | Results change with study progress or documents; repetition is useful when the underlying state has not changed. Unchanged document extraction is cached. |
+
+Primary question topics come from **Notes**, **Exercise / assignment** and
+**Past paper** documents. **Syllabus / learning outcomes** constrains scope;
+**Marking scheme** and **Exam report** material supports assessment and difficulty.
+Administrative marking instructions and performance statistics are not selected
+as study topics. The existing preflight compares the candidate's inference with
+nearby previous tasks, in addition to source-copy and local duplicate checks;
+this adds no separate model request per question. MCQ identity includes option
+bodies and ignores their display order.
+
+Practice avoidance checks the **2,000 most recent retained question exposures**,
+across course index versions and source filters. Exact/number-only matches are
+checked across that history; a bounded shortlist receives local semantic checks.
+Worked examples already shown by Explain are also avoided by the practice bridge.
+Only a compact relevant avoidance list is sent to the model. This avoids extra
+provider calls and unbounded history growth. It cannot promise unlimited novel
+questions from a finite topic; exhaustion is reported instead of silently
+returning a known repeat. Explicit review remains available.
+
+Cached explanations need the current validation version before they can be
+reused as checked references or used to grade recall. Saved material remains
+readable when a fresh check is needed. New practice-bank entries must meet the
+current question-validation policy.
+
 ## Files, screenshots and local reading
 
 Workspace and Ask a question accept file-picker selections, drag/drop and pasted
@@ -300,6 +335,26 @@ changes mark a sheet historical. Prepare a fresh explanation and save it to
 refresh that topic; replacing local edits requires confirmation, preserves
 personal notes and checks for changes made in another window. Export important
 sheets if you need a separate permanent archive.
+
+**Explain a concept** separates the covered principles from source exercise setups
+before drafting an original application. A blind Solver supplies the worked
+solution; local arithmetic, symbolic and formatting checks plus an independent
+source review must pass before the explanation is saved. One bounded repair is
+allowed for paid connections. Ordinary work has a 60-second deadline; a
+feedback-guided practice repair may use one additional 15-second grace period.
+Deep explanations and extended supplied tasks use the 90-second complex budget.
+Queue waiting does not consume these processing deadlines. The same unchanged example reuses its checked
+solution when only the surrounding explanation needs correction. Unsupported
+course topics and copied examples are withheld.
+
+**Ask a question** preserves the supplied question and option order. A faulty
+private calculation plan gets one independent retry without changing the public
+givens. Parameter-dependent results remain symbolic; the app does not invent
+numbers to satisfy a calculator. Proofs and extended supplied tasks use the
+existing bounded complex-task deadline, starting after the queue slot is acquired.
+Missing essential information, invalid proof claims and incorrect options still
+fail verification. Detailed local diagnostics distinguish private-plan retries
+from explanation grounding, originality and mathematical failures.
 
 **Recall checkpoint** sits below an explanation. Describe the concept in your
 own words; the tutor identifies correct ideas and specific gaps. Corrections
@@ -486,6 +541,37 @@ calculator/symbolic checks, source-clone screening, grounding and OPA gates; unc
 or rejected work is withheld. Important answers still deserve independent checking.
 The 60/90-second ceilings start after slot acquisition; queue waiting is separate.
 Normal use may reuse a current verified bank item instead of generating afresh.
+
+### 8 November 2026 tutor-panel checks
+
+A controlled live comparison used frozen excerpts from COMP2121, FINA1310,
+MATH2014, DSE Math and DSE Biology, with real local vector retrieval.
+
+| Valid-request confirmation | Accepted | Mean time for accepted requests |
+|---|---:|---:|
+| Explain: five Brief and five Deep topics | 10/10 | 24.09 seconds |
+| Ask: supplied questions, parameters, proofs, multi-part and OCR text | 24/24 | 8.47 seconds |
+
+Every accepted output passed a separate same-provider content audit; all five
+invalid/out-of-course controls were withheld. The initial Explain comparison
+accepted 7/10, including three examples flagged as source copies by the extra
+audit; the final ten explanations had no such flags. Ask already passed all 14
+initial ordinary cases: the changes address recorded failures and targeted edge
+cases, rather than proving a statistical improvement from a low baseline there.
+An additional current-policy smoke check accepted 5/5 valid requests and rejected
+2/2 negative controls. These small development samples and same-provider audits
+are **not** independent ground truth or a 100% future reliability guarantee.
+A separate repeated-practice stress cohort accepted **20/24 (83.3%)**, averaging
+**27.99 seconds** for accepted requests. All twenty passed the extra answer/working
+audit, but one was flagged as a possible source reskin. All six multi-question
+groups passed the cross-question inference-variety audit. Source-reskin screening
+was subsequently tightened: a final focused confirmation accepted **5/6** requests
+(mean **26.52 seconds**); all five passed the extra content/originality audit, and
+the remaining request was withheld as repetitive. Both resulting course groups
+passed the cross-question variety audit. These results
+show that fresh, varied practice remains less reliable than the tutor-panel sample.
+The broader question-generation matrix above and these stress checks measure
+different workloads and should not be compared as one benchmark.
 
 ## Estimated AI cost
 

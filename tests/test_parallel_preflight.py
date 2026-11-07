@@ -48,7 +48,7 @@ def test_cancellation_releases_parallel_owned_and_borrowed_slots(monkeypatch):
     asyncio.run(asyncio.wait_for(run(),2))
 
 def test_blind_method_check_rejects_a_related_heading_without_required_theorem(monkeypatch):
-    async def invoke(*a):return preflight.QuestionPreflight(reason='The required theorem is absent; a related heading is insufficient.',verdict='valid',is_on_topic=True,tested_concept='Test-only geometry',is_grounded=False)
+    async def invoke(*a):return preflight.QuestionPreflight(reason='The required theorem is absent; a related heading is insufficient.',verdict='valid',source_clone=False,repeats_recent_task=False,originality_reason='No source exercise is reproduced.',is_on_topic=True,tested_concept='Test-only geometry',is_grounded=False)
     monkeypatch.setattr(tools,'_invoke_json',invoke)
     with pytest.raises(tools.EvidenceScopeError,match='not supported'):
         asyncio.run(preflight.check('Test-only geometry','Prove a result needing an absent theorem.',[],[{'ref':'S1','source_title':'Notes','kind':'notes','page':1,'text':'A related general geometry heading, without the theorem.'}]))
@@ -57,7 +57,18 @@ def test_unverifiable_preflight_quotes_still_fail_after_bounded_repair(monkeypat
     calls=[]
     async def invoke(*a):
         calls.append(1)
-        return preflight.QuestionPreflight(reason='Claimed support.',verdict='valid',is_on_topic=True,tested_concept='Test-only method',is_grounded=True,used_source_refs=['S1'],evidence_support=[tools.EvidenceSupport(method='An absent method',source_ref='S1',quote='A quotation which is not in the source.')])
+        return preflight.QuestionPreflight(reason='Claimed support.',verdict='valid',source_clone=False,repeats_recent_task=False,originality_reason='No source exercise is reproduced.',is_on_topic=True,tested_concept='Test-only method',is_grounded=True,used_source_refs=['S1'],evidence_support=[tools.EvidenceSupport(method='An absent method',source_ref='S1',quote='A quotation which is not in the source.')])
     monkeypatch.setattr(tools,'_invoke_json',invoke)
     with pytest.raises(tools.EvidenceScopeError):asyncio.run(preflight.check('Test-only method','Use the absent method.',[],[{'ref':'S1','source_title':'Notes','kind':'notes','page':1,'text':'Only another unrelated method is defined.'}]))
     assert len(calls)==2
+
+
+def test_parallel_reviews_share_one_blind_premise_check(monkeypatch):
+    calls=[]
+    async def premise(question,options):calls.append('premise');return tools.PublicValidity(verdict='valid',reason='Complete public premises.')
+    async def audit(draft,*a):calls.append('audit');return object()
+    monkeypatch.setattr(tools,'ensure_public_validity',premise)
+    monkeypatch.setattr(tools,'_audit_draft',audit)
+    draft=tools.QuestionDraft(question='Prove the stated identity for all real x.',question_type='proof',canonical_answer='The two expressions agree.',solution='Expand and collect equal terms under the given hypotheses.')
+    values=asyncio.run(preflight.paired_audits(draft,[], '', '', None))
+    assert len(values)==2 and calls==['premise','audit','audit']

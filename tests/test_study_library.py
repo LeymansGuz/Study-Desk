@@ -1,3 +1,4 @@
+from explanations import CHECK_VERSION
 import io,json,uuid
 from datetime import date,timedelta
 from pathlib import Path
@@ -41,7 +42,7 @@ def test_recommendations_do_not_treat_repeated_same_day_success_as_retention(cli
 
 def test_guide_excludes_personal_edits_and_stale_sources(client,course):
     cid=course['id'];key=uuid.uuid4().hex
-    store.put('revision_sheet',key,auth.OWNER_ID,{'id':key,'topic':'Gradient','course_ids':[cid],'version':'library-v1','checked_markdown':'Checked source text. [S1]','markdown':'Wrong personal edit','sources':[{'ref':'S1','file':'notes.pdf','page':1}]})
+    store.put('revision_sheet',key,auth.OWNER_ID,{'id':key,'topic':'Gradient','check_version':CHECK_VERSION,'course_ids':[cid],'version':'library-v1','checked_markdown':'Checked source text. [S1]','markdown':'Wrong personal edit','sources':[{'ref':'S1','file':'notes.pdf','page':1}]})
     store.put('explain',key,auth.OWNER_ID,{'id':key,'topic':'Old text','course_ids':[cid],'version':'stale','markdown':'Old unsupported text','sources':[]})
     response=client.get('/library/guide/'+cid)
     assert response.status_code==200,response.text
@@ -140,7 +141,7 @@ def test_scheduled_backup_runs_once_and_retries_a_full_queue(client,monkeypatch)
     finally:db.set_app_setting('scheduled_backup',json.dumps({'interval':'off'}))
 
 def test_checked_guide_survives_explanation_history_and_invalidates_old_version(client,course):
-    data={'topic':'Diffusion','course_ids':[course['id']],'version':'library-v1','markdown':'Checked text. [S1]','sources':[{'ref':'S1','file':'notes.pdf','page':1}]}
+    data={'topic':'Diffusion','check_version':CHECK_VERSION,'course_ids':[course['id']],'version':'library-v1','markdown':'Checked text. [S1]','sources':[{'ref':'S1','file':'notes.pdf','page':1}]}
     library.save_checked_section(auth.OWNER_ID,data)
     assert 'Checked text.' in client.get('/library/guide/'+course['id']).text
     library.save_checked_section(auth.OWNER_ID,{**data,'version':'new','topic':'New checked topic'})
@@ -151,7 +152,7 @@ def test_checked_guide_rolls_back_with_failed_generation(client,course):
     import asyncio
     from generation_control import atomic_generation
     async def fail():
-        library.save_checked_section(auth.OWNER_ID,{'topic':'Never published','course_ids':[course['id']],'version':'library-v1','markdown':'Text','sources':[]})
+        library.save_checked_section(auth.OWNER_ID,{'topic':'Never published','check_version':CHECK_VERSION,'course_ids':[course['id']],'version':'library-v1','markdown':'Text','sources':[]})
         raise ValueError('forced failure')
     with pytest.raises(ValueError):asyncio.run(atomic_generation(fail))
     assert store.get('course_guide',course['id'],auth.OWNER_ID) is None

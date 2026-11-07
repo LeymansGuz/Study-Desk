@@ -26,11 +26,9 @@ import generation_progress
 from answer_parts import SolvedPart
 from policy import decide
 from retrieval import TOP_K, search
-from tools import MAX_ATTEMPTS, TutorError, CandidateError, DuplicateQuestionError, problem_similarity, Assessment, compose_correct, compose_hint, compose_reveal, choice_answer_correct, draft_question, evaluate_answer, generate_choice_hint, prepare_assignment_question
+from tools import MAX_ATTEMPTS, TutorError, CandidateError, DuplicateQuestionError, Assessment, compose_correct, compose_hint, compose_reveal, choice_answer_correct, draft_question, evaluate_answer, generate_choice_hint, prepare_assignment_question
 logger = logging.getLogger(__name__)
 
-def _question_similarity(left: str, right: str) -> float:
-    return problem_similarity(left, right)
 TutorStatus = Literal['generating', 'awaiting_answer', 'correct', 'revealed', 'blocked']
 
 class TutorState(TypedDict, total=False):
@@ -109,6 +107,7 @@ async def retrieve_context(state: TutorState) -> dict[str, Any]:
     return {'sources': sources}
 
 async def generate_question(state: TutorState) -> dict[str, Any]:
+    from practice_novelty import task_text
     from pipeline_runtime import set_generation_profile
     set_generation_profile(state.get('difficulty','medium'),state.get('question_types'))
     """Generate a practice question, or privately solve a supplied question."""
@@ -136,9 +135,12 @@ async def generate_question(state: TutorState) -> dict[str, Any]:
                 banked['options'] = shuffled.options
                 banked['canonical_answer'] = shuffled.canonical_answer
                 banked['solution'] = shuffled.solution
-            db.record_exposure(user_id, banked['scope_key'], banked['skill_id'], banked['current_question'], [s['chunk_id'] for s in banked['sources']])
+            db.record_exposure(user_id, banked['scope_key'], banked['skill_id'], task_text(banked['current_question'],banked.get('options')), [s['chunk_id'] for s in banked['sources']])
             return {'bank_candidate': None, 'bank_checked': True, **{key: value for key, value in banked.items() if key in TutorState.__annotations__}, 'bank_id': banked['fingerprint'], 'status': 'awaiting_answer', 'user_attempts': 0, 'part_results': [], 'history': [], 'pending_answer': '', 'last_feedback': '', 'messages': [AIMessage(content=banked['current_question'])]}
         recent_questions = list(state.get('recent_questions') or [])
+        from practice_novelty import history
+        retained=await asyncio.to_thread(history,user_id)
+        seen_questions=list(dict.fromkeys([*recent_questions,*(row['question'] for row in retained)]))
         draft = None
         skill_id = state.get('skill_id', '')
         rejected_skills = []
@@ -153,15 +155,17 @@ async def generate_question(state: TutorState) -> dict[str, Any]:
                 elif state.get('figure_mode') == 'math':
                     from math_figures import draft_visual
                     writer = draft_visual
-                from tools import DRAFT_FEEDBACK
+                from tools import DRAFT_FEEDBACK, NOVELTY_HISTORY
                 feedback_token = DRAFT_FEEDBACK.set(retry_feedback)
+                novelty_token=NOVELTY_HISTORY.set(seen_questions)
                 try:
                     draft = await writer(topic, sources, difficulty, list(state.get('question_types') or ['short_answer']), avoid_questions=recent_questions, course_context=state.get('course_overview', ''))
                 finally:
                     DRAFT_FEEDBACK.reset(feedback_token)
+                    NOVELTY_HISTORY.reset(novelty_token)
                 from semantic_duplicates import duplicate
-                if draft.question in recent_questions if draft.figure else await asyncio.to_thread(duplicate, draft.question, recent_questions):
-                    raise DuplicateQuestionError('The draft repeated a recent problem.')
+                if await asyncio.to_thread(duplicate,task_text(draft.question,draft.options),seen_questions):
+                    raise DuplicateQuestionError('The draft repeated a recent problem.',feedback='This proposed task repeats a retained question: '+draft.question[:1800]+' Change the inference or information flow, not just names or numbers.')
                 if learning_store.is_quarantined(draft.question):
                     raise CandidateError('This question template is paused for review.')
                 import monitoring
@@ -171,7 +175,13 @@ async def generate_question(state: TutorState) -> dict[str, Any]:
                 from tools import ArithmeticRepairError
                 if isinstance(failure, ArithmeticRepairError):
                     raise
+                from pipeline_runtime import set_repair_profile
+                set_repair_profile()
                 retry_feedback = failure.feedback
+                failed_draft=getattr(failure,'draft',None) or draft
+                if failed_draft is not None:
+                    recent_questions=list(dict.fromkeys([*recent_questions,task_text(failed_draft.question,failed_draft.options)]))[-32:]
+                    seen_questions=list(dict.fromkeys([*seen_questions,task_text(failed_draft.question,failed_draft.options)]))
                 import monitoring
                 reason = 'duplicate' if isinstance(failure, DuplicateQuestionError) else 'scope' if 'support' in str(failure).lower() or 'scope' in str(failure).lower() else 'rejected'
                 monitoring.candidate(user_id, sources, skill_id, reason)
@@ -181,15 +191,15 @@ async def generate_question(state: TutorState) -> dict[str, Any]:
                 try:
                     context = await asyncio.to_thread(plan_context, user_id, list(state.get('course_ids') or []), state.get('topic', topic), whole=state.get('scope') == 'syllabus', doc_types=state.get('doc_types') or None, exclude_skill_ids=rejected_skills, figure_mode=state.get('figure_mode', 'auto'), target_skill_id=state.get('focus_skill_id'))
                 except ValueError as exc:
-                    if isinstance(failure, DuplicateQuestionError):
-                        raise TutorError('No fresh supported section remains for this topic. Try another topic.') from exc
+                    # A narrow topic can have one sound evidence set yet many original tasks.
+                    # Keep it for the remaining bounded, feedback-guided attempt; never return a repeat.
                     continue
                 plan = context['plans'][0]
                 skill_id, sources, topic = (plan['skill_id'], plan['sources'], plan['topic'])
-        if draft is None or (draft.question in recent_questions if draft.figure else any((_question_similarity(draft.question, old) >= 0.82 for old in recent_questions))):
+        if draft is None:
             raise TutorError('Repeated drafts were too similar to recent questions. Choose another topic or try again.')
         if user_id and state.get('scope_key'):
-            db.record_exposure(user_id, state['scope_key'], skill_id, draft.question, [source['chunk_id'] for source in sources])
+            db.record_exposure(user_id, state['scope_key'], skill_id, task_text(draft.question,draft.options), [source['chunk_id'] for source in sources])
         logger.info('Generated verified question difficulty=%s with %s sources', difficulty, len(sources))
     return {'sources': sources, 'topic': draft.formula_focus[:200] if state.get('scope') == 'syllabus' and draft.formula_focus else state.get('topic', ''), 'verification': draft.verification, 'assessment_version': __import__('assessment_level').POLICY_VERSION, 'figure': draft.figure, 'skill_id': locals().get('skill_id', state.get('skill_id', '')), 'messages': [AIMessage(content=draft.question)], 'current_question': draft.question, 'question_type': draft.question_type, 'options': draft.options, 'canonical_answer': draft.canonical_answer, 'answer_parts': [part.model_dump() for part in draft.answer_parts], 'part_results': [], 'solution': draft.solution, 'formula_focus': draft.formula_focus, 'opening_hint': opening_hint, 'pending_answer': '', 'user_attempts': 0, 'max_attempts': state.get('max_attempts', MAX_ATTEMPTS), 'status': 'awaiting_answer', 'last_feedback': '', 'last_verdict': '', 'history': [], 'policy_decisions': []}
 

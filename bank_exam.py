@@ -1,4 +1,5 @@
 """Resumable exams assembled exclusively from current verified bank items."""
+from practice_novelty import task_text
 import secrets
 import uuid
 import io
@@ -50,7 +51,7 @@ def eligible(req,user_id):
         items=[q for q in items if words and words<=curriculum.terms(str(q.get('topic',''))+' '+q['current_question'])]
     if req.unseen_only:
         with db.connect() as c:seen={r[0] for r in c.execute('SELECT item_id FROM learning_exposures WHERE user_id=?',(user_id,))}
-        items=[q for q in items if user_id+':'+store.fingerprint(q['current_question']) not in seen]
+        items=[q for q in items if user_id+':'+store.fingerprint(q['current_question'],q.get('options')) not in seen]
     return items
 
 
@@ -125,7 +126,8 @@ def install(app, ns):
                 raise HTTPException(409, 'Course evidence or bank eligibility changed. Start a new bank exam.')
             updated = {**exam,'threads':[*exam['threads'][:index],thread],'index':index}
             store.put('exam',identifier,user['id'],updated)
-            store.mark_served(user['id'],item['current_question'])
+            store.mark_served(user['id'],item['current_question'],item.get('options'))
+            db.record_exposure(user['id'],item.get('scope_key') or '',item.get('skill_id') or '',task_text(item['current_question'],item.get('options')),[r['chunk_id'] for r in item.get('sources',[]) if r.get('chunk_id')])
             return await public(identifier,updated,user)
         except BaseException:
             await graph.checkpointer.adelete_thread(thread)
@@ -136,9 +138,14 @@ def install(app, ns):
         items=eligible(req,user['id'])
         if len(items)<req.count:
             raise HTTPException(409,f'Only {len(items)} verified questions match. Choose fewer questions or broaden the filters.')
+        from practice_novelty import history,question_key,task_text
+        from collections import Counter
+        appearances=Counter(question_key(row['question']) for row in history(user['id']))
+        secrets.SystemRandom().shuffle(items)
+        items.sort(key=lambda item:appearances[question_key(task_text(item['current_question'],item.get('options')))])
         exam = {'source':'verified_bank','user_id':user['id'],'course_ids':[req.course_id],
             'version':curriculum.scope_version(user['id'],[req.course_id]),
-            'items':secrets.SystemRandom().sample(items,req.count),'threads':[],'index':0,'topic':'Verified bank exam'}
+            'items':items[:req.count],'threads':[],'index':0,'topic':'Verified bank exam'}
         return await atomic_generation(lambda:prepare(uuid.uuid4().hex,exam,0,user))
 
     @app.get('/bank-exams/availability')

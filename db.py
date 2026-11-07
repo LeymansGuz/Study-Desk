@@ -86,9 +86,12 @@ def extraction_coverage(user_id: str, course_ids: list[str] | None=None) -> list
         rows = connection.execute('SELECT course_id, manifest_json FROM extraction_manifests WHERE user_id = ?', (user_id,)).fetchall()
     return [json.loads(row['manifest_json']) for row in rows if not course_ids or row['course_id'] in course_ids]
 
-def recent_exposures(user_id: str, scope_key: str, limit: int=80) -> list[dict[str, Any]]:
+def recent_exposures(user_id: str, scope_key: str | None, limit: int=80) -> list[dict[str, Any]]:
     with connect() as connection:
-        rows = connection.execute('SELECT * FROM pipeline_exposures WHERE user_id = ? AND scope_key = ? ORDER BY created_at DESC LIMIT ?', (user_id, scope_key, min(500, limit))).fetchall()
+        if scope_key is None:
+            rows=connection.execute('SELECT * FROM pipeline_exposures WHERE user_id=? ORDER BY created_at DESC,rowid DESC LIMIT ?', (user_id,max(1,min(2000,limit)))).fetchall()
+        else:
+            rows = connection.execute('SELECT * FROM pipeline_exposures WHERE user_id = ? AND scope_key = ? ORDER BY created_at DESC LIMIT ?', (user_id, scope_key, min(500, limit))).fetchall()
     return [{**dict(row), 'chunk_ids': json.loads(row['chunk_ids_json'])} for row in rows]
 
 def record_exposure(user_id: str, scope_key: str, skill_id: str, question: str, chunk_ids: list[str]) -> None:

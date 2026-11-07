@@ -41,6 +41,17 @@ successful compilation is not a device compatibility guarantee.
   Keep MCQ key, ordinal/letter references and part requirements consistent when
   shuffling. Public verification receipts must pass `verification_metadata.py`;
   never include private keys, indices or reviewer text in them, including resumes.
+- Practice variety: `practice_novelty.py`, `curriculum.py` and
+  `semantic_duplicates.py`. Keep the 2,000-exposure limit and check across corpus
+  revisions. Rotate within topical/source-quality limits, not into unrelated
+  chapters. Duplicate candidates receive concrete feedback and bounded retries.
+  Do not force novelty on explanations, supplied answers, marking or explicit review.
+- Tutor panels: `explanations.py` reuses `writer_evidence.py` to separate covered
+  principles from concrete source tasks. Keep the original passages for the final
+  verifier. Worked examples use `tools.solve_supplied_checked`; do not add a
+  second Writer-derived answer or bypass originality. Supplied questions allow
+  private-plan repair, never automatic public-question edits or option shuffling.
+  Correctness, acceptance, originality and latency must be reported separately.
 - Study tools: `study_companion.py`, `static/companion.js`. Planning and revision
   sheet saving are local operations. Recall assessments use quoted course
   evidence plus independent review. Personal edits are not a marking authority.

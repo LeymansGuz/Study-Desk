@@ -28,7 +28,7 @@
   }
   function renderSheets(){
     const shown=sheets.slice(page*5,page*5+5);
-    document.querySelector('#revision-sheets').innerHTML=shown.map(s=>`<article class="study-queue-row"><div><strong>${esc(s.topic)}</strong><p class="hint">${s.historical?'Sources changed · review before using':s.edited?'Locally edited · edits not independently checked':'Saved from a checked explanation'}</p></div><button type="button" class="quiet-button" data-sheet="${esc(s.id)}">Open</button></article>`).join('')||'<p class="hint">Save a checked explanation as a revision sheet. It stays available without another AI call.</p>';
+    document.querySelector('#revision-sheets').innerHTML=shown.map(s=>`<article class="study-queue-row"><div><strong>${esc(s.topic)}</strong><p class="hint">${s.historical?'Needs a fresh source and correctness check':s.edited?'Locally edited · edits not independently checked':'Saved from a checked explanation'}</p></div><button type="button" class="quiet-button" data-sheet="${esc(s.id)}">Open</button></article>`).join('')||'<p class="hint">Save a checked explanation as a revision sheet. It stays available without another AI call.</p>';
     document.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>openSheet(b.dataset.sheet).catch(fail));
     const pages=document.querySelector('#sheet-pages');pages.hidden=sheets.length<=5;pages.querySelector('[data-page-label]').textContent=`${page+1} / ${Math.max(1,Math.ceil(sheets.length/5))}`;pages.querySelector('[data-prev]').disabled=page===0;pages.querySelector('[data-next]').disabled=(page+1)*5>=sheets.length;
   }
@@ -39,7 +39,7 @@
     sheet=await api('/study/sheets/'+encodeURIComponent(id));view('learning');
     const editor=form();editor.hidden=false;editor.elements.markdown.value=sheet.markdown;editor.elements.notes.value=sheet.notes;
     document.querySelector('#sheet-title').textContent=sheet.topic;
-    document.querySelector('#sheet-label').textContent=sheet.historical?'Source material changed. This is a historical sheet. Prepare a fresh explanation before relying on it.':sheet.edited?'This sheet has local edits. They have not been independently checked.':'Saved from a checked explanation. Personal edits are labelled separately.';
+    document.querySelector('#sheet-label').textContent=sheet.historical?'This saved sheet needs a fresh source and correctness check before you rely on it.':sheet.edited?'This sheet has local edits. They have not been independently checked.':'Saved from a checked explanation. Personal edits are labelled separately.';
     document.querySelector('#sheet-render').innerHTML=rich(sheet.markdown);
     document.querySelector('#sheet-export').href='/study/sheets/'+encodeURIComponent(id)+'/export';
     status('#sheet-status','');editor.scrollIntoView({behavior:'smooth',block:'start'});
@@ -65,7 +65,7 @@
     document.querySelector('#explain-result').append(details);
     const recall=details.querySelector('form'),prior=drafts.get(data.id);if(prior){recall.elements.answer.value=prior.answer;if(prior.result)recallResult(prior.result,recall);}
     recall.querySelector('[data-recall-submit]').dataset.historical=String(Boolean(data.historical));
-    if(data.historical){const p=document.createElement('p');p.className='hint';p.textContent='The sources changed. Prepare a fresh explanation before checking recall.';recall.prepend(p);}
+    if(data.historical){const p=document.createElement('p');p.className='hint';p.textContent='Refresh this explanation before checking recall.';recall.prepend(p);}
     if(!prior)api('/study/recall/history/'+encodeURIComponent(data.id)).then(history=>{const saved=history.items?.[0];if(saved&&details.isConnected&&!recall.elements.answer.value){recall.elements.answer.value=saved.answer;drafts.set(data.id,{answer:saved.answer,result:saved});recallResult(saved,recall);}}).catch(()=>{});
     recall.elements.answer.oninput=()=>{const previous=drafts.get(data.id)||{};drafts.set(data.id,{...previous,answer:recall.elements.answer.value});if(drafts.size>10)drafts.delete(drafts.keys().next().value);};
     recall.onsubmit=event=>{event.preventDefault();task('recall',recall,recall.querySelector('#recall-status'),async()=>{const result=await post('/study/recall',{explanation_id:data.id,answer:recall.elements.answer.value});drafts.set(data.id,{answer:recall.elements.answer.value,result});recallResult(result,recall);}).finally(recallScope);};recallScope();

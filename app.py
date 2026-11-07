@@ -733,7 +733,7 @@ async def ask_question(req: AskRequest, request: Request, user: dict[str, Any]=D
         async with asyncio.timeout(180), practice_queue.request_slot(user['id']):
             thread_id, result = await generate()
             if result and result.get('current_question'):
-                learning_store.mark_served(user['id'], result['current_question'])
+                learning_store.mark_served(user['id'], result['current_question'],result.get('options'))
         if _course_access_lost(user['id'], courses) or curriculum.scope_version(user['id'], courses) != version:
             raise TutorError('Course material changed. Please request a fresh question.')
     except BudgetExceeded as exc:

@@ -1,3 +1,4 @@
+from explanations import CHECK_VERSION
 import asyncio,json,uuid
 from datetime import date,timedelta
 import pytest
@@ -8,7 +9,7 @@ def explanation(client,monkeypatch):
     import curriculum
     course=db.create_course(auth.OWNER_ID,'Companion '+uuid.uuid4().hex[:8])
     monkeypatch.setattr(curriculum,'scope_version',lambda *a:'current-version')
-    item={'id':uuid.uuid4().hex,'topic':'Diffusion','depth':'brief','course_ids':[course['id']],'version':'current-version','markdown':'## Core Concept\n\nDiffusion moves particles down their concentration gradient. [S1]','sources':[{'ref':'S1','file':'notes.pdf','course_id':course['id'],'page':1}]}
+    item={'id':uuid.uuid4().hex,'topic':'Diffusion','check_version':CHECK_VERSION,'depth':'brief','course_ids':[course['id']],'version':'current-version','markdown':'## Core Concept\n\nDiffusion moves particles down their concentration gradient. [S1]','sources':[{'ref':'S1','file':'notes.pdf','course_id':course['id'],'page':1}]}
     store.put('explain',item['id'],auth.OWNER_ID,item)
     return item
 
@@ -108,3 +109,12 @@ def test_anki_export_converts_math_and_escapes_html():
     value=study.anki_field(r'Inline $x^2$ and $$x+1$$, price \$5 <script>')
     assert r'\(x^2\)' in value and r'\[x+1\]' in value and '$5' in value
     assert '<script>' not in value and '&lt;script&gt;' in value
+
+
+def test_legacy_checks_do_not_authorize_new_recall(client,explanation):
+    legacy=dict(explanation);legacy.pop('check_version')
+    store.put('explain',legacy['id'],auth.OWNER_ID,legacy)
+    result=client.get('/explain/'+legacy['id'])
+    assert result.status_code==200 and result.json()['historical']
+    assert client.post('/study/recall',json={'explanation_id':legacy['id'],'answer':'An otherwise complete explanation of diffusion.'}).status_code==409
+    assert store.get('explain',legacy['id'],auth.OWNER_ID)['markdown']==legacy['markdown']

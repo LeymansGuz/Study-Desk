@@ -20,3 +20,8 @@ QUESTION_LABELS = {'mcq':'Multiple choice','short_answer':'Short answer','long_a
 def public():
     return {'document_types':DOCUMENT_TYPES,'question_types':QUESTION_LABELS,
             'difficulties':{level:level.title() for level in get_args(Difficulty)}}
+
+
+QUESTION_SOURCE_TYPES = frozenset({'notes','past_paper','exercise'})
+PRIMARY_SOURCE_REASON = ('Choose notes, exercises or past papers as primary question sources. '
+                        'Syllabuses define scope; marking schemes and exam reports provide assessment support.')

@@ -168,6 +168,10 @@ def numeric_binding_issues(parts, fallback=''):
         calculated=([part.value] if part.value is not None else [])+[c.value for c in part.calculations]
         if not calculated:continue
         answer=part.answer.strip() or (fallback if len(parts)==1 else '')
+        currency_prefix=bool(re.match(r'^[A-Z]{3}\s*(?=\$?[-+]?\d)',answer)) or part.unit.strip().upper() in {'USD','HKD','CNY','RMB','EUR','GBP','JPY','AUD','CAD','CHF','SGD','NZD'}
+        if currency_prefix:
+            answer=re.sub(r'^[A-Z]{3}\s*','',answer,count=1)
+            answer=re.sub(r'(?<=\d),(?=\d{3}(?:[,.$]|$))','',answer)
         expressions=re.findall(r'\$\$?(.*?)\$\$?',answer,re.S) or [answer]
         reported=[]
         for expression in expressions:

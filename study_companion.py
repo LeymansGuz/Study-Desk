@@ -1,5 +1,6 @@
 """Bounded local revision, planning and source-grounded recall checkpoints."""
 from __future__ import annotations
+from explanations import CHECK_VERSION, current as explanation_current
 import asyncio,hashlib,json,re,time,uuid
 from datetime import date
 from typing import ClassVar,Literal
@@ -69,7 +70,7 @@ def install(app,services):
         return item
     def sheet_public(user,item):
         accessible(user,item)
-        return {**item,'historical':item['version']!=curriculum.scope_version(user['id'],item['course_ids'])}
+        return {**item,'historical':item['version']!=curriculum.scope_version(user['id'],item['course_ids']) or (not item.get('edited') and item.get('check_version')!=CHECK_VERSION)}
 
     @app.get('/study/today')
     async def today(user=Depends(user_dep)):
@@ -123,7 +124,7 @@ def install(app,services):
     @app.post('/study/sheets/from/{explanation_id}')
     async def save_sheet(explanation_id:str,replace:bool=False,revision:int=0,user=Depends(user_dep)):
         original=accessible(user,store.get('explain',explanation_id,user['id']))
-        if original['version']!=curriculum.scope_version(user['id'],original['course_ids']):raise HTTPException(409,'Course material changed. Prepare a fresh explanation before saving a revision sheet.')
+        if not explanation_current(original,user['id']):raise HTTPException(409,'Prepare a fresh checked explanation before saving it as a verified revision sheet.')
         identifier=hashlib.sha256((user['id']+'|'+','.join(original['course_ids'])+'|'+original['topic'].casefold()).encode()).hexdigest()[:32]
         prior=store.get('revision_sheet',identifier,user['id'])
         if prior:
@@ -131,7 +132,7 @@ def install(app,services):
             if not changed:return sheet_public(user,prior)
             if prior['edited'] and not replace:return {**sheet_public(user,prior),'refresh_available':True}
             if replace and prior['revision']!=revision:raise HTTPException(409,'The sheet changed while you were confirming. Reopen it before replacing the checked text.')
-        item={'id':identifier,'topic':original['topic'],'course_ids':original['course_ids'],'version':original['version'],'markdown':original['markdown'],'checked_markdown':original['markdown'],'sources':original['sources'],'notes':prior.get('notes','') if prior else '','revision':prior['revision']+1 if prior else 1,'edited':False,'explanation_id':explanation_id}
+        item={'id':identifier,'topic':original['topic'],'course_ids':original['course_ids'],'version':original['version'],'check_version':CHECK_VERSION,'markdown':original['markdown'],'checked_markdown':original['markdown'],'sources':original['sources'],'notes':prior.get('notes','') if prior else '','revision':prior['revision']+1 if prior else 1,'edited':False,'explanation_id':explanation_id}
         store.put('revision_sheet',identifier,user['id'],item)
         return sheet_public(user,item)
 
@@ -173,7 +174,7 @@ def install(app,services):
     @generation_endpoint
     async def recall(body:RecallRequest,request:Request,user=Depends(user_dep)):
         original=accessible(user,store.get('explain',body.explanation_id,user['id']))
-        if original['version']!=curriculum.scope_version(user['id'],original['course_ids']):raise HTTPException(409,'Course material changed. Prepare a fresh explanation before checking recall.')
+        if not explanation_current(original,user['id']):raise HTTPException(409,'Prepare a fresh checked explanation before checking recall.')
         async with services['practice_queue'].request_slot(user['id']),observability.operation('recall_check',user['id'],body.explanation_id,question_type='recall') as operation:
             observability.describe(operation['id'],{'current_question':original['topic'],'question_type':'recall'},body.explanation_id)
             # Re-read authoritative source passages; local sheet edits never become
@@ -194,7 +195,7 @@ def install(app,services):
             mark_stage('recall')
             try:result=await assess(body.answer,original,context)
             except tools.TutorError as exc:raise HTTPException(422,str(exc)) from exc
-            if original['version']!=curriculum.scope_version(user['id'],original['course_ids']):raise HTTPException(409,'Course material changed during the check. Please retry.')
+            if not explanation_current(original,user['id']):raise HTTPException(409,'Course material changed during the check. Please retry.')
             saved={'id':uuid.uuid4().hex,'topic':original['topic'],'course_ids':original['course_ids'],'version':original['version'],'explanation_id':body.explanation_id,'answer':body.answer,'feedback':result}
             store.put('recall',saved['id'],user['id'],saved);return saved
 

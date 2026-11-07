@@ -1,10 +1,17 @@
-Study Desk v0.2.14 beta — private, course-grounded study with your own AI key.
+Study Desk v0.2.15 beta — private, course-grounded study with your own AI key.
 
-Workspace document types share one UI/API catalog, including Syllabus / learning
-outcomes. Type changes update retrieval metadata before reporting success, with
-rollback handling. Edit in place without losing the page, search or file order,
-or select files and apply a document type together. Progress exam dates use
-dd/mm/yyyy across operating-system languages.
+Explain uses covered-principle evidence, a checked blind worked solution and
+source/originality review. Ask preserves public givens and option order while
+repairing faulty private calculation plans. Symbolic parameters remain symbolic;
+long supplied tasks keep their full supported input. Checked caches carry the
+validation version before serving as marking references.
+
+Practice rotates eligible course sections and primary chunks, retains bounded
+cross-version avoidance and withholds known repeats. Bank exams deliberately
+reuse verified material while preferring less-practised items. Explanations,
+source reading and marking stay consistent for the same task and evidence.
+One bounded repair grace period prevents restarting otherwise valid work.
+See README for the dated, small-sample reliability limits and usage estimates.
 
 Includes Practice, Explain, Ask a question, Workspace, spaced review, checked
 revision sheets, recall checkpoints and verified-bank exams with paper summaries.

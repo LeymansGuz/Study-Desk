@@ -321,6 +321,9 @@ def test_false_proof_is_rejected_without_waiting_for_a_rewritten_claim(monkeypat
     import question_preflight
     async def confirm(*a):
         return tools.PremiseChallenge(reason='The prime two is an admissible counterexample.',verdict='confirmed_defect')
+    async def validity(*a):
+        return tools.PublicValidity(verdict='defect',reason='The prime two is an admissible counterexample.')
+    monkeypatch.setattr(tools,'ensure_public_validity',validity)
     monkeypatch.setattr(question_preflight,'challenge_defect',confirm)
     monkeypatch.setattr(math_format,'check',check)
     monkeypatch.setattr(tools,'_audit_draft',audit)

@@ -158,7 +158,7 @@ class StudyRequests:
             if status < 400 and (path == '/ask' or path.startswith('/practice/follow-up/')):
                 data = b''.join((m.get('body', b'') for m in messages if m['type'] == 'http.response.body'))
                 try:
-                    store.mark_served(user['id'], json.loads(data)['question'])
+                    store.mark_served(user['id'], json.loads(data)['question'],json.loads(data).get('options'))
                 except (KeyError, ValueError):
                     pass
             if key and status < 400:

@@ -37,6 +37,22 @@ def set_generation_profile(difficulty,question_types):
     if trace and difficulty in {'hard','insane'} and any(t in {'proof','long_answer'} for t in question_types or []):
         trace['timer'].reschedule(trace['started']+max(GENERATION_TIMEOUT_SECONDS,COMPLEX_TIMEOUT_SECONDS))
 
+def set_tutor_profile(*, extended=False):
+    """Give a deep explanation or supplied extended task the existing complex budget."""
+    trace=TRACE.get()
+    if trace and extended:
+        trace['timer'].reschedule(trace['started']+max(GENERATION_TIMEOUT_SECONDS,COMPLEX_TIMEOUT_SECONDS))
+
+
+def set_repair_profile():
+    """One bounded grace period finishes a feedback-guided candidate repair."""
+    trace=TRACE.get()
+    if trace and not trace.get('repair_grace_used'):
+        trace['repair_grace_used']=True
+        deadline=trace['started']+GENERATION_TIMEOUT_SECONDS+min(30,max(0,float(os.getenv('GENERATION_REPAIR_GRACE_SECONDS','15'))))
+        trace['timer'].reschedule(max(trace['timer'].when(),deadline))
+
+
 GENERATION_TIMEOUT_SECONDS = float(os.getenv('GENERATION_TIMEOUT_SECONDS', '60'))
 
 def current_gate():

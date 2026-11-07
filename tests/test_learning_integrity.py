@@ -1,3 +1,4 @@
+from explanations import CHECK_VERSION
 import uuid,time
 import auth,db,learning_store as store,study_library as library,curriculum
 
@@ -20,7 +21,7 @@ def test_crossing_midnight_does_not_establish_delayed_retention(client):
 def test_guide_preserves_unchanged_sections_and_rejects_changed_sources(client,monkeypatch):
     cid=db.create_course(auth.OWNER_ID,'Lineage '+uuid.uuid4().hex)['id']
     doc=db.add_document(user_id=auth.OWNER_ID,course_id=cid,filename='first.md',sha256='a'*64,size=20,page_count=1)
-    payload={'topic':'First concept','course_ids':[cid],'version':curriculum.scope_version(auth.OWNER_ID,[cid]),'markdown':'Checked concept. [S1]','sources':[{'ref':'S1','file':'first.md','page':1,'course_id':cid}]}
+    payload={'topic':'First concept','check_version':CHECK_VERSION,'course_ids':[cid],'version':curriculum.scope_version(auth.OWNER_ID,[cid]),'markdown':'Checked concept. [S1]','sources':[{'ref':'S1','file':'first.md','page':1,'course_id':cid}]}
     library.save_checked_section(auth.OWNER_ID,payload)
     monkeypatch.setattr(curriculum,'course_map',lambda *a:{'sections':[]})
     db.add_document(user_id=auth.OWNER_ID,course_id=cid,filename='unrelated.md',sha256='b'*64,size=20,page_count=1)

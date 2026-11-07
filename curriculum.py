@@ -5,6 +5,7 @@ pages), not inferred learning objectives. Original passages remain authoritative
 the model must prove that its solution methods are supported by those passages.
 """
 from __future__ import annotations
+from study_catalog import QUESTION_SOURCE_TYPES, PRIMARY_SOURCE_REASON
 from collections import Counter, defaultdict
 from functools import lru_cache
 import hashlib
@@ -167,6 +168,9 @@ def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False
     sections = [unit for unit in catalog['sections'] if not unit.get('excluded') and unit['doc_type'] in allowed and (unit['id'] not in excluded)]
     sections = [{**unit, 'sources': [s for s in unit['sources'] if not s.get('quality_review_required')]} for unit in sections]
     sections = [unit for unit in sections if unit['sources']]
+    sections=[unit for unit in sections if unit['doc_type'] in QUESTION_SOURCE_TYPES]
+    if not sections:
+        raise ValueError(PRIMARY_SOURCE_REASON)
     if target_skill_id:
         focused = [unit for unit in sections if unit['id'] == target_skill_id]
         if not focused:
@@ -181,9 +185,10 @@ def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False
         if excluded:
             raise ValueError('The available source sections are temporarily cooling down after repeated validation failures. Try another covered section or return in 20 minutes; original files remain available.')
         raise ValueError('No indexed course sections match the selected source types. Upload/index material or adjust the selection.')
-    counts = db.skill_exposure_counts(user_id, key)
-    recent = db.recent_exposures(user_id, key)
-    recent_skills = {row['skill_id'] for row in recent[:8]}
+    from practice_novelty import history,coverage,relevant_questions
+    recent=history(user_id)
+    counts,chunk_counts=coverage(recent)
+    recent_skills = {row['skill_id'] for row in [r for r in recent if r['skill_id']!='explained-example'][:8]}
     query = query_terms(topic)
     frequency = Counter((term for unit in sections for term in set().union(*(terms(s['text']) for s in unit['sources']))))
     semantic = [] if whole else retrieval.search(topic, user_id, 60, None, course_ids, list(allowed))
@@ -222,7 +227,7 @@ def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False
         sections=[unit for unit in sections if relevance[unit['id']]>=best*.85]
     random.shuffle(sections)
     mastery_scores = learning_store.mastery(user_id)
-    sections.sort(key=lambda unit: (0 if whole else -math.ceil(8*relevance[unit['id']]/best),unit['id'] in recent_skills, -learning_store.priority(unit['id'], mastery_scores), counts.get(unit['id'], 0)))
+    sections.sort(key=lambda unit: (unit['id'] in recent_skills,counts.get(unit['id'],0),0 if whole else -relevance[unit['id']],-learning_store.priority(unit['id'],mastery_scores)))
     selected, used_files = ([], set())
     while sections and len(selected) < count:
         unit = next((unit for unit in sections if (unit['course_id'], unit['source_file']) not in used_files), sections[0])
@@ -236,21 +241,22 @@ def plan_context(user_id: str, course_ids: list[str], topic: str, *, whole=False
     plans = []
     for unit in selected:
         sources = sorted(unit['sources'], key=lambda row: len(terms(row['text']) & query), reverse=True)
-        anchor = sources[0]
+        overlap=max((len(terms(row['text']) & query) for row in sources),default=0)
+        topical_sources=[row for row in sources if not overlap or len(terms(row['text']) & query)>=overlap*.75]
+        anchor=min(topical_sources,key=lambda row:chunk_counts.get(row['chunk_id'],0))
         same_document = [source for section in catalog['sections'] if not section.get('excluded') and section['course_id'] == unit['course_id'] and (section['source_file'] == unit['source_file']) for source in section['sources'] if not source.get('quality_review_required')]
         neighbors = sorted(same_document, key=lambda row: (abs(row['page'] - anchor['page']) * 10000 + abs(row.get('chunk_index', 0) - anchor.get('chunk_index', 0)), row['page'], row.get('chunk_index', 0)))
         companions = assessment_support(catalog, unit, query, allowed)
         topical=topical_evidence(catalog,unit,query,allowed,semantic)
         continuation=[row for row in neighbors if row['page']==anchor['page'] and row['chunk_id']!=anchor['chunk_id']][:1]
         evidence = retrieval.pack_sources([anchor,*continuation,*topical,*companions,*neighbors[:2]], max_chars=10000)
-        evidence.sort(key=lambda row: (row['page'], row.get('chunk_index', 0)))
         evidence = retrieval.relabel_sources(evidence)
         target = 'A covered concept from: ' + ', '.join(unit['keywords'][:6])
         plans.append({'skill_id': unit['id'], 'title': unit['title'], 'scope_key': key, 'sources': evidence, 'topic': topic if not whole else target})
     context = overview(catalog, scope_rules(user_id, course_ids))
     if len(context) > 20000:
         raise ValueError('The combined course scope is too large for one question request. Select fewer courses or provide a concise syllabus.')
-    return {'version': catalog['version'], 'scope_key': key, 'overview': context, 'plans': plans, 'recent_questions': [row['question'] for row in recent[:24]]}
+    return {'version': catalog['version'], 'scope_key': key, 'overview': context, 'plans': plans, 'recent_questions': relevant_questions(recent,topic)}
 
 def public_map(user_id, course_ids):
     catalog = course_map(user_id, course_ids)

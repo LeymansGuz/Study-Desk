@@ -71,7 +71,9 @@ def listing(kind, user_id, limit=100):
         rows = conn.execute('SELECT id,payload,updated FROM learning_objects WHERE kind=? AND user_id=? ORDER BY updated DESC,rowid DESC LIMIT ?', (kind, user_id, min(10000, limit))).fetchall()
     return [{'id': row['id'], **json.loads(row['payload']), 'updated': row['updated']} for row in rows]
 
-def fingerprint(text):
+def fingerprint(text,options=None):
+    from practice_novelty import task_text
+    text=task_text(text,options)
     return hashlib.sha256(' '.join(text.lower().split()).encode()).hexdigest()
 
 def template_id(text):
@@ -117,7 +119,7 @@ def priority(skill, mastery_scores):
 def bank_add(user_id, state, version):
     if not state.get('current_question') or not state.get('sources') or state.get('mode') != 'practice':
         return None
-    question_hash = fingerprint(state['current_question'])
+    question_hash = fingerprint(state['current_question'],state.get('options'))
     identifier = f'{user_id}:{question_hash}'
     prior = get('bank', identifier)
     if prior and prior.get('quarantined') or is_quarantined(state['current_question']):
@@ -146,7 +148,7 @@ def bank_items(user_id, course):
                 and {s.get('course_id') for s in sources} == {course}
                 and not any(s.get('quality_review_required') for s in sources)
                 and template_id(row.get('current_question', '')) not in paused):
-            unique.setdefault(row.get('fingerprint') or fingerprint(row['current_question']), row)
+            unique.setdefault(row.get('fingerprint') or fingerprint(row['current_question'],row.get('options')), row)
     return list(unique.values())
 
 
@@ -166,6 +168,8 @@ def bank_counts(user_id, course):
 def bank_take(user_id, version, courses, difficulty, types, doc_types, topic, whole=False, figure_mode='none'):
     """Reserve a validated, unexposed item atomically; reserve before returning it."""
     import curriculum
+    from practice_novelty import history,question_key,task_text
+    seen_keys={question_key(row['question']) for row in history(user_id)}
     with db.connect() as conn:
         conn.execute('BEGIN IMMEDIATE')
         paused = {r['id'] for r in conn.execute("SELECT id FROM learning_objects WHERE kind='quarantine' AND json_extract(payload,'$.active')=1")}
@@ -175,6 +179,8 @@ def bank_take(user_id, version, courses, difficulty, types, doc_types, topic, wh
         rows = conn.execute(f"SELECT id,payload FROM learning_objects WHERE kind=? AND user_id=? AND json_extract(payload,'$.version')=? AND json_extract(payload,'$.difficulty')=? AND json_extract(payload,'$.question_type') IN ({placeholders}) AND id NOT IN (SELECT item_id FROM learning_exposures WHERE user_id=?) ORDER BY updated", ('bank', user_id, version, difficulty, *types, user_id))
         for row in rows:
             item = json.loads(row['payload'])
+            if question_key(task_text(item.get('current_question',''),item.get('options'))) in seen_keys:
+                continue
             if (item.get('assessment_version') or 0) < __import__('assessment_level').POLICY_VERSION:
                 continue
             if figure_mode != 'auto' and ((item.get('figure_mode') or 'none') != figure_mode or (figure_mode == 'math' and (not item.get('figure')))):
@@ -198,12 +204,12 @@ def bank_take(user_id, version, courses, difficulty, types, doc_types, topic, wh
             return item
     return None
 
-def mark_served(user_id, question):
+def mark_served(user_id, question, options=None):
     from generation_control import defer
-    if defer(lambda: mark_served(user_id, question)):
+    if defer(lambda: mark_served(user_id, question, options)):
         return
     with db.connect() as conn:
-        conn.execute('INSERT OR IGNORE INTO learning_exposures VALUES(?,?,?)', (user_id, f'{user_id}:{fingerprint(question)}', time.time()))
+        conn.execute('INSERT OR IGNORE INTO learning_exposures VALUES(?,?,?)', (user_id, f'{user_id}:{fingerprint(question,options)}', time.time()))
 
 def quarantine(question, user_id=None):
     identifier = fingerprint(question)

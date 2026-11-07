@@ -8,6 +8,8 @@ from tools import QuestionDraft, TutorError
 
 @pytest.fixture
 def course(client, monkeypatch):
+    # Isolate each workflow's local-owner history; tests deliberately use small shared fixtures.
+    with db.connect() as c:c.execute('DELETE FROM pipeline_exposures WHERE user_id=?',(auth.OWNER_ID,))
     identifier=client.post('/workspace/courses',json={'name':'Flow '+uuid.uuid4().hex[:8]}).json()['id']
     monkeypatch.setattr(curriculum,'scope_version',lambda *a,**k:'flow-version')
     monkeypatch.setattr(graph,'plan_context',lambda *a,**k:{'plans':[{'sources':[],'skill_id':'flow','topic':'Equations'}], 'overview':'Course evidence','scope_key':'flow','recent_questions':[]})
@@ -35,7 +37,11 @@ def test_mastery_generates_one_selected_type_at_a_time_and_rolls_back(client,cou
     calls=[]
     async def draft(topic,sources,difficulty,types,**kwargs):
         calls.append((difficulty,types))
-        return QuestionDraft(question=f'Solve the equation $x+{len(calls)}=5$ for real $x$.',question_type=types[0],canonical_answer='4',solution='Subtract the constant from five.',formula_focus='Equations')
+        tasks=[('Solve the equation $x+1=5$ for real $x$.','4','Subtract one from both sides to obtain x=4.'),
+               ('Factor $x^2-5x+4$ and find every real zero.','1, 4','The factorization is (x-1)(x-4), so the zero-product property gives 1 and 4.'),
+               ('Determine when the two linear equations $x+y=1$ and $x-y=a$ have equal real solutions $x=y$.','a=0','Subtracting the equal unknowns gives zero, so the second equation requires a=0.')]
+        question,key,solution=tasks[min(len(calls)-1,2)]
+        return QuestionDraft(question=question,question_type=types[0],canonical_answer=key,solution=solution,formula_focus='Equations')
     monkeypatch.setattr(graph,'draft_question',draft)
     r=client.post('/ask/path',json={'topic':'Equations','course_ids':[course],'question_type':'calculation','doc_types':['notes']})
     assert r.status_code==200,r.text

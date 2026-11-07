@@ -26,7 +26,18 @@ def vector(text):
 
 def duplicate(question, previous):
     from tools import problem_similarity
+    from practice_novelty import question_key
+    key=question_key(question)
+    if any(question_key(old)==key for old in previous):return True
+    # A cheap lexical shortlist bounds embedding work even with 2,000 retained tasks.
+    if len(previous)>48:
+        query_words=set(re.findall(r'[a-z]{2,}',key))
+        def overlap(old):
+            words=set(re.findall(r'[a-z]{2,}',question_key(old)))
+            return len(words & query_words)/max(1,len(words | query_words))
+        previous=sorted(previous,key=overlap,reverse=True)[:48]
     if any((problem_similarity(question, old) >= 0.82 for old in previous)):
+
         return True
     if not previous:
         return False

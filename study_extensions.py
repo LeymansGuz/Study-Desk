@@ -157,7 +157,7 @@ def install(app, ns):
                 if version != curriculum.scope_version(user['id'], path['course_ids']):
                     raise HTTPException(409, 'Course material changed. Start a fresh mastery path.')
                 await attach_verification(values, thread, round(time.perf_counter()-started,3), user['id'], graph, config)
-                learning_store.mark_served(user['id'], values['current_question'])
+                learning_store.mark_served(user['id'], values['current_question'],values.get('options'))
                 updated = {**path, 'threads': [*path['threads'][:index], thread], 'index': index}
                 learning_store.put('path', identifier, user['id'], updated)
                 return await public_path(identifier, updated, user)

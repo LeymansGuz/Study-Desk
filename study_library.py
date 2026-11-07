@@ -75,6 +75,7 @@ def save_checked_section(owner,payload):
         value=json.loads(row[0]) if row else {}
         entries=value.get('sections',[]) if value.get('version')==payload['version'] else [r for r in value.get('sections',[]) if source_lineage.current(r,versions)]
         entry={k:payload[k] for k in ['topic','markdown','sources']}
+        entry['check_version']=payload.get('check_version')
         entry['source_versions']=source_lineage.pin(entry,versions)
         entries=[r for r in entries if r['topic'].casefold()!=entry['topic'].casefold()]+[entry]
         guide={'course_id':cid,'version':payload['version'],'sections':entries[-20:]}
@@ -138,15 +139,16 @@ def install(app,services):
 
     @app.get('/library/guide/{course_id}')
     async def guide(course_id:str,download:bool=False,user=Depends(require)):
+        from explanations import CHECK_VERSION
         current=course(user['id'],course_id);version=curriculum.scope_version(user['id'],[course_id])
-        explanations=[x for x in store.listing('explain',user['id'],10) if x.get('course_ids')==[course_id] and x.get('version')==version]
-        sheets=[x for x in store.listing('revision_sheet',user['id'],20) if x.get('course_ids')==[course_id] and x.get('version')==version and not x.get('imported')]
+        explanations=[x for x in store.listing('explain',user['id'],10) if x.get('course_ids')==[course_id] and x.get('version')==version and x.get('check_version')==CHECK_VERSION]
+        sheets=[x for x in store.listing('revision_sheet',user['id'],20) if x.get('course_ids')==[course_id] and x.get('version')==version and not x.get('imported') and x.get('check_version')==CHECK_VERSION]
         unique={x['topic'].casefold():{'topic':x['topic'],'markdown':x.get('checked_markdown',x['markdown']),'sources':x.get('sources',[])} for x in sheets+explanations}
         saved_guide=store.get('course_guide',course_id,user['id']) or {}
         import source_lineage
         versions=source_lineage.fingerprints(user['id'],course_id)
         for entry in saved_guide.get('sections',[]):
-            if saved_guide.get('version')==version or source_lineage.current(entry,versions):unique.setdefault(entry['topic'].casefold(),entry)
+            if entry.get('check_version')==CHECK_VERSION and (saved_guide.get('version')==version or source_lineage.current(entry,versions)):unique.setdefault(entry['topic'].casefold(),entry)
         units=await asyncio.to_thread(sections,user['id'],course_id)
         covered={(s.get('source_file',s.get('file')),s.get('page')) for x in unique.values() for s in x['sources']}
         gaps=[{'topic':x['title'],'source_file':x['source_file'],'pages':x['pages']} for x in units if not any((x['source_file'],p) in covered for p in x['pages'])]

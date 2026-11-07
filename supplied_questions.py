@@ -3,6 +3,10 @@ import re
 
 def classify(text):
     matches = list(re.finditer('(?m)(?:^|[ \\t]+)([A-D])[.)]\\s+', text))
+    if len(matches)==2 and [m[1] for m in matches]==['A','B']:
+        options=[text[m.end():matches[i+1].start() if i==0 else len(text)].strip() for i,m in enumerate(matches)]
+        if {o.lower().rstrip('.') for o in options}=={'true','false'}:
+            return ('true_false',text[:matches[0].start()].strip(),[o.rstrip('.') for o in options])
     if len(matches) == 4 and [m[1] for m in matches] == list('ABCD'):
         options = [text[m.end():matches[i + 1].start() if i < 3 else len(text)].strip() for i, m in enumerate(matches)]
         if all(options):
