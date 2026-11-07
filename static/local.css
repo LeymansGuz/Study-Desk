@@ -57,3 +57,5 @@
 .local-card input[type=file]::file-selector-button { font:inherit; padding:7px 12px; margin-right:12px; border:1px solid var(--line-strong); border-radius:6px; background:var(--surface-soft); color:var(--ink); cursor:pointer; }
 button[disabled] { cursor:not-allowed; }
 [aria-busy=true] button[disabled] { cursor:wait; }
+
+.local-card .file-select-label{display:flex;flex-direction:row;align-items:center;gap:.75rem;margin:0 0 .5rem}#file-type-tools{gap:.75rem}#file-type-tools[hidden]{display:none}

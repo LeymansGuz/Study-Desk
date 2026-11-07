@@ -5,7 +5,20 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const rich=s=>window.studyRich(String(s??''));
 const fileSize=bytes=>bytes<1024?`${bytes} B`:bytes<1048576?`${(bytes/1024).toFixed(1)} KB`:`${(bytes/1048576).toFixed(1)} MB`;
 const local={view:'practice',courses:[],files:[],filePage:0,jobs:[],rebuildPending:false,practice:null,ask:null,path:null,settings:{},busy:new Set()};
-const types={syllabus:'Syllabus / learning outcomes',notes:'Notes',past_paper:'Past paper',exercise:'Exercise / assignment',marking_scheme:'Marking scheme',exam_report:'Exam report'};
+const types={};
+// Text dates avoid operating-system locale placeholders such as dd/月/yyyy.
+const studyDates={
+ display(value){return value?String(value).split('-').reverse().join('/'):'';},
+ iso(value){
+  if(!value.trim())return null;
+  const match=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if(!match)throw Error('Enter the exam date as dd/mm/yyyy.');
+  const [,d,m,y]=match,date=new Date(Date.UTC(+y,+m-1,+d));
+  if(date.getUTCFullYear()!==+y||date.getUTCMonth()!==+m-1||date.getUTCDate()!==+d)throw Error('Enter a valid exam date as dd/mm/yyyy.');
+  return `${y}-${m}-${d}`;
+ }
+};
+
 
 async function api(path,options={}) {
   const headers={...options.headers};
@@ -130,12 +143,38 @@ async function workspace(){
 function renderFiles(){
   const query=$('#file-search').value.trim().toLowerCase(),rows=local.files.filter(f=>f.filename.toLowerCase().includes(query)),size=10;
   local.filePage=Math.min(local.filePage,Math.max(0,Math.ceil(rows.length/size)-1));
-  $('#files').innerHTML=rows.slice(local.filePage*size,(local.filePage+1)*size).map(f=>`<article class="local-item"><strong>${esc(f.filename)}</strong><p class="local-file-meta"><span>${esc(types[f.doc_type]||f.doc_type)}</span><span>${fileSize(f.size)}</span><span>${f.indexed?`${Number(f.chunks)} chunks`:'Waiting for indexing'}</span></p><div class="local-actions"><button class="quiet-button" data-preview="${esc(f.id)}">Preview</button><a class="quiet-button" href="/workspace/documents/${encodeURIComponent(f.id)}/download">Download</a><button class="quiet-button" data-syllabus="${esc(f.id)}" data-enabled="${Boolean(f.syllabus_enabled)}">${Boolean(f.syllabus_enabled)?'Included in':'Excluded from'} any syllabus topic</button><label>Document type<select data-type="${esc(f.id)}">${Object.entries(types).map(([v,t])=>`<option value="${v}" ${v===f.doc_type?'selected':''}>${t}</option>`).join('')}</select></label><button class="quiet-button" data-delete="${esc(f.id)}">Delete</button></div></article>`).join('')||'<p class="hint">No documents found. Add your course material above.</p>';
+  $('#files').innerHTML=rows.slice(local.filePage*size,(local.filePage+1)*size).map(f=>`<article class="local-item"><label class="file-select-label"><input type="checkbox" class="file-choice" data-file-select="${esc(f.id)}" aria-label="Select ${esc(f.filename)}"><strong>${esc(f.filename)}</strong></label><p class="local-file-meta"><span data-file-type-label>${esc(types[f.doc_type]||f.doc_type)}</span><span>${fileSize(f.size)}</span><span>${f.indexed?`${Number(f.chunks)} chunks`:'Waiting for indexing'}</span></p><div class="local-actions"><button class="quiet-button" data-preview="${esc(f.id)}">Preview</button><a class="quiet-button" href="/workspace/documents/${encodeURIComponent(f.id)}/download">Download</a><button class="quiet-button" data-syllabus="${esc(f.id)}" data-enabled="${Boolean(f.syllabus_enabled)}">${Boolean(f.syllabus_enabled)?'Included in':'Excluded from'} any syllabus topic</button><label>Document type<select data-type="${esc(f.id)}">${Object.entries(types).map(([v,t])=>`<option value="${v}" ${v===f.doc_type?'selected':''}>${t}</option>`).join('')}</select></label><button class="quiet-button" data-delete="${esc(f.id)}">Delete</button></div></article>`).join('')||'<p class="hint">No documents found. Add your course material above.</p>';
   $('#file-pages').innerHTML=`<button class="quiet-button" id="file-prev" ${local.filePage===0?'disabled':''}>Previous</button><span>${rows.length?local.filePage+1:0} / ${Math.ceil(rows.length/size)} · ${rows.length} documents</span><button class="quiet-button" id="file-next" ${(local.filePage+1)*size>=rows.length?'disabled':''}>Next</button>`;
   $('#file-prev').onclick=()=>{local.filePage--;renderFiles();};$('#file-next').onclick=()=>{local.filePage++;renderFiles();};
   $$('[data-preview]').forEach(b=>b.onclick=async()=>{try{const f=local.files.find(x=>x.id===b.dataset.preview);const result=await api('/workspace/documents/'+f.id+'/preview');$('#source-dialog').classList.toggle('document-only',result.mode==='pdf');$('#source-question').innerHTML=rich(result.content||f.filename);if(result.mode==='image'){const image=document.createElement('img');image.src=result.file_url;image.alt=f.filename;image.className='source-image';$('#source-question').append(image);}$('#source-select').innerHTML='<option>Original document</option>';$('#source-excerpt').textContent='';$('#source-pdf').hidden=result.mode!=='pdf';$('#source-pdf').src=result.mode==='pdf'?result.file_url:'about:blank';$('#source-download').href=result.file_url;$('#source-download').hidden=false;$('#source-select').onchange=null;$('#source-dialog').showModal();}catch(e){fail(e);}});
   $$('[data-syllabus]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('/workspace/documents/'+b.dataset.syllabus+'/syllabus',{method:'PUT',body:JSON.stringify({enabled:b.dataset.enabled!=='true'})});await workspace();}catch(e){fail(e);b.disabled=false;}});
-  $$('[data-type]').forEach(b=>b.onchange=async()=>{try{await api('/workspace/files/'+b.dataset.type+'/type',{method:'PUT',body:JSON.stringify({doc_type:b.value})});await workspace();}catch(e){fail(e);}});
+  async function saveType(select,value){
+    const file=local.files.find(f=>f.id===select.dataset.type),previous=file.doc_type;
+    select.disabled=true;
+    try{
+      const result=await api('/workspace/files/'+file.id+'/type',{method:'PUT',body:JSON.stringify({doc_type:value})});
+      file.doc_type=result.doc_type;select.value=result.doc_type;
+      select.closest('article').querySelector('[data-file-type-label]').textContent=types[result.doc_type];
+      status('#file-type-status','Document type saved.');
+    }catch(e){select.value=previous;throw e;}finally{select.disabled=false;}
+  }
+  $$('[data-type]').forEach(b=>b.onchange=async()=>{try{await saveType(b,b.value);}catch(e){status('#file-type-status',e.message,true);}});
+  const choices=$$('[data-file-select]');
+  function selection(){const count=choices.filter(c=>c.checked).length;$('#file-type-tools').hidden=!count;$('#file-type-count').textContent=`${count} selected`;}
+  choices.forEach(c=>c.onchange=selection);selection();
+  $('#file-select-page').disabled=!choices.length;
+  $('#file-select-page').onclick=()=>{const checked=!choices.every(c=>c.checked);choices.forEach(c=>c.checked=checked);selection();};
+  $('#file-type-apply').onclick=async()=>{
+    const selected=choices.filter(c=>c.checked),button=$('#file-type-apply'),value=$('#file-bulk-type').value;
+    const locked=$$('#files select,#files button,#file-pages button,#file-search,#workspace-course,#file-bulk-type');
+    const disabled=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
+    button.disabled=true;$('#file-select-page').disabled=true;choices.forEach(c=>c.disabled=true);
+    let saved=0;
+    try{for(const choice of selected){await saveType($$('[data-type]').find(s=>s.dataset.type===choice.dataset.fileSelect),value);choice.checked=false;saved++;$$('[data-type]').forEach(el=>el.disabled=true);}
+      status('#file-type-status',`${saved} document types saved.`);
+    }catch(e){status('#file-type-status',`${saved} saved. ${e.message} Remaining files stay selected.`,true);}
+    finally{locked.forEach((el,i)=>el.disabled=disabled[i]);button.disabled=false;$('#file-select-page').disabled=false;choices.forEach(c=>c.disabled=false);selection();}
+  };
   $$('[data-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this document and its indexed content?'))return;try{await api('/workspace/files/'+b.dataset.delete,{method:'DELETE'});await workspace();}catch(e){fail(e);}});
 }
 async function coverage(){const id=$('#workspace-course').value;if(!id)return;const data=await api('/workspace/courses/'+id+'/coverage');$('#coverage').hidden=false;$('#coverage-summary').textContent='Index summary: '+Number(data.eligible_sections??data.sections?.length??0)+' extracted sections available for practice. This is not a check of complete syllabus coverage.';$('#scope-rules').value=typeof data.scope_rules==='string'?data.scope_rules:(data.scope_rules?.[0]?.scope_notes||'');}
@@ -146,7 +185,7 @@ async function resume(kind,id){
   else if(kind==='exam'){view('learning');renderExam(await api('/bank-exams/'+id));}
   else if(kind==='path'){view('practice');renderPath(await api('/ask/path/'+id));}
 }
-const questionLabels={mcq:'Multiple choice',short_answer:'Short answer',calculation:'Calculation',long_answer:'Long answer',proof:'Proof / derivation',essay:'Essay',true_false:'True / false'};
+const questionLabels={};
 async function bank(){const course=$('#bank-course').value;if(!course){local.bankData=null;$('#bank-counts').textContent='Choose a course to view verified counts.';examAvailable();return;}const data=await api('/learning/courses/'+course+'/bank');local.bankData={...data,course_id:course};const counts=data.counts||[];const levels=[...new Set(counts.map(r=>r.difficulty))];const kinds=[...new Set(counts.map(r=>r.question_type))];$('#bank-counts').innerHTML=table(levels.map(d=>Object.fromEntries([['Difficulty',d],...kinds.map(t=>[questionLabels[t]||t,counts.find(r=>r.difficulty===d&&r.question_type===t)?.count||0])])));examAvailable();}
 function examAvailable(){const data=local.bankData;if(!data||data.course_id!==$('#exam-course').value){$('#exam-available').textContent='Choose a course to see available verified questions.';return;}const count=(data.counts||[]).filter(r=>($('#exam-difficulty').value==='any'||r.difficulty===$('#exam-difficulty').value)&&($('#exam-type').value==='any'||r.question_type===$('#exam-type').value)).reduce((n,r)=>n+r.count,0);$('#exam-available').textContent=`${count} verified question${count===1?'':'s'} match these filters. Up to 10 can be used per exam.`;}
 
@@ -170,6 +209,7 @@ function renderExam(data){renderQuestion('exam',{...data.question,status:data.cu
 
 async function init(){
   $$('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+  const catalog=await api('/local/catalog');Object.assign(types,catalog.document_types);Object.assign(questionLabels,catalog.question_types);$('#file-bulk-type').innerHTML=Object.entries(types).map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
   $('#doc-type').innerHTML=Object.entries(types).map(([v,t])=>`<option value="${v}" ${v==='notes'?'selected':''}>${t}</option>`).join('');
   $('#source-types').innerHTML=Object.entries(types).map(([v,t])=>`<label><input type="checkbox" value="${v}">${t}</label>`).join('');
   $('#theme-toggle').onclick=async()=>{const value=document.documentElement.dataset.theme==='dark'?'light':'dark';theme(value);local.settings.theme=value;try{local.settings=await api('/settings',{method:'PUT',body:JSON.stringify(local.settings)});}catch(error){fail(error);}};

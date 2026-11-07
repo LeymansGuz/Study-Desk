@@ -7,18 +7,18 @@ Both editions open directly as the local owner.
 
 ## Install the desktop application
 
-The current published beta is [v0.2.13-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.13-beta.1).
+The current published beta is [v0.2.14-beta.1](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.14-beta.1).
 Choose an installer for your computer; the source-code ZIP is for source setup.
 Desktop users do not need Python, Node.js or a `.env` file.
 
 | Computer | Download |
 |---|---|
-| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/Study-Desk_0.2.13_amd64.AppImage) |
+| Windows x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [aarch64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [x64 DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_amd64.deb) or [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/Study-Desk_0.2.14_amd64.AppImage) |
 
-The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.13-beta.1/SHA256SUMS.txt)
+The release also provides [SHA256SUMS.txt](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.14-beta.1/SHA256SUMS.txt)
 and build manifests. For your own local build, installer files are in `dist/installers/`.
 
 **Windows:** run the setup executable, install it for your Windows user, and open
@@ -42,15 +42,15 @@ and Apple Silicon DMGs use separate builds; do not mix them.
 manager, or run this from the download folder:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.13_amd64.deb
+sudo apt install ./Study-Desk_0.2.14_amd64.deb
 ```
 
 **Linux AppImage:** make the downloaded file executable in its file properties,
 then open it. The equivalent terminal commands are:
 
 ```bash
-chmod +x ./Study-Desk_0.2.13_amd64.AppImage
-./Study-Desk_0.2.13_amd64.AppImage
+chmod +x ./Study-Desk_0.2.14_amd64.AppImage
+./Study-Desk_0.2.14_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need additional system
@@ -58,7 +58,7 @@ libraries, especially `libwebkit2gtk-4.1-0` and `libsecret-1-0`. If the AppImage
 reports missing FUSE support, install `libfuse2` or run it without FUSE:
 
 ```bash
-./Study-Desk_0.2.13_amd64.AppImage --appimage-extract-and-run
+./Study-Desk_0.2.14_amd64.AppImage --appimage-extract-and-run
 ```
 
 Use the DEB for a system installation with package-managed dependencies. Saving
@@ -398,6 +398,17 @@ originality, Solver, Verifier, workload and policy checks as ordinary practice.
 Documents classified as **Syllabus / learning outcomes** supply the official
 allowed scope in the prompt. Content methods still require supporting evidence;
 a syllabus awaiting indexing blocks generation until its scope is available.
+
+In **Workspace**, choose **Syllabus / learning outcomes**, Notes, Past paper,
+Exercise / assignment, Marking scheme or Exam report for each document. Change
+individual types in place, or select files (up to the ten shown on a page), choose
+**Set document type** and **Apply to selected**. The current order, page and search
+stay in place. Wait for indexing to finish before editing types; saved changes
+update both the document registry and retrieval metadata. A failed batch keeps
+its remaining files selected so you can retry without repeating successful edits.
+
+Both exam-date fields in **Progress** use **dd/mm/yyyy** (for example,
+`21/11/2026`), independently of your operating system's language.
 
 In **Workspace → Course scope**, optionally specify learning objectives, allowed
 methods or excluded topics for the selected course. Its index summary counts

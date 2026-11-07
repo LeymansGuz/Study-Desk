@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 import db
 from upload_limits import WORKSPACE_FILES, IMAGE_BYTES, IMAGE_EXTENSIONS
 from security import sanitize_filename, ALLOWED_CORPUS_EXTENSIONS
+from study_catalog import DocumentType
 CHUNK_BYTES = 5 * 1024 * 1024
 TTL = 3600
 ACTIVE = {'receiving', 'processing'}
@@ -24,7 +25,7 @@ class FileSpec(BaseModel):
 
 class BatchSpec(BaseModel):
     course_id: str = Field(min_length=1, max_length=100)
-    doc_type: str = 'notes'
+    doc_type: DocumentType = 'notes'
     request_key: str = Field(default_factory=lambda: uuid.uuid4().hex, pattern='^[0-9a-f]{32}$')
     files: list[FileSpec] = Field(min_length=1, max_length=WORKSPACE_FILES)
 
@@ -194,8 +195,6 @@ def install(app, services):
         if not course:
             raise HTTPException(404, 'Unknown course.')
         services['_assert_course_editable'](user, course)
-        if spec.doc_type not in services['DOC_TYPES']:
-            raise HTTPException(400, 'Unknown document type.')
         if len(spec.files) > services['MAX_BATCH_FILES']:
             raise HTTPException(400, 'Too many files.')
         names = [sanitize_filename(item.name, ALLOWED_CORPUS_EXTENSIONS) for item in spec.files]

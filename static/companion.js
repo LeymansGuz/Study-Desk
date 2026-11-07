@@ -24,7 +24,7 @@
         if(q.kind==='practice'){document.querySelector('#practice-course').value=q.id;view('practice');}
       }catch(e){status('#today-status',e.message,true);}finally{button.disabled=false;}
     });
-    const plan=document.querySelector('#study-plan');if(!plan.contains(document.activeElement)){plan.elements.minutes.value=data.preferences.minutes;plan.elements.exam_date.value=data.preferences.exam_date||'';}
+    const plan=document.querySelector('#study-plan');if(!plan.contains(document.activeElement)){plan.elements.minutes.value=data.preferences.minutes;plan.elements.exam_date.value=studyDates.display(data.preferences.exam_date);}
   }
   function renderSheets(){
     const shown=sheets.slice(page*5,page*5+5);
@@ -77,7 +77,7 @@
   document.addEventListener('study-progress-updated',()=>{if(ready)today().catch(e=>status('#today-status',e.message,true));});
   document.addEventListener('study-ready',()=>{
     ready=true;
-    const plan=document.querySelector('#study-plan');plan.onsubmit=event=>{event.preventDefault();task('study-plan',plan,'#today-status',async()=>{await api('/study/plan',{method:'PUT',body:JSON.stringify({minutes:Number(plan.elements.minutes.value),exam_date:plan.elements.exam_date.value||null})});await today();});};
+    const plan=document.querySelector('#study-plan');plan.onsubmit=event=>{event.preventDefault();task('study-plan',plan,'#today-status',async()=>{await api('/study/plan',{method:'PUT',body:JSON.stringify({minutes:Number(plan.elements.minutes.value),exam_date:studyDates.iso(plan.elements.exam_date.value)})});await today();});};
     document.querySelector('[data-prev]').onclick=()=>{page=Math.max(0,page-1);renderSheets();};document.querySelector('[data-next]').onclick=()=>{page++;renderSheets();};
     const editor=form();let previewTimer;editor.elements.markdown.oninput=()=>{clearTimeout(previewTimer);previewTimer=setTimeout(()=>document.querySelector('#sheet-render').innerHTML=rich(editor.elements.markdown.value),180);};
     editor.onsubmit=event=>{event.preventDefault();task('sheet',editor,'#sheet-status',async()=>{

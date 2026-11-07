@@ -47,6 +47,7 @@ from policy import decide, opa_ready, close_policy_client
 from retrieval import TOP_K, collection_count, chroma_heartbeat, corpus_documents, course_workspace, delete_file, delete_user_collection, ingest_files, search, update_course_name, update_file_doc_type, update_file_identity, user_workspace, format_lineage
 from security import ALLOWED_CORPUS_EXTENSIONS, MAX_ASSIGNMENT_CHARS, MAX_UPLOAD_BYTES, SlidingWindowLimiter, enforce_rate_limit, extract_office_text, sanitize_filename, sanitize_text, security_headers, validate_upload
 from tools import Assessment, Difficulty, MAX_ATTEMPTS, QuestionType, TutorError, choice_answer_correct, generate_choice_hint, public_settings
+from study_catalog import DOC_TYPES, DocumentType
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s | %(message)s')
 logger = logging.getLogger('study.api')
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -57,7 +58,6 @@ MAX_BATCH_FILES = int(os.getenv('MAX_BATCH_FILES', str(WORKSPACE_FILES)))
 MAX_BATCH_BYTES = int(os.getenv('MAX_BATCH_BYTES', str(WORKSPACE_BYTES)))
 MAX_USER_STORAGE_BYTES = int(os.getenv('MAX_USER_STORAGE_BYTES', str(5 * 1024 * 1024 * 1024)))
 OWNER_STORAGE_LIMIT_BYTES = int(os.getenv('OWNER_STORAGE_LIMIT_BYTES', str(100 * 1024 * 1024 * 1024)))
-DOC_TYPES = {'syllabus', 'past_paper', 'marking_scheme', 'exam_report', 'notes', 'exercise'}
 ThreadId = Annotated[str, PathParam(min_length=8, max_length=64, pattern='^[A-Za-z0-9_-]+$')]
 ASK_LIMIT = SlidingWindowLimiter(5, 60)
 ANSWER_LIMIT = SlidingWindowLimiter(10, 60)
@@ -120,8 +120,6 @@ async def lifespan(_: FastAPI):
         maintenance_task.cancel()
         await asyncio.gather(maintenance_task, return_exceptions=True)
     await chunk_uploads.close()
-    import learning_api
-    await learning_api.close()
     await close_policy_client()
     if INDEX_WORKER:
         INDEX_WORKER.cancel()
@@ -185,12 +183,7 @@ class AskRequest(MathRequest):
     difficulty: Difficulty = 'medium'
     question_types: list[QuestionType] = Field(default_factory=lambda: ['short_answer'])
     course_ids: list[str] = Field(default_factory=list)
-    doc_types: list[str] = Field(default_factory=list)
-
-    @field_validator('doc_types')
-    @classmethod
-    def _clean_doc_types(cls, values: list[str]) -> list[str]:
-        return [value for value in values if value in DOC_TYPES][:len(DOC_TYPES)]
+    doc_types: list[DocumentType] = Field(default_factory=list, max_length=len(DOC_TYPES))
 
     @field_validator('topic')
     @classmethod
@@ -205,12 +198,7 @@ class AskQuestionRequest(BaseModel):
     question: str = Field(default='', max_length=MAX_ASSIGNMENT_CHARS)
     attachment_text: str = Field(default='', max_length=MAX_ASSIGNMENT_CHARS)
     attachment_name: str = Field(default='', max_length=140)
-    doc_types: list[str] = Field(default_factory=list)
-
-    @field_validator('doc_types')
-    @classmethod
-    def _clean_doc_types(cls, values: list[str]) -> list[str]:
-        return [value for value in values if value in DOC_TYPES][:len(DOC_TYPES)]
+    doc_types: list[DocumentType] = Field(default_factory=list, max_length=len(DOC_TYPES))
 
 class AnswerRequest(BaseModel):
     thread_id: str = Field(min_length=8, max_length=64)
@@ -362,35 +350,6 @@ class Course(BaseModel):
 class CourseListResponse(BaseModel):
     courses: list[Course]
 
-class AdminSharedUpdateRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=80)
-    institution: str = Field(min_length=1, max_length=80)
-    description: str = Field(min_length=1, max_length=600)
-
-    @field_validator('name', 'institution', 'description')
-    @classmethod
-    def _clean_text(cls, value: str) -> str:
-        value = ' '.join(value.split()).strip()
-        if any((ord(char) < 32 and char not in '\t\n\r' for char in value)):
-            raise ValueError('Text contains unsupported control characters.')
-        return value
-
-class AdminRejectRequest(AdminSharedUpdateRequest):
-    reason: str = Field(min_length=3, max_length=500)
-
-    @field_validator('reason')
-    @classmethod
-    def _clean_reason(cls, value: str) -> str:
-        value = ' '.join(value.split()).strip()
-        if any((ord(char) < 32 and char not in '\t\n\r' for char in value)):
-            raise ValueError('Text contains unsupported control characters.')
-        return value
-
-class AdminDocumentTypeRequest(BaseModel):
-    doc_type: Literal['past_paper', 'marking_scheme', 'exam_report', 'notes', 'exercise']
-
-class StarterCourseRequest(BaseModel):
-    course_id: str = Field(min_length=1, max_length=64)
 
 class AdminFile(BaseModel):
     id: str
@@ -420,7 +379,7 @@ class UploadResponse(BaseModel):
     job_id: str | None = None
 
 class DocumentTypeRequest(BaseModel):
-    doc_type: Literal['past_paper', 'marking_scheme', 'exam_report', 'notes', 'exercise']
+    doc_type: DocumentType
 
 class DocumentUpdateRequest(BaseModel):
     filename: str | None = Field(default=None, min_length=1, max_length=180)
@@ -435,8 +394,6 @@ class FlashcardReviewRequest(BaseModel):
 class ProgressResetRequest(BaseModel):
     confirm: Literal['RESET']
 
-class BackupSettingsRequest(BaseModel):
-    backup_dir: str = Field(min_length=1, max_length=500)
 
 class WorkspaceHealthResponse(BaseModel):
     user: dict[str, Any]
@@ -453,22 +410,6 @@ class WorkspaceSnapshotResponse(BaseModel):
     courses: list[Course]
     files: list[AdminFile]
 
-class AdminBroadcastRequest(BaseModel):
-    title: str = Field(min_length=3, max_length=120)
-    message: str = Field(min_length=1, max_length=1000)
-
-    @field_validator('title', 'message')
-    @classmethod
-    def _clean_broadcast(cls, value: str) -> str:
-        return sanitize_text(value, max_chars=1000).strip()
-
-class ChangePasswordRequest(BaseModel):
-    current_password: str = Field(min_length=1, max_length=128)
-    new_password: str = Field(min_length=8, max_length=128)
-
-class DeleteAccountRequest(BaseModel):
-    password: str = Field(min_length=1, max_length=128)
-    confirmation: str = Field(min_length=1, max_length=40)
 
 class UserSettingsResponse(BaseModel):
     theme: Literal['light', 'dark']
@@ -493,10 +434,6 @@ def _sources(values: dict[str, Any]) -> list[Source]:
 def _decisions(values: dict[str, Any]) -> list[PolicyDecision]:
     return [PolicyDecision(**decision) for decision in values.get('policy_decisions') or []]
 
-def require_owner(user: dict[str, Any]=Depends(require_user)) -> dict[str, Any]:
-    if not user.get('is_admin'):
-        raise HTTPException(status_code=404, detail='Not found.')
-    return user
 
 def _log_usage(user_id: str, kind: str) -> None:
     try:
@@ -1200,15 +1137,13 @@ async def download_workspace_files(course_id: str | None=None, user: dict[str, A
 
 @app.post('/workspace/files/local', response_model=UploadResponse, tags=['workspace'], include_in_schema=False)
 @app.post('/workspace/files', response_model=UploadResponse, tags=['workspace'])
-async def upload_workspace_files(request: Request, course_id: str=Form(...), doc_type: str=Form('notes'), files: list[UploadFile]=File(...), user: dict[str, Any]=Depends(require_user)) -> UploadResponse:
+async def upload_workspace_files(request: Request, course_id: str=Form(...), doc_type: DocumentType=Form('notes'), files: list[UploadFile]=File(...), user: dict[str, Any]=Depends(require_user)) -> UploadResponse:
     local_owner_upload = request.url.path.endswith('/local')
     if local_owner_upload:
         if not _is_trusted_local_owner(request, user):
             raise HTTPException(status_code=404, detail='Not found.')
     elif not request.url.path.startswith('/workspace/uploads/'):
         enforce_rate_limit(request, UPLOAD_LIMIT, 'upload', user_id=user['id'])
-    if doc_type not in DOC_TYPES:
-        raise HTTPException(status_code=400, detail='Unknown document type.')
     course = db.get_course(user['id'], course_id)
     if not course:
         raise HTTPException(status_code=404, detail='Unknown course.')
@@ -1325,10 +1260,8 @@ async def upload_workspace_files(request: Request, course_id: str=Form(...), doc
     return UploadResponse(uploaded=uploaded, ingest=ingest, already_present=already_present, job_id=job['id'] if job else None)
 
 @app.post('/workspace/courses/{course_id}/import-zip', response_model=UploadResponse, tags=['workspace'])
-async def import_course_zip(course_id: str, request: Request, file: UploadFile=File(...), doc_type: str=Form('notes'), user: dict[str, Any]=Depends(require_user)) -> UploadResponse:
+async def import_course_zip(course_id: str, request: Request, file: UploadFile=File(...), doc_type: DocumentType=Form('notes'), user: dict[str, Any]=Depends(require_user)) -> UploadResponse:
     enforce_rate_limit(request, UPLOAD_LIMIT, 'import-zip', user_id=user['id'])
-    if doc_type not in DOC_TYPES:
-        raise HTTPException(status_code=400, detail='Unknown document type.')
     course = db.get_course(user['id'], course_id)
     if not course:
         raise HTTPException(status_code=404, detail='Unknown course.')
@@ -1422,20 +1355,33 @@ async def import_course_zip(course_id: str, request: Request, file: UploadFile=F
 @app.put('/workspace/files/{document_id}/type', tags=['workspace'])
 async def update_workspace_file_type(document_id: str, req: DocumentTypeRequest, request: Request, user: dict[str, Any]=Depends(require_user)) -> dict[str, str]:
     enforce_rate_limit(request, DOC_TYPE_LIMIT, 'file-type', user_id=user['id'])
-    document = db.get_document(user['id'], document_id)
-    if not document:
-        raise HTTPException(status_code=404, detail='Unknown document.')
-    course = db.get_course(user['id'], document['course_id'])
-    if course:
-        _assert_course_editable(user, course)
-    db.update_document_type(user['id'], document_id, req.doc_type)
-
-    async def refresh_indexed_type() -> None:
-        try:
-            await asyncio.to_thread(update_file_doc_type, user['id'], document['course_id'], document['filename'], req.doc_type)
-        except Exception:
-            logger.exception('Could not update indexed doc_type for %s', document['filename'])
-    asyncio.create_task(refresh_indexed_type())
+    async with WORKSPACE_LOCK:
+        document = db.get_document(user['id'], document_id)
+        if not document:
+            raise HTTPException(404, 'Unknown document.')
+        course = db.get_course(user['id'], document['course_id'])
+        if course:
+            _assert_course_editable(user, course)
+        if db.active_index_job(user['id'], document['course_id']):
+            raise HTTPException(409, 'Wait for this course to finish indexing before changing document types.')
+        if document['doc_type'] != req.doc_type:
+            def save_type():
+                try:
+                    update_file_doc_type(user['id'], document['course_id'], document['filename'], req.doc_type)
+                    if not db.update_document_type(user['id'], document_id, req.doc_type):
+                        raise RuntimeError('Document disappeared during type update')
+                except Exception:
+                    # Keep registry and retrieval aligned if either store fails.
+                    try:
+                        update_file_doc_type(user['id'], document['course_id'], document['filename'], document['doc_type'])
+                    except Exception:
+                        logger.exception('Could not restore indexed document type')
+                    raise
+            try:
+                await asyncio.to_thread(save_type)
+            except Exception:
+                logger.exception('Could not save document type')
+                raise HTTPException(503, 'Could not save the document type. Please retry.')
     return {'status': 'updated', 'doc_type': req.doc_type}
 
 @app.delete('/workspace/files/{document_id}', tags=['workspace'])

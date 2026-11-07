@@ -21,6 +21,11 @@ successful compilation is not a device compatibility guarantee.
 - Providers and catalog adapters: `providers.py`. Keep credentials in the OS
   keyring and snapshot the connection for a whole workflow. Unknown pricing must
   never be represented as free. Preserve server-side free-model restrictions.
+- Public form choices: `study_catalog.py`. Workspace uploads, document edits,
+  course imports and source filters share `DocumentType`; the UI loads labels
+  from `/local/catalog`. Extend the shared catalog and contract tests together.
+  Keep document edits in place and keep API dates in ISO format while showing
+  exam dates as `dd/mm/yyyy`.
 - Document readers: `extraction.py`, `pdf_text.py`, `document_ocr.py`. Keep OCR
   selective and cached; preserve page references and cancellation limits.
 - Difficulty and workload: `assessment_level.py` is the shared Writer/Verifier

@@ -139,8 +139,7 @@ class QuestionDraft(BaseModel):
     @classmethod
     def _clean_options(cls, values: list[str]) -> list[str]:
         return [value.strip() for value in values if value.strip()][:6]
-Difficulty = Literal['easy', 'medium', 'hard', 'insane']
-QuestionType = Literal['mcq', 'short_answer', 'long_answer', 'essay', 'calculation', 'proof', 'true_false']
+from study_catalog import Difficulty, QuestionType
 QUESTION_TYPES: dict[str, str] = {'mcq': 'multiple choice: one question plus 4 plausible options; answer key must state the correct option', 'short_answer': 'short answer: a few sentences or a short calculation', 'long_answer': 'long answer: a structured, multi-part question requiring connected working and reasoning', 'essay': 'essay: an extended written response in connected paragraphs, supported by evidence and reasoning', 'calculation': 'calculation: show the method and numeric/symbolic result', 'proof': 'proof or derivation: justify every step', 'true_false': 'true/false with a short justification; options are True and False'}
 DEFAULT_QUESTION_TYPES: list[QuestionType] = ['short_answer']
 from assessment_level import DIFFICULTY_GUIDE, TYPE_REQUIREMENTS, type_requirements

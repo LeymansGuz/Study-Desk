@@ -1,13 +1,10 @@
-Study Desk v0.2.13 beta — private, course-grounded study with your own AI key.
+Study Desk v0.2.14 beta — private, course-grounded study with your own AI key.
 
-Course-relative difficulty uses focused learning objectives without mandatory
-subpart counts. General fixes cover calculus variables, fraction formatting,
-equation checks, tier-specific repair, MCQ shuffling and proof presentation.
-Public verification receipts exclude private answer keys and option indices.
-The latest 28-attempt source confirmation accepted 25 questions in 29.2 seconds
-on average; all 25 passed an extra same-provider content audit, with one
-difficulty disagreement. These small checks do not guarantee correctness.
-See README for the full dated limits and normalized cost estimates.
+Workspace document types share one UI/API catalog, including Syllabus / learning
+outcomes. Type changes update retrieval metadata before reporting success, with
+rollback handling. Edit in place without losing the page, search or file order,
+or select files and apply a document type together. Progress exam dates use
+dd/mm/yyyy across operating-system languages.
 
 Includes Practice, Explain, Ask a question, Workspace, spaced review, checked
 revision sheets, recall checkpoints and verified-bank exams with paper summaries.

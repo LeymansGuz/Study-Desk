@@ -36,6 +36,11 @@ class LocalBoundary:
 
 def install_local(app):
 
+    @app.get('/local/catalog')
+    async def catalog(user=Depends(auth.current_user)):
+        from study_catalog import public
+        return public()
+
     @app.get('/local/runtime')
     async def runtime():
         return {'instance':os.getenv('STUDY_LOCAL_INSTANCE',''), 'ready':True}

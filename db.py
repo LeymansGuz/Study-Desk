@@ -299,6 +299,9 @@ def get_document(user_id: str, document_id: str) -> dict[str, Any] | None:
 def update_document_type(user_id: str, document_id: str, doc_type: str) -> bool:
     with connect() as db:
         cursor = db.execute('UPDATE documents SET doc_type = ? WHERE id = ? AND user_id = ?', (doc_type, document_id, user_id))
+        if cursor.rowcount:
+            db.execute('INSERT INTO app_settings (key,value,updated_at) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at',
+                       ('corpus_revision:'+user_id, uuid.uuid4().hex, utc_now()))
     return cursor.rowcount > 0
 
 def delete_document(user_id: str, filename: str, course_id: str) -> bool:

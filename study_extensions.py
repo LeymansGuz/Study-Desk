@@ -6,6 +6,7 @@ from rate_limits import generation_limit, limiter, account_key
 from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 import db, learning_store, observability, tools
+from study_catalog import DocumentType, DOC_TYPES
 PDF_LOCK = threading.Lock()
 
 async def public_verification(values, elapsed):
@@ -31,7 +32,7 @@ class PathRequest(BaseModel):
     topic: str = Field(min_length=2, max_length=200)
     course_ids: list[str] = Field(min_length=1, max_length=12)
     question_type: tools.QuestionType
-    doc_types: list[str] = Field(default_factory=list, max_length=6)
+    doc_types: list[DocumentType] = Field(default_factory=list, max_length=len(DOC_TYPES))
 
     @field_validator('topic')
     @classmethod
@@ -39,13 +40,6 @@ class PathRequest(BaseModel):
         value = value.strip()
         if len(value) < 2 or value.casefold() in {'any syllabus topic', 'whole syllabus review', 'all topics', 'random topic'}:
             raise ValueError('Enter a specific topic for the mastery path.')
-        return value
-
-    @field_validator('doc_types')
-    @classmethod
-    def source_types(cls, value):
-        if not set(value) <= {'syllabus','notes','past_paper','exercise','marking_scheme','exam_report'}:
-            raise ValueError('Unknown document type.')
         return value
 
 

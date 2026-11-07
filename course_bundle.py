@@ -5,9 +5,9 @@ from fastapi import HTTPException,Depends
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 import db,learning_store as store,curriculum
+from study_catalog import DOC_TYPES
 
 MANIFEST='study-desk-course.json'
-TYPES={'notes','syllabus','past_paper','exercise','marking_scheme','exam_report'}
 
 def read_manifest(archive):
     if MANIFEST not in archive.namelist():return None
@@ -19,7 +19,7 @@ def read_manifest(archive):
         if not isinstance(files,list) or len(files)>500:raise ValueError()
         names=set()
         for row in files:
-            if not isinstance(row,dict) or not isinstance(row.get('filename'),str) or len(row['filename'])>255 or row['filename'] in names or row.get('doc_type') not in TYPES or type(row.get('syllabus_enabled')) is not bool:raise ValueError()
+            if not isinstance(row,dict) or not isinstance(row.get('filename'),str) or len(row['filename'])>255 or row['filename'] in names or row.get('doc_type') not in DOC_TYPES or type(row.get('syllabus_enabled')) is not bool:raise ValueError()
             names.add(row['filename'])
             if not __import__('re').fullmatch('[a-f0-9]{64}',str(row.get('sha256',''))):raise ValueError()
         from study_library import PersonalSheet
