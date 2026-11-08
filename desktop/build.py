@@ -79,10 +79,13 @@ def main():
     npm=shutil.which('npm.cmd' if os.name=='nt' else 'npm')
     if not npm:raise SystemExit('Install npm on the build machine.')
     subprocess.run([npm,'ci'],cwd=ROOT/'desktop',check=True)
-    command=[npm,'run','build']
-    if sys.platform=='darwin':command+=['--','--bundles','app,dmg']
-    elif sys.platform.startswith('linux'):command+=['--','--bundles','deb,appimage']
-    subprocess.run(command,cwd=ROOT/'desktop',check=True)
+    command=[npm,'run','build','--','--verbose']
+    if sys.platform=='darwin':command+=['--bundles','app,dmg']
+    elif sys.platform.startswith('linux'):command+=['--bundles','deb,appimage']
+    sys.path.insert(0,str(ROOT))
+    from desktop.build_downloads import tools
+    with tools(os.environ,linux=sys.platform.startswith('linux')) as environment:
+        subprocess.run(command,cwd=ROOT/'desktop',check=True,env=environment)
     if sys.platform=='darwin':
         packaged=ROOT/'desktop/src-tauri/target/release/bundle/macos/Study Desk.app/Contents/Resources/backend/StudyDeskBackend'
         if not packaged.is_file():raise RuntimeError('macOS application is missing the bundled backend.')

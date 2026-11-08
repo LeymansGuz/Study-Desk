@@ -94,3 +94,9 @@ through the deferred transaction boundary.
 Keep optional controls inside existing views. Browser checks must assert panel
 padding as well as overflow, theme consistency and input preservation. Private
 harnesses, reports and screenshots belong under ignored `audit/`.
+
+CI uses the official authenticated GitHub release API for native build tools,
+with SHA-256 and size validation before caching. Its temporary gateway binds
+only to loopback and stops after packaging. Normal source builds require no
+GitHub key. Native packaging runs with verbose diagnostics; the AppImage build
+uses a verified runtime file instead of an implicit network download.

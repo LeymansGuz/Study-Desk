@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.15-beta.2
+        default: v0.2.15-beta.3
       publish:
         description: Publish checked installers as a prerelease
         type: boolean
@@ -47,9 +47,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v6
-        with:
-          version: '0.9.5'
+      - name: Install pinned build runner
+        run: python -m pip install uv==0.9.5
       - uses: dtolnay/rust-toolchain@stable
       - name: Linux native dependencies
         if: matrix.platform == 'linux'
@@ -127,9 +126,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v6
-        with:
-          version: '0.9.5'
+      - name: Install pinned build runner
+        run: python -m pip install uv==0.9.5
       - uses: actions/download-artifact@v4
         with:
           pattern: study-desk-*
