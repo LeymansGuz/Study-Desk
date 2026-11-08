@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import urllib.error
 import webbrowser
 from pathlib import Path
 
@@ -154,12 +155,37 @@ def download_opa():
     base=f'https://github.com/open-policy-agent/opa/releases/download/v{OPA_VERSION}/{asset}'
     client=download_client()
     def fetch(url,limit):
-        req=urllib.request.Request(url,headers={'User-Agent':'StudyDesk-Setup/1.0'})
-        with client.open(req,timeout=90) as response:
-            if not response.geturl().startswith('https://'):raise RuntimeError('OPA download redirected to an insecure connection.')
-            data=response.read(limit+1)
-        if len(data)>limit:raise RuntimeError('OPA download exceeded its size limit.')
-        return data
+        for attempt in range(3):
+            # A fresh URL on retry avoids a cached gateway error. Trust still comes
+            # from HTTPS and the release checksum, never from retry success alone.
+            target=url if not attempt else url+'?study_setup_retry='+str(time.monotonic_ns())
+            req=urllib.request.Request(target,headers={'User-Agent':'StudyDesk-Setup/1.0'})
+            try:
+                with client.open(req,timeout=90) as response:
+                    if not response.geturl().startswith('https://'):raise RuntimeError('OPA download redirected to an insecure connection.')
+                    data=response.read(limit+1)
+                if len(data)>limit:raise RuntimeError('OPA download exceeded its size limit.')
+                return data
+            except (urllib.error.URLError,TimeoutError,ConnectionError) as exc:
+                transient=not isinstance(exc,urllib.error.HTTPError) or exc.code in {408,429,500,502,503,504}
+                if not transient:raise
+                if attempt==2:
+                    # CI's scoped GitHub token can use the official release API
+                    # when the public browser-download gateway is unavailable.
+                    # gh handles authenticated redirects; never forward a token
+                    # ourselves to an asset CDN. The same checksum gate follows.
+                    gh=shutil.which('gh')
+                    if not gh or not os.getenv('GH_TOKEN'):raise
+                    import tempfile
+                    with tempfile.TemporaryDirectory(prefix='study-opa-') as stage:
+                        name=url.rsplit('/',1)[-1]
+                        subprocess.run([gh,'release','download','v'+OPA_VERSION,'--repo',
+                            'https://github.com/open-policy-agent/opa','--pattern',name,
+                            '--dir',stage],check=True,capture_output=True,timeout=120)
+                        with (Path(stage)/name).open('rb') as handle:data=handle.read(limit+1)
+                    if len(data)>limit:raise RuntimeError('OPA download exceeded its size limit.')
+                    return data
+                time.sleep(attempt+1)
     checksum=fetch(base+'.sha256',4096).decode('ascii').split()[0]
     if not re.fullmatch('[0-9a-fA-F]{64}',checksum):raise RuntimeError('OPA checksum was invalid; nothing was installed.')
     payload=fetch(base,150*1024**2)

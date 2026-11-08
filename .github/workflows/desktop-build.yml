@@ -7,7 +7,7 @@ on:
       tag:
         description: New beta tag matching the source version
         required: true
-        default: v0.2.15-beta.1
+        default: v0.2.15-beta.2
       publish:
         description: Publish checked installers as a prerelease
         type: boolean
@@ -36,6 +36,7 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: ${{ startsWith(matrix.platform, 'macos-') && '14.0' || '' }}
       APPIMAGE_EXTRACT_AND_RUN: '1'
+      UV_PYTHON: python
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +44,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.9.5'
@@ -66,6 +70,7 @@ jobs:
         run: uv run --frozen --group dev --group desktop-build pytest -q
       - name: Build and check the packaged backend
         env:
+          GH_TOKEN: ${{ github.token }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: uv run --frozen --group desktop-build python desktop/build.py
@@ -108,6 +113,8 @@ jobs:
           compression-level: 0
           retention-days: 14
   publish:
+    env:
+      UV_PYTHON: python
     needs: build
     if: github.event_name == 'push' || inputs.publish == true
     runs-on: ubuntu-22.04

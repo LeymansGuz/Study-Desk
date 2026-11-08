@@ -78,3 +78,71 @@ def test_owned_worker_cleanup_is_scoped_to_children():
         assert control.alive(own)
     finally:
         if process.poll() is None:process.terminate();process.wait(timeout=10)
+
+def test_opa_download_recovers_from_gateway_error_and_still_checks_hash(local_root,monkeypatch):
+    import io,hashlib,urllib.error
+    calls=[];payload=b'verified-test-binary';checksum=hashlib.sha256(payload).hexdigest().encode()
+    class Client:
+        def open(self,request,**kwargs):
+            calls.append(request.full_url)
+            if len(calls)==1:raise urllib.error.HTTPError(request.full_url,504,'Gateway timeout',{},None)
+            response=io.BytesIO(checksum if '.sha256' in request.full_url else payload)
+            response.geturl=lambda:request.full_url
+            return response
+    monkeypatch.setattr(control,'download_client',lambda:Client())
+    monkeypatch.setattr(control.time,'sleep',lambda *a:None)
+    control.download_opa()
+    assert '?study_setup_retry=' in calls[1]
+    assert len(calls)==3
+    assert (local_root/'.tools'/('opa.exe' if os.name=='nt' else 'opa')).read_bytes()==payload
+
+
+def test_opa_download_retry_is_bounded_and_never_installs_partial_binary(local_root,monkeypatch):
+    import urllib.error
+    calls=[]
+    class Client:
+        def open(self,request,**kwargs):
+            calls.append(request.full_url)
+            raise urllib.error.HTTPError(request.full_url,504,'Gateway timeout',{},None)
+    monkeypatch.setattr(control,'download_client',lambda:Client())
+    monkeypatch.setattr(control.time,'sleep',lambda *a:None)
+    with pytest.raises(urllib.error.HTTPError):control.download_opa()
+    assert len(calls)==3 and not (local_root/'.tools').exists()
+
+
+def test_opa_download_does_not_retry_nontransient_errors(local_root,monkeypatch):
+    import urllib.error
+    calls=[]
+    class Client:
+        def open(self,request,**kwargs):
+            calls.append(request.full_url)
+            raise urllib.error.HTTPError(request.full_url,404,'Missing asset',{},None)
+    monkeypatch.setattr(control,'download_client',lambda:Client())
+    with pytest.raises(urllib.error.HTTPError):control.download_opa()
+    assert len(calls)==1 and not (local_root/'.tools').exists()
+
+@pytest.mark.parametrize('corrupt',[False,True])
+def test_opa_api_fallback_keeps_checksum_gate(local_root,monkeypatch,corrupt):
+    import urllib.error,hashlib
+    from pathlib import Path
+    payload=b'expected-opa-binary';calls=[]
+    class Client:
+        def open(self,request,**kwargs):
+            raise urllib.error.HTTPError(request.full_url,504,'Gateway timeout',{},None)
+    def download(args,**kwargs):
+        calls.append(args)
+        assert 'test-ci-token' not in str(args)
+        name=args[args.index('--pattern')+1];target=Path(args[args.index('--dir')+1])/name
+        target.write_bytes(hashlib.sha256(payload).hexdigest().encode() if name.endswith('.sha256') else b'wrong-binary' if corrupt else payload)
+    monkeypatch.setenv('GH_TOKEN','test-ci-token')
+    monkeypatch.setattr(control,'download_client',lambda:Client())
+    monkeypatch.setattr(control.shutil,'which',lambda name:'gh')
+    monkeypatch.setattr(control.subprocess,'run',download)
+    monkeypatch.setattr(control.time,'sleep',lambda *a:None)
+    if corrupt:
+        with pytest.raises(RuntimeError,match='checksum did not match'):control.download_opa()
+        assert not (local_root/'.tools').exists()
+    else:
+        control.download_opa()
+        assert (local_root/'.tools'/('opa.exe' if os.name=='nt' else 'opa')).read_bytes()==payload
+    assert len(calls)==2
