@@ -4,6 +4,8 @@
 
 ## Connect a provider
 
+First time? [Get an API key](API-KEYS.md) for DeepSeek, OpenRouter, OpenAI, Claude or a custom endpoint.
+
 1. Open **Settings → AI connection** and choose a provider.
 2. Enter its API key and choose **Save and use** to save it and load the model catalog.
 3. Choose a text model and, for OpenRouter, a hosting endpoint. Save the connection.

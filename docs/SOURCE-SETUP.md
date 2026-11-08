@@ -98,7 +98,8 @@ start after reboot; start and stop the services explicitly.
 
 ## AI connection and storage
 
-Use **Settings → AI connection** for the same provider/key flow as the desktop app.
+[Obtain your provider key](API-KEYS.md), then use **Settings → AI connection**
+for the same provider/key flow as the desktop app.
 Alternatively, configure the private `.env` created from `.env.example` while
 services are stopped. Never commit it. Setup's optional key prompt uses the
 source DeepSeek configuration; other providers can be selected in Settings.

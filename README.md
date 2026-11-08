@@ -52,6 +52,8 @@ DeepSeek Flash is the tested paid baseline. Free models support **brief concept
 explanations only**. AI features need internet access unless you configure a suitable
 local model server. Local embeddings may download their model on first use.
 
+Need a key? [Get an API key for your provider](docs/API-KEYS.md).
+
 ### Updates inside the app
 
 Open **Settings → App updates → Check for updates → Download update**.

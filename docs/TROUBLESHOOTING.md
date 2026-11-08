@@ -56,6 +56,8 @@ passed; end-user desktop testing is still pending.
 
 ## API key, model or free-allowance errors
 
+Need to create a key first? Follow [Get an API key](API-KEYS.md).
+
 - Open **Settings → AI connection**. Check the provider, model and hosting endpoint.
 - Leave the key blank to reuse that provider's saved key; enter a new one to replace it.
 - Wait for model/endpoint loading before saving. A failed lookup needs an eligible selection.
