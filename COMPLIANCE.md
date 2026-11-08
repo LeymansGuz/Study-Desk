@@ -1,20 +1,45 @@
 # Local beta compliance scope
 
-Reviewed 3 November 2026. These are practical safeguards, not legal clearance.
+Technical documentation reviewed **8 November 2026**. This describes implemented
+safeguards, not a new legal opinion or legal clearance.
+
+[Privacy notice](PRIVACY.md) · [Usage terms](TERMS.md) · [Licensing and notices](THIRD-PARTY-NOTICES.md) · [Security review](SECURITY-AUDIT.md)
 
 ## Implemented safeguards
 
-- A versioned data-use notice and usage terms appear before the first AI request. A server-side check blocks AI requests without the current acknowledgement. Settings supports review and withdrawal.
-- The notice covers local unencrypted data/backups, diagnostics, DeepSeek content transfers/costs, model downloads and manual GitHub update connections. It makes no guarantee about provider retention/training or universal answer correctness.
-- Uploads require an explicit rights confirmation. Private study does not automatically permit every use or redistribution. No copyrighted course library is distributed with the app.
-- Local deletion, backup, credential-removal and reporting instructions are documented. Study telemetry is not automatically sent to the maintainer. Public issues must not contain personal information, keys or protected course content.
-- Python licence files preserve relative paths. Distribution metadata, Python/Node/OPA licences and locked Rust dependency notices accompany desktop builds. Frontend licences are retained; the MIT licence covers Study Desk's own code.
-- Updates authenticate payloads and signed versions, preserve the separate data folder, and require a verified backup before installation.
+| Area | Safeguard |
+|---|---|
+| AI data use | Versioned privacy/usage notices and server-side acknowledgement before AI requests; review/withdrawal in Settings. |
+| Provider transfers | Notice covers the selected provider/host, relevant study content, validation retries, costs and account eligibility. |
+| Upload rights | Explicit rights confirmation; no copyrighted course library is distributed with the app. |
+| Local control | Local deletion and backup controls; no automatic study-diagnostic upload to the maintainer. |
+| Credentials | Desktop keys remain in the OS credential store and outside backups/releases; source `.env` is private. |
+| Distribution notices | Original frontend licences, Python licence paths, Node/OPA notices and locked Rust inventory are preserved. |
+| Updates | Signed/version-bound payloads, idle checks, verified backups and separate study-data storage. |
 
-## Remaining responsibilities
+## Limits and responsibilities
 
-Acknowledgement does not prove document-processing permission or establish a lawful basis for other people's personal data. Users need the necessary permissions and must assess their DeepSeek account's terms. Commercial activity, collection of user data or redistribution of protected content changes this assessment.
+- Acknowledgement does not prove permission to process documents or establish a
+  lawful basis for another person's personal data.
+- Users must assess their chosen provider and hosting endpoint's applicable
+  processing, account and eligibility terms. The app does not promise retention,
+  deletion or training practices on their behalf.
+- Private study, free use or sharing with friends is not a blanket permission to
+  redistribute protected material. See the unchanged usage terms.
+- Bundled notices and inventories do not prove every native/transitive licence
+  obligation is satisfied. Review source/relinking obligations before redistribution.
+- OS signing/notarization, updater authentication and device compatibility are
+  separate checks. AI verification is not a guarantee of truth.
+- Commercial use, collecting user data or distributing protected course content
+  changes the scope and calls for a new assessment.
 
-Bundled notices and dependency inventories do not prove that every native/transitive licence obligation is satisfied. Review native-library and Linux/AppImage copyleft source/relinking obligations before broader redistribution. OS code signing/notarization and target-device GUI testing are separate from updater authentication. Do not advertise legal risk-free status or guaranteed AI correctness.
+The policy meaning and acknowledgement version remain unchanged by the documentation
+reorganisation; navigation and headings have been clarified.
 
-Primary references: [DeepSeek API terms](https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html), [DeepSeek privacy policy](https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html) (which distinguishes downstream apps), and [Hong Kong IPD copyright FAQs](https://www.ipd.gov.hk/en/copyright/legislative-proposals-and-amendments/copyright-amendment-ordinance-2022/details-faqs/index.html). Privacy obligations depend on who controls actual personal-data processing. Seek Hong Kong legal advice if the scope expands.
+## Existing reference material
+
+[DeepSeek API terms](https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html),
+[DeepSeek privacy policy](https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html),
+and [Hong Kong IPD copyright FAQs](https://www.ipd.gov.hk/en/copyright/legislative-proposals-and-amendments/copyright-amendment-ordinance-2022/details-faqs/index.html).
+The privacy notice links the other supported providers. These references are not
+a fresh jurisdiction-wide legal audit; seek appropriate advice if the scope expands.

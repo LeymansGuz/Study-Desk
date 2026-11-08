@@ -1,66 +1,31 @@
-# Study Desk desktop
+# Desktop builds and releases
 
-The desktop application opens Study Desk in its own window. Python, OPA, Node.js,
-OCR models and the study interface are bundled. Users do not need a terminal,
-Python installation, `.env` file or an account on a hosted Study Desk service.
-Hosted AI needs internet access and the user's own eligible provider API key. Free endpoints are limited and experimental.
-Local text embeddings may download their model on first use.
+[User installation](README.md#install-the-desktop-application) · [Source setup](docs/SOURCE-SETUP.md) · [Contributing](CONTRIBUTING.md)
 
-## Installing and using releases
+This guide is for maintainers. Installer users need only the README and
+[User guide](docs/USER-GUIDE.md).
 
-1. Download the installer for your computer and `SHA256SUMS.txt` from the
-   [current beta release](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.12-beta.1).
-   On Windows, run the setup executable for your Windows user. On macOS, drag
-   the app from the DMG into Applications. On Linux, install the DEB or make
-   the AppImage executable. See [installation instructions](README.md#install-the-desktop-application)
-   for platform requirements and unsigned-build guidance.
-2. Open **Study Desk** from the Start menu or its shortcut.
-3. On first launch, **Settings → AI connection** opens automatically.
-   Paste your API key and choose **Save and use**; the model catalog refreshes automatically. Saving makes no provider call.
-4. Add course documents in Workspace, wait for indexing, then practise or explain
-   a concept. The same question-quality gates apply in the desktop application.
-5. Close the application to stop its backend and policy service. Reopening it
-   restores the same local workspace. Only one desktop instance runs per user.
+## Current platform status
 
-The key is stored using the operating system's credential service, never embedded in
-frontend assets or saved in the study database, backups, release installer or repository. It cannot be
-read back through the settings API. Enter another key to replace it. If your
-system keyring is unavailable or locked, saving fails visibly; the application
-does not fall back to a plaintext key file.
+Release: [0.2.15 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.15-beta.3).
 
-The application still runs a private loopback backend internally. Its random
-port and per-launch HttpOnly session are managed automatically. It does not
-publish a server on your network. The main window stays inside its workspace. Allowlisted provider/legal and official repository links open in the system browser. Web content has no Tauri shell/file privileges.
+| Target | Package | Verification |
+|---|---|---|
+| Windows 10/11 x64 | NSIS setup EXE | Native CI/backend checks; Windows desktop/browser checks exist. |
+| macOS 14+ Apple Silicon | aarch64 DMG | Native CI/backend/signature/DMG checks; user-reported device launch. |
+| macOS 14+ Intel | x64 DMG | Native CI/backend/signature/DMG checks; device GUI testing pending. |
+| Linux x64, Ubuntu 22.04 target | DEB and AppImage | Native CI/backend/package checks; device GUI testing pending. |
 
-## Study data and updates
+User-reported launch is not an exhaustive device test. Source lifecycle checks,
+installer checks and actual graphical study/update flows are separate evidence.
+Windows arm64 and Linux arm64 have no validated native release package.
 
-Study data is separate from installation files:
+## Build locally
 
-| System | Default directory |
-|---|---|
-| Windows | `%APPDATA%\link.spookelgoose.studydesk` |
-| macOS | `~/Library/Application Support/link.spookelgoose.studydesk` |
-| Linux | `$XDG_DATA_HOME/link.spookelgoose.studydesk`, usually `~/.local/share/link.spookelgoose.studydesk` |
-
-Use Settings → App updates to check, download and install a signed update. Matching cached blocks reduce downloads when available; installation uses a complete verified package. Installation requires an idle workspace and a verified backup, then restarts the app. Uninstalling preserves study data and the system credential. See README for platform permissions and recovery limits.
-
-To transfer a source-edition workspace, stop both editions first. Back up its
-`data` folder, then copy its contents into the desktop data directory before
-reopening the app. Keep the original copy until you verify documents and sessions.
-Do not copy `.env`, `.tools`, `.venv` or `audit`; enter the key in Settings.
-Changing assessment versions can make older bank questions ineligible until they
-meet the current verification policy.
-
-## Building from source
-
-Build on the OS and architecture you intend to distribute. Windows x64 is the
-primary target. The published beta also has native Apple Silicon, Intel Mac and
-Linux x64 builds. All four targets passed CI tests and packaged-backend checks;
-macOS and Linux still need graphical testing on target devices.
-
-Build-machine requirements: Python 3.12 via uv, Node.js 20+, Rust stable and the
-platform build tools described in the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
-These tools are needed by maintainers, not by users of the installer.
+Build on the intended OS/architecture. Requirements: Python 3.12 through uv,
+Node.js 20+, Rust stable, and [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
+Intel Mac additionally needs the cryptography source-build setup in
+[Source setup](docs/SOURCE-SETUP.md#macos).
 
 ```text
 uv sync --frozen --group dev --group desktop-build
@@ -68,122 +33,104 @@ uv run --frozen --group dev pytest -q
 uv run --frozen --group desktop-build python desktop/build.py
 ```
 
-The build bundles the verified OPA download, the build machine's Node executable
-and public application assets. It excludes `.env`, study data, local evaluations
-and private documents. Python and npm locks plus `desktop/src-tauri/Cargo.lock`
-are kept in source. A build manifest records the Python/Node/OPA versions and
-the Python lock digest. Bundled component licence notices accompany the backend.
+- Output: `dist/installers/`, including checksums and build provenance.
+- Every backend runs `StudyDeskBackend --self-check` before packaging proceeds.
+  It checks OCR, extraction, vector storage, KaTeX and the frozen symbolic worker,
+  without provider inference.
+- `--backend-only` diagnoses the packaged backend; Cargo is still required for
+  the native dependency licence inventory.
+- `--shell-only` rebuilds the shell/installer from an existing backend.
+- Close test copies first; Windows may lock executable files during packaging.
 
-Every backend build runs `StudyDeskBackend --self-check` before proceeding.
-This checks OCR, native document extraction, vector storage, KaTeX rejection of
-bad math and the frozen symbolic worker. It does not call DeepSeek. The Windows
-installer appears in `dist/installers` with `SHA256SUMS.txt`; generated build and
-release files are ignored by Git. Installers are large because they include the
-native OCR, document and Python dependencies.
+The build includes the verified OPA binary, Node executable, locked Python/native
+packages and public assets. It excludes `.env`, course data, private evaluations
+and signing material. Preserve all [distribution notices](THIRD-PARTY-NOTICES.md).
 
-For backend-only diagnosis, use `--backend-only`.
-Rust/Cargo must also be on PATH for backend-only builds because they include the
-native dependency licence inventory. Missing Cargo is checked before packaging.
-Once a backend is ready,
-`--shell-only` rebuilds the native shell/installer. Close all test copies of Study
-Desk before rebuilding: Windows can lock executables being packaged.
+## CI tool downloads
 
-## Building through GitHub and publishing a beta
+The workflow selects Python 3.12 and installs pinned uv 0.9.5 from PyPI.
+Authenticated CI downloads native tools through the official GitHub release API,
+with size and SHA-256 verification before caching. A nonce-protected temporary
+gateway binds only to loopback and stops after packaging; Tauri retains its own
+checksum checks. Linux receives a verified AppImage runtime explicitly.
 
-1. Review and commit the source, lock files, `desktop/` and `.github/workflows/`.
-   Push them to your repository. Do not force-add ignored local files.
-2. Push an unused tag matching the source version, such as **v0.2.3-beta.3**. This
-   starts **Build desktop installers** for Windows x64, Apple Silicon, Intel Mac
-   and Linux x64. Alternatively run that workflow manually on `main`, supplying
-   a new tag and selecting `publish`. No DeepSeek key is required.
-3. Each target runs offline tests, builds on its native runner, and checks the
-   packaged backend. Intel Mac uses ONNX Runtime 1.23.2 and builds the current
-   cryptography package from source. macOS requires version 14 or later.
-4. After all four targets succeed, the workflow validates source commit, version,
-   architecture, installer format and checksums. It publishes installers, build
-   manifests and a combined `SHA256SUMS.txt` as a GitHub prerelease. Failed targets
-   block publication; successful job artifacts remain downloadable from Actions.
-   Test the graphical app, key storage, indexing, generation and shutdown on your
-   devices before considering a stable release. CI checks cannot guarantee these.
-5. For later releases, update the version in `pyproject.toml`, `desktop/package.json`,
-   `desktop/src-tauri/Cargo.toml` and `desktop/src-tauri/tauri.conf.json`;
-   regenerate the corresponding locks and repeat verification. The build manifest
-   reads the version from `pyproject.toml`.
+Normal source builds do not require a GitHub key. CI supplies its scoped
+`GH_TOKEN`; it is not an end-user setting or a bundled credential. Native builds
+use verbose diagnostics so tool/network failures are distinguishable from app failures.
 
-The current beta has no Windows publisher certificate; macOS bundles are ad-hoc
-signed and are not Apple-notarized. Verify the checksum and architecture before
-following the README's quarantine instructions for a trusted download. A signing
-or corruption warning must not automatically be treated as harmless.
-Signing credentials are not supplied by this
-repository. For a publicly distributed release, arrange Windows code signing;
-macOS distribution also needs an Apple Developer ID certificate and notarization.
-Configure signing secrets in CI only after obtaining them. The workflow publishes
-experimental prereleases and refuses to overwrite an already published release;
-use a new beta tag for another attempt.
+## Publish a release
 
-The macOS and Linux installers remain experimental until checked on real devices.
-Linux needs an available Secret Service or KWallet credential backend. Android
-and iOS are outside this desktop release: the Python/native-worker architecture
-requires a separate mobile implementation.
+1. Run offline checks and review staged files. Keep private data, credentials,
+   reports and generated installers out of source commits.
+2. Bump the app version consistently in Python/uv, npm, Cargo and Tauri metadata,
+   including corresponding locks. Keep README download links and release notes current.
+3. Commit, then push an unused matching tag. For the next version, for example:
 
-## Verification for this Windows build
+   ```text
+   git push origin main
+   git tag -a v0.2.16-beta.1 -m "Study Desk 0.2.16 beta"
+   git push origin v0.2.16-beta.1
+   ```
 
-The per-user installer, installed runtime self-check and uninstaller passed on
-this Windows computer. The installed native window was inspected in light and
-dark modes; its first-run key setup and normal close/shutdown worked. Scanned-PDF
-upload, spawned OCR workers and local indexing also passed with an empty provider
-key. The release has not been verified on a clean Windows VM, macOS or Linux.
+4. **Build desktop installers** runs Windows, both Mac architectures and Linux.
+   Alternatively dispatch it manually on the intended source revision with a new
+   matching tag and `publish` enabled.
+5. All four targets must pass tests and packaged-backend checks. The collector
+   verifies revision, version, architecture, package formats, signatures and
+   checksums before publication.
+6. Check the published assets, combined `SHA256SUMS.txt`, four build manifests,
+   README links and complete signed updater feed. Device tests remain necessary
+   before claiming broad stable-release compatibility.
 
-## Maintaining signed updates
+A published payload must not be replaced in place. Failed targets block
+publication; successful Actions artifacts remain available. Documentation-only
+changes do not require rebuilding or replacing the installers.
 
-Updater signing is separate from OS code signing. Official CI uses repository
-secret `TAURI_SIGNING_PRIVATE_KEY`. The public key and strict signed-version check
-are embedded in the native shell. Keep an encrypted offline backup of the private
-key: losing it prevents seamless updates for existing users. The maintainer's
-ignored `.signing/` directory must never be committed or bundled.
+## Signed updates
 
-For a local build, set `TAURI_SIGNING_PRIVATE_KEY` to your key path and, if needed,
-`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` in the build environment. Forks must generate
-their own key and change the fixed repository/feed URLs.
+Updater signing is separate from operating-system publisher signing.
+`TAURI_SIGNING_PRIVATE_KEY` is a CI secret; keep an encrypted offline backup.
+Do not commit `.signing/` or private keys. Losing the key prevents seamless
+updates for existing installations. Forks need their own key and repository/feed URLs.
 
-Bump the version consistently in Python/uv, npm and Cargo/Tauri metadata, commit
-and push, then run desktop-build with a new matching tag. All four platform builds
-must pass. Publication independently verifies signatures, signed versions,
-architecture and checksums, then publishes latest.json and atomically updates
-desktop/update-manifest.json. The feed covers Windows NSIS, both Mac architectures
-and Linux DEB/AppImage. Never point it at incomplete/unsigned releases or replace
-published payloads. Use a newer application version for another update.
+For local signing, set `TAURI_SIGNING_PRIVATE_KEY` and, when needed,
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` in the build environment.
 
-Native update authority stays in Rust. The UI can request only check/download/
-install. Private control endpoints require the per-launch secret; webview input
-cannot override the feed, signing key or download path. Updates make no DeepSeek
-calls and send no course content to GitHub.
+Publication verifies payload and signed-version metadata, then atomically updates
+`desktop/update-manifest.json`. It covers Windows NSIS, Apple Silicon/Intel app
+updates, and Linux DEB/AppImage. Never point it at incomplete or unsigned payloads.
 
-Windows installers use supported NSIS LZMA archive compression. It reduces the
-download size while unpacking the same application files; build/installation can
-take longer. Runtime libraries and OCR capabilities remain bundled. macOS/Linux
-packaging retains its existing supported compression. HTML drag/drop is enabled
-inside the native window; clipboard-button availability depends on the WebView,
-with standard keyboard paste available as the fallback.
+Native Rust code owns update authority. Web content cannot supply arbitrary
+feeds, signatures, output paths or control results. Installation requires idle
+study/indexing and a verified backup. Documents and credentials are separate from
+program files; backups do not promise database downgrade compatibility.
 
+### Differential transport
 
-## Differential update transport
+- A backend worker verifies signed block maps, reuses matching verified cached
+  bytes and resumes valid partial downloads.
+- It reconstructs a complete package and checks its version-bound signature;
+  the installer verifies again. It never patches running app files.
+- Missing metadata, unsupported byte ranges or poor reuse fall back to a full
+  signed package. The worker exits if the parent app exits.
+- Cache retention: one verified package and one partial file; backups exclude it.
+- Windows uses pinned Tauri CLI 2.12.4 with non-solid LZMA to improve block reuse.
+  The full upstream template licence is retained in bundles.
 
-Native update authority stays in Rust. The bundled backend’s isolated
-`--update-download` worker accepts only an official versioned release URL. It
-verifies a signed `.blocks.json` manifest and its announced version, reuses
-content-defined cached blocks, and resumes verified partial blocks. A complete
-version-bound signature is checked before a download becomes installable; the
-native installer verifies again. Failed verification cannot promote a partial
-package. Unsupported range requests or ineffective reuse fall back to the full
-signed package. The worker exits if its parent desktop app exits.
+Build/update protocol files: `desktop/build.py`, `desktop/build_downloads.py`,
+`desktop/collect_release.py`, `update_blocks.py` and
+`desktop/src-tauri/src/updates.rs`.
 
-`desktop/build.py` creates and signs block maps for every updater payload.
-`desktop/collect_release.py` checks all maps, signatures, payload checksums,
-platforms and source commits before publishing. Windows uses the pinned Tauri
-CLI 2.12.4 installer template with one compression directive changed to non-solid
-LZMA. Its upstream logic and MIT licence are retained. Data
-backups exclude the download cache. Cache retention is one previous verified
-package and one staging file; an initial full download is necessary when neither
-can supply matching bytes. Test real installation on each target operating
-system in addition to offline reconstruction tests.
+## OS trust and device testing
+
+Windows builds have no publisher certificate; Mac bundles are ad-hoc signed and
+not Apple-notarized. Signed updater metadata does not remove these OS warnings.
+Use [troubleshooting](docs/TROUBLESHOOTING.md) for user-facing opening steps.
+Developer ID/notarization and Windows publisher signing are separate distribution
+work from the existing updater signatures.
+
+Before broader platform claims, test installation, key storage, uploads/OCR,
+indexing, AI workflows, shutdown, update/restart and data preservation on actual
+devices. Current evidence and unresolved dependency risk are in the
+[security review](SECURITY-AUDIT.md); AI measurements are in
+[reliability and cost](docs/RELIABILITY-AND-COST.md).

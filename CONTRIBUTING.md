@@ -1,8 +1,9 @@
 # Contributing to Study Desk
 
 Study Desk is a desktop/local-owner application for Windows, macOS and Linux.
-Keep the source edition bound to loopback. Read the README before changing
-setup, storage paths, AI configuration or the update flow.
+Keep the source edition bound to loopback. Start with the [README](README.md),
+[source setup](docs/SOURCE-SETUP.md), [pipeline reference](docs/AI-AND-PIPELINE.md)
+and [desktop release guide](DESKTOP.md).
 
 ## Development checks
 
@@ -13,7 +14,7 @@ Check changed JavaScript with `node --check <file>`.
 
 Native updater tests: `cargo test --locked --manifest-path desktop/src-tauri/Cargo.toml`.
 Building installers requires the desktop-build dependency group and the platform
-tools described in DESKTOP.md. Test actual installation on each target OS;
+tools described in [DESKTOP.md](DESKTOP.md). Test actual installation on each target OS;
 successful compilation is not a device compatibility guarantee.
 
 ## Extension points
@@ -81,7 +82,7 @@ For live evaluations freeze each code revision, cap every provider HTTP request
 difficulty and type. Separate production costs from evaluation-only audits.
 Keep intermediate regressions in the report rather than selecting the best run.
 Security reports should follow SECURITY.md.
-# Local study-library modules
+## Local study-library modules
 
 `study_library.py` owns planning, checked-guide assembly, page notes and personal
 imports. `local_jobs.py` runs bounded local search-index/backup jobs; it must not
@@ -100,3 +101,14 @@ with SHA-256 and size validation before caching. Its temporary gateway binds
 only to loopback and stops after packaging. Normal source builds require no
 GitHub key. Native packaging runs with verbose diagnostics; the AppImage build
 uses a verified runtime file instead of an implicit network download.
+
+## Documentation changes
+
+Keep README focused on downloads, first launch, a feature list and the pipeline
+diagram. Put detailed workflows, source setup and troubleshooting under `docs/`;
+keep licensing in THIRD-PARTY-NOTICES.md and the original licence files. Use
+relative links between guides and check anchors when moving sections. Treat
+security scans and model evaluations as dated evidence, not current guarantees.
+Do not change policy meaning without reviewing acknowledgement versioning.
+Document-only changes need link/rendering checks, not paid inference or installer
+rebuilds. Retain original third-party licence texts unchanged.

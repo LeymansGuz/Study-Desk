@@ -1,53 +1,46 @@
-Study Desk v0.2.15 beta — private, course-grounded study with your own AI key.
+# Study Desk 0.2.15 beta
 
-Explain uses covered-principle evidence, a checked blind worked solution and
-source/originality review. Ask preserves public givens and option order while
-repairing faulty private calculation plans. Symbolic parameters remain symbolic;
-long supplied tasks keep their full supported input. Checked caches carry the
-validation version before serving as marking references.
+Local, document-grounded study using your own AI key.
 
-Practice rotates eligible course sections and primary chunks, retains bounded
-cross-version avoidance and withholds known repeats. Bank exams deliberately
-reuse verified material while preferring less-practised items. Explanations,
-source reading and marking stay consistent for the same task and evidence.
-One bounded repair grace period prevents restarting otherwise valid work.
-See README for the dated, small-sample reliability limits and usage estimates.
+## Included
 
-Includes Practice, Explain, Ask a question, Workspace, spaced review, checked
-revision sheets, recall checkpoints and verified-bank exams with paper summaries.
-Progress offers course plans, workload warnings and suggestions based on distinct
-question outcomes across days. Learning tools combines checked guide sections,
-document-text search, page notes and portable course/personal-study transfer.
-Optional controls are collapsed inside the existing views.
+- Practice with seven question types, course-relative difficulty and checked maths figures.
+- Brief/deep concept explanations, worked examples and recall checkpoints.
+- Tutoring for your own questions and locally read attachments.
+- Workspace uploads, OCR/indexing, original-file previews and bulk document types.
+- Verified-bank exams with paper summaries, mistakes and FSRS review cards.
+- Study plans, revision sheets/guides, search, page notes and import/export.
+- Token/cost statistics, local/encrypted backups and signed differential updates.
 
-Source changes invalidate the relevant course and cited guide sections, preserving
-unrelated checked work. Reindexing reuses vectors for identical text; changed
-text is embedded locally and the complete replacement is checked before serving.
-The local queue supports recoverable search-index and backup jobs. Settings
-includes opt-in scheduled local backups and encrypted portable backup/restore.
+## Checking and reliability
 
-Paid Flash stages have bounded compact-response repair without relaxing solving,
-source, originality, difficulty or OPA gates. Free models remain restricted.
-Some fresh-generation requests still fail or time out. Small development checks
-do not establish a universal success/correctness percentage; inspect important
-answers independently. See README for the dated evaluation limits and costs.
+Independent solving, local maths/formatting checks, source/originality review and
+policy gates run before checked work is published. Private-plan repairs preserve
+supplied questions and option order. Practice avoids retained equivalent tasks;
+explanations and deliberate review stay consistent where useful.
 
-Windows x64 uses the setup executable; Apple Silicon and Intel Macs (macOS 14+)
-use their matching DMG; Linux x64 uses the DEB or AppImage. The build checks each
-packaged backend, source revision, architecture, signed update metadata and hashes.
-These are not physical-device GUI compatibility certificates. macOS/Linux builds
-remain experimental pending device testing. macOS bundles are ad-hoc signed but
-not Apple-notarized; Windows installers have no publisher certificate.
-Operating-system trust checks can prevent opening them. Verify release hashes
-before following platform-specific opening instructions.
+Some requests are withheld or time out, and accepted answers can still be wrong.
+See [measured reliability and estimated cost](https://github.com/LeymansGuz/Study-Desk/blob/main/docs/RELIABILITY-AND-COST.md)
+for dated samples and limitations. Free models remain restricted to brief explanations.
 
-In-app updates reconstruct a complete signed installer from verified cached
-blocks when possible, otherwise use a full signed download. Applying an update
-requires an idle app and a verified data backup. Provider keys stay in the system
-credential store and are not included in backups. Never upload material you are
-not entitled to process; selected excerpts go to your configured AI provider.
+## Downloads and platform status
 
-Source, installation and limitations: [README](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application).
-Security findings and the residual Linux GTK dependency risk: [security audit](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
-SHA256SUMS.txt and four build manifests accompany the release. Five signed block
-maps support differential transport; savings depend on the actual package changes.
+[Installation and downloads](https://github.com/LeymansGuz/Study-Desk#install-the-desktop-application).
+
+Windows x64, Apple Silicon Mac, Intel Mac and Linux x64 passed native CI/backend
+checks. Both Mac DMGs passed signature/format checks; Linux DEB/AppImage checks
+passed. Apple Silicon launch has user-reported device testing. Intel Mac and
+Linux device GUI testing is pending.
+
+Mac builds require macOS 14+. For a trusted download blocked as an unidentified
+developer, use **System Settings → Privacy & Security → Open Anyway** after
+trying to open it once. See [troubleshooting](https://github.com/LeymansGuz/Study-Desk/blob/main/docs/TROUBLESHOOTING.md)
+for checksum and quarantine guidance. Updater signatures do not replace OS notarization.
+
+Checksums and four provenance manifests accompany the release. Updates reuse
+verified cached blocks where possible and otherwise download the complete signed
+package. Installation requires idle work and a verified backup.
+
+[Privacy](https://github.com/LeymansGuz/Study-Desk/blob/main/PRIVACY.md) ·
+[Licensing](https://github.com/LeymansGuz/Study-Desk/blob/main/THIRD-PARTY-NOTICES.md) ·
+[Security review](https://github.com/LeymansGuz/Study-Desk/blob/main/SECURITY-AUDIT.md).
