@@ -3,7 +3,7 @@
   let pending=null;
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   window.cancelCourseUpload=async()=>{
-    if(!pending?.id)return;
+    if(!pending?.id){pending=null;return;}
     const response=await fetch(`/workspace/uploads/${pending.id}`,{method:'DELETE'});
     if(!response.ok&&response.status!==404){const body=await response.json().catch(()=>({}));throw Error(body.detail||'Wait for document saving to finish before changing this selection.');}
     pending=null;
@@ -41,7 +41,7 @@
     const report=(text,bytes=0,phase='transfer')=>onProgress({text,percent:total?Math.min(100,Math.floor(bytes/total*100)):0,phase});
     const same=pending&&pending.courseId===courseId&&pending.docType===docType&&files.length===pending.files.length&&files.every((file,index)=>file===pending.files[index]);
     if(!same){
-      if(pending?.id)fetch(`/workspace/uploads/${pending.id}`,{method:'DELETE'}).catch(()=>{});
+      if(pending?.id)await window.cancelCourseUpload();
       pending=null;
     }
     let batch;

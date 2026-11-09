@@ -26,9 +26,9 @@ class AttachmentQueue {
   message(text,error=false){const host=this.zone.querySelector('[data-message]');host.textContent=text;host.classList.toggle('error-text',error);}
   invalidate(){this.extracted=null;if(this.review){this.review.hidden=true;this.text.value='';}for(const url of this.urls.values())URL.revokeObjectURL(url);this.urls.clear();}
   async change(action){
-    if(this.busy)return;this.lock(true);
+    if(this.busy)return;const submit=this.input.form.querySelector('button[type=submit]'),wasDisabled=submit?.disabled;if(submit)submit.disabled=true;this.lock(true);
     try{if(this.kind==='workspace')await window.cancelCourseUpload();action();this.invalidate();this.message('Selection updated.');}
-    catch(error){this.message(error.message,true);}finally{this.lock(false);}
+    catch(error){this.message(error.message,true);}finally{this.lock(false);if(submit)submit.disabled=wasDisabled;}
   }
   add(incoming){
     if(this.busy)return;
@@ -70,7 +70,7 @@ class AttachmentQueue {
         const label=document.createElement('label');label.textContent='Document type';
         const select=document.createElement('select');select.innerHTML=document.querySelector('#doc-type').innerHTML;
         select.value=this.roles.get(file)||document.querySelector('#doc-type').value;select.disabled=this.busy;
-        select.setAttribute('aria-label',file.name+' document type');select.onchange=()=>this.roles.set(file,select.value);
+        select.setAttribute('aria-label',file.name+' document type');select.onchange=()=>this.change(()=>this.roles.set(file,select.value));
         label.append(select);info.append(label);
       }
       const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Remove';remove.disabled=this.busy;remove.setAttribute('aria-label','Remove '+file.name);remove.onclick=()=>this.change(()=>this.files.splice(index,1));row.append(remove);host.append(row);
@@ -120,7 +120,7 @@ document.addEventListener('study-ready',async()=>{
     studyAttachments.ask=new AttachmentQueue(document.querySelector('#question-file'),'ask',limits);
     studyAttachments.workspace=new AttachmentQueue(document.querySelector('#documents'),'workspace',limits);
     const bulk=document.createElement('button');bulk.type='button';bulk.className='quiet-button';bulk.textContent='Apply this type to selected files';
-    bulk.onclick=()=>{const q=studyAttachments.workspace;if(!q.busy){q.files.forEach(f=>q.roles.set(f,document.querySelector('#doc-type').value));q.render();}};
+    bulk.onclick=()=>{const q=studyAttachments.workspace;q.change(()=>q.files.forEach(f=>q.roles.set(f,document.querySelector('#doc-type').value)));};
     document.querySelector('#doc-type').parentElement.after(bulk);
     document.querySelector('#workspace-upload-limits').textContent=`Up to ${limits.workspace_files} files / ${fileSize(limits.workspace_bytes)} per batch; documents up to ${fileSize(limits.document_bytes)}, screenshots up to ${fileSize(limits.image_bytes)}. Background indexing keeps the app usable.`;
     document.querySelector('#question-upload-limits').textContent=`Up to ${limits.question_files} attachments for one question, ${fileSize(limits.question_bytes)} total, ${fileSize(limits.question_file_bytes)} per file and ${limits.question_pages} relevant pages. Combined question text stays within ${limits.question_chars.toLocaleString()} characters.`;
