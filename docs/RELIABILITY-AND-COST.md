@@ -2,6 +2,11 @@
 
 [Back to README](../README.md) · [AI pipeline](AI-AND-PIPELINE.md)
 
+The dated samples below describe their stated development policies, not a
+guarantee for 0.2.16. That release adds joint-scenario, answer-sufficiency and
+per-target originality checks; see the [current pipeline](AI-AND-PIPELINE.md).
+Historical price-normalized estimates are not current provider price quotes.
+
 ## 8 November 2026 tutor-panel checks
 
 A controlled live comparison used frozen excerpts from COMP2121, FINA1310,
