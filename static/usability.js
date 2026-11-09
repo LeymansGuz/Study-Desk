@@ -26,7 +26,7 @@
     // Resume is the first action in Learning tools; history remains bounded at ten.
     by('revision-sheets').closest('section').querySelector('h2').textContent='Personal revision sheets';
     const saved=by('saved-sessions').closest('section');saved.querySelector('h2').textContent='Continue studying';
-    by('view-learning').querySelector('h1').after(saved);
+    const learning=by('view-learning'),title=learning.querySelector('h1');learning.prepend(title);title.after(saved);saved.after(panel);panel.after(by('course-library'));
     const bankSection=by('bank-course').closest('section'),exam=by('exam-form').closest('section');
     const details=document.createElement('details');details.className='library-panel';details.innerHTML='<summary>Practise from the verified question bank</summary>';
     bankSection.before(details);details.append(bankSection,exam);

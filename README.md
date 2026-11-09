@@ -5,15 +5,15 @@ provider key; your files and study history stay on your computer.
 
 ## Install the desktop application
 
-Current release: [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.1).
+Current release: [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.2).
 No Python, Node.js or `.env` setup is needed for the installers.
 
 | Computer | Download |
 |---|---|
-| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/Study-Desk_0.2.17_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/Study-Desk_0.2.17_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/Study-Desk_0.2.17_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/Study-Desk_0.2.17_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/Study-Desk_0.2.17_amd64.AppImage) |
+| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/Study-Desk_0.2.17_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/Study-Desk_0.2.17_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/Study-Desk_0.2.17_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/Study-Desk_0.2.17_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/Study-Desk_0.2.17_amd64.AppImage) |
 
 **Windows:** run the installer, then open **Study Desk** from the Start menu.
 
@@ -38,7 +38,7 @@ chmod +x ./Study-Desk_0.2.17_amd64.AppImage
 
 Linux builds target Ubuntu 22.04. Other distributions may need WebKitGTK,
 Secret Service/KWallet or FUSE setup; see [Linux troubleshooting](docs/TROUBLESHOOTING.md#linux-dependencies-or-fuse).
-[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.1/SHA256SUMS.txt)
+[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.2/SHA256SUMS.txt)
 and build manifests accompany the release.
 
 ### First launch
