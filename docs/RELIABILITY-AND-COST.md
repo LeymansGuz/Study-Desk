@@ -3,8 +3,10 @@
 [Back to README](../README.md) · [AI pipeline](AI-AND-PIPELINE.md)
 
 The dated samples below describe their stated development policies, not a
-guarantee for 0.2.16. That release adds joint-scenario, answer-sufficiency and
+guarantee for the current release. The 0.2.16 pipeline added joint-scenario, answer-sufficiency and
 per-target originality checks; see the [current pipeline](AI-AND-PIPELINE.md).
+The 0.2.17 usability update does not change generation prompts or correctness gates;
+it adds local upload/review integrity checks without a fresh paid-model benchmark.
 Historical price-normalized estimates are not current provider price quotes.
 
 ## 8 November 2026 tutor-panel checks

@@ -157,3 +157,21 @@ def test_bank_exam_start_is_idempotent(client,course):
     assert second.status_code==200,second.text
     assert second.headers.get('Idempotent-Replayed')=='true'
     assert second.json()['id']==first.json()['id']
+
+
+def test_mistake_retry_reuses_eligible_bank_without_generation_or_key_disclosure(client,course,monkeypatch):
+    question='Solve $9x=18$ for real $x$.'
+    identifier=add_bank(course,question)
+    record=db.save_study_record(auth.OWNER_ID,{'id':uuid.uuid4().hex,'kind':'practice','ref_id':'missing-session','question':question,'attempts':1,'is_correct':False,'source_summary':[{'course_id':course}]})
+    async def forbidden(*a,**k):raise AssertionError('Retry must not generate')
+    monkeypatch.setattr(graph,'draft_question',forbidden)
+    before=db.study_dashboard(auth.OWNER_ID)
+    result=client.post('/progress/mistakes/'+record['id']+'/retry')
+    assert result.status_code==200,result.text
+    assert result.json()['question']['question']==question
+    assert 'canonical_answer' not in result.text and 'solution' not in result.json()['question']
+    assert store.get('exam',result.json()['id'],auth.OWNER_ID)['deliberate_review']
+    assert db.study_dashboard(auth.OWNER_ID)==before
+    item=store.get('bank',identifier,auth.OWNER_ID);item['quarantined']=True;store.put('bank',identifier,auth.OWNER_ID,item)
+    assert client.post('/progress/mistakes/'+record['id']+'/retry').status_code==409
+    assert client.post('/progress/mistakes/not-owned/retry').status_code==404

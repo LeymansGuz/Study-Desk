@@ -148,6 +148,24 @@ def install(app, ns):
             'items':items[:req.count],'threads':[],'index':0,'topic':'Verified bank exam'}
         return await atomic_generation(lambda:prepare(uuid.uuid4().hex,exam,0,user))
 
+    @app.post('/progress/mistakes/{record_id}/retry')
+    async def retry_mistake(record_id:str,user=Depends(require_user)):
+        record=db.get_study_record(user['id'],record_id)
+        if not record:raise HTTPException(404,'This study result is unavailable.')
+        saved=store.get('tutor',record['ref_id'],user['id']) or {}
+        courses=saved.get('course_ids') or list({s['course_id'] for s in record.get('source_summary',[]) if s.get('course_id')})
+        item=None
+        for course in courses:
+            if not db.get_course(user['id'],course):continue
+            item=next((q for q in store.bank_items(user['id'],course) if q['current_question']==record['question'] and (q.get('options') or [])==(record.get('options') or [])),None)
+            if item:break
+        if not item:raise HTTPException(409,'This question needs a fresh source or quality check. Use Explain this concept, or prepare a new practice question.')
+        exam={'source':'verified_bank','user_id':user['id'],'course_ids':item['course_ids'],
+              'version':curriculum.scope_version(user['id'],item['course_ids']),
+              'items':[item],'threads':[],'index':0,'topic':'Mistake review','deliberate_review':True}
+        # A bank-review session is excluded from independent practice/mastery totals.
+        return await atomic_generation(lambda:prepare(uuid.uuid4().hex,exam,0,user))
+
     @app.get('/bank-exams/availability')
     async def availability(course_id:str,difficulty:str='any',question_type:str='any',topic:str='',unseen_only:bool=False,user=Depends(require_user)):
         from pydantic import ValidationError

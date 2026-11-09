@@ -2,7 +2,7 @@
 window.studyAttachments={};
 class AttachmentQueue {
   constructor(input,kind,limits){
-    this.input=input;this.kind=kind;this.limits=limits;this.files=[];this.urls=new Map();this.page=0;this.busy=false;this.extracted=null;
+    this.input=input;this.kind=kind;this.limits=limits;this.files=[];this.roles=new Map();this.urls=new Map();this.page=0;this.busy=false;this.extracted=null;
     input.multiple=true;input.required=false;input.classList.add('attachment-picker');
     this.zone=document.createElement('section');this.zone.className='attachment-zone';this.zone.tabIndex=0;this.zone.setAttribute('aria-label',`${kind==='ask'?'Question':'Workspace'} attachments: drop files or paste a screenshot`);
     input.parentElement.insertAdjacentElement('afterend',this.zone);
@@ -59,12 +59,20 @@ class AttachmentQueue {
     }catch(_){this.zone.focus();this.message(`Copy a screenshot, then press ${/Mac/.test(navigator.platform)?'⌘V':'Ctrl+V'} in this attachment area. Clipboard permissions differ between systems.`);}
   }
   render(){
+    for(const file of this.roles.keys())if(!this.files.includes(file))this.roles.delete(file);
     const host=this.zone.querySelector('[data-files]');host.innerHTML='';
     this.page=Math.min(this.page,Math.max(0,Math.ceil(this.files.length/10)-1));
     this.files.slice(this.page*10,this.page*10+10).forEach((file,offset)=>{
       const index=this.page*10+offset,row=document.createElement('article');row.className='attachment-row';
       if(file.type.startsWith('image/')){const img=document.createElement('img');if(!this.urls.has(file))this.urls.set(file,URL.createObjectURL(file));img.src=this.urls.get(file);img.alt='Screenshot preview';img.loading='lazy';row.append(img);}
       const info=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('p');name.textContent=file.name;name.title=file.name;meta.className='hint';meta.dataset.fileIndex=index;meta.textContent=`${file.name.split('.').pop().toUpperCase()} · ${fileSize(file.size)} · ${this.extracted?.[index]?'Read':'Selected'}`;info.append(name,meta);row.append(info);
+      if(this.kind==='workspace'){
+        const label=document.createElement('label');label.textContent='Document type';
+        const select=document.createElement('select');select.innerHTML=document.querySelector('#doc-type').innerHTML;
+        select.value=this.roles.get(file)||document.querySelector('#doc-type').value;select.disabled=this.busy;
+        select.setAttribute('aria-label',file.name+' document type');select.onchange=()=>this.roles.set(file,select.value);
+        label.append(select);info.append(label);
+      }
       const remove=document.createElement('button');remove.type='button';remove.className='quiet-button';remove.textContent='Remove';remove.disabled=this.busy;remove.setAttribute('aria-label','Remove '+file.name);remove.onclick=()=>this.change(()=>this.files.splice(index,1));row.append(remove);host.append(row);
     });
     this.zone.querySelector('[data-summary]').textContent=`${this.files.length} file${this.files.length===1?'':'s'} selected · ${fileSize(this.files.reduce((n,f)=>n+f.size,0))} total`;
@@ -111,8 +119,29 @@ document.addEventListener('study-ready',async()=>{
     const limits=await api('/local/upload-limits');
     studyAttachments.ask=new AttachmentQueue(document.querySelector('#question-file'),'ask',limits);
     studyAttachments.workspace=new AttachmentQueue(document.querySelector('#documents'),'workspace',limits);
+    const bulk=document.createElement('button');bulk.type='button';bulk.className='quiet-button';bulk.textContent='Apply this type to selected files';
+    bulk.onclick=()=>{const q=studyAttachments.workspace;if(!q.busy){q.files.forEach(f=>q.roles.set(f,document.querySelector('#doc-type').value));q.render();}};
+    document.querySelector('#doc-type').parentElement.after(bulk);
     document.querySelector('#workspace-upload-limits').textContent=`Up to ${limits.workspace_files} files / ${fileSize(limits.workspace_bytes)} per batch; documents up to ${fileSize(limits.document_bytes)}, screenshots up to ${fileSize(limits.image_bytes)}. Background indexing keeps the app usable.`;
     document.querySelector('#question-upload-limits').textContent=`Up to ${limits.question_files} attachments for one question, ${fileSize(limits.question_bytes)} total, ${fileSize(limits.question_file_bytes)} per file and ${limits.question_pages} relevant pages. Combined question text stays within ${limits.question_chars.toLocaleString()} characters.`;
     document.querySelector('#own-question').required=false;
   }catch(error){fail(error);}
 });
+
+window.reviewCourseFiles=async(courseId,files)=>{
+  const existing=(await api('/workspace/files?'+new URLSearchParams({course_id:courseId}))).files;
+  const conflicts=files.map((file,index)=>({file,index,old:existing.find(d=>d.filename===file.name)})).filter(x=>x.old);
+  const metadata=files.map(file=>({doc_type:studyAttachments.workspace.roles.get(file)||document.querySelector('#doc-type').value}));
+  if(!conflicts.length)return metadata;
+  const dialog=document.createElement('dialog');dialog.className='local-card upload-review-dialog';dialog.setAttribute('aria-labelledby','upload-review-title');
+  dialog.innerHTML='<h2 id="upload-review-title">Review existing filenames</h2><p>Replace keeps the old document usable until the new index is ready. Identical files are skipped automatically. Existing document types are preserved when replacing.</p><label>Apply to all conflicts<select data-all><option value="">Choose individually</option><option value="replace">Replace</option><option value="keep">Keep both</option><option value="skip">Skip</option></select></label><div data-conflicts></div><div class="local-actions"><button type="button" class="quiet-button" data-cancel>Cancel</button><button type="button" class="primary-button" data-confirm>Upload selected files</button></div>';
+  conflicts.forEach(x=>{const label=document.createElement('label');label.textContent=x.file.name;const select=document.createElement('select');select.dataset.index=x.index;select.innerHTML='<option value="keep">Keep both</option><option value="replace">Replace</option><option value="skip">Skip</option>';label.append(select);dialog.querySelector('[data-conflicts]').append(label);});
+  dialog.querySelector('[data-all]').onchange=e=>{if(e.target.value)dialog.querySelectorAll('[data-index]').forEach(s=>s.value=e.target.value);};
+  document.body.append(dialog);dialog.showModal();
+  return new Promise((resolve,reject)=>{
+    let accepted=false;
+    dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+    dialog.querySelector('[data-confirm]').onclick=()=>{accepted=true;conflicts.forEach(x=>Object.assign(metadata[x.index],{conflict:dialog.querySelector(`[data-index="${x.index}"]`).value,expected_sha:x.old.sha256}));dialog.close();};
+    dialog.addEventListener('close',()=>{dialog.remove();accepted?resolve(metadata):reject(Error('Upload cancelled. Your selected files are kept.'));},{once:true});
+  });
+};

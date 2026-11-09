@@ -43,8 +43,8 @@ def prune_sessions():
 
 def session_summaries(user_id):
     with db.connect() as conn:
-        rows = conn.execute("SELECT id,kind,updated,json_extract(payload,'$.current_question') AS question, json_extract(payload,'$.topic') AS topic,json_extract(payload,'$.status') AS status FROM learning_objects WHERE user_id=? AND kind IN ('tutor','exam','explain','path') AND (kind<>'exam' OR json_extract(payload,'$.source')='verified_bank') AND COALESCE(json_extract(payload,'$.prepared'),0)=0 ORDER BY updated DESC,rowid DESC LIMIT 10", (user_id,)).fetchall()
-    return [{'id': r['id'], 'kind': r['kind'], 'updated': r['updated'], 'question': (r['question'] or r['topic'] or 'Paper')[:180], 'status': r['status'] or 'paper'} for r in rows]
+        rows = conn.execute("SELECT id,kind,updated,json_extract(payload,'$.current_question') AS question, json_extract(payload,'$.topic') AS topic,json_extract(payload,'$.status') AS status,json_extract(payload,'$.course_ids') AS course_ids FROM learning_objects WHERE user_id=? AND kind IN ('tutor','exam','explain','path') AND (kind<>'exam' OR json_extract(payload,'$.source')='verified_bank') AND COALESCE(json_extract(payload,'$.prepared'),0)=0 ORDER BY updated DESC,rowid DESC LIMIT 10", (user_id,)).fetchall()
+    return [{'id': r['id'], 'kind': r['kind'], 'updated': r['updated'], 'question': (r['question'] or r['topic'] or 'Paper')[:180], 'status': r['status'] or 'saved', 'course_ids':json.loads(r['course_ids'] or '[]')} for r in rows]
 
 def get(kind, identifier, user_id=None):
     from generation_control import CURRENT

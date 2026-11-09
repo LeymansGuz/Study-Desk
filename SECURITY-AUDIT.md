@@ -1,6 +1,6 @@
 # Security review and verification status
 
-Documentation reviewed **8 November 2026** for **0.2.15**. This is a summary of
+Usability and upload integrity reviewed **10 November 2026** for **0.2.17**. This is a summary of
 recorded checks, not a new vulnerability scan or a certification of security.
 
 [Security boundary and reporting](SECURITY.md) · [Historical audit records](docs/SECURITY-AUDIT-HISTORY.md) · [AI reliability](docs/RELIABILITY-AND-COST.md)
@@ -9,7 +9,7 @@ recorded checks, not a new vulnerability scan or a certification of security.
 
 | Check | Recorded result |
 |---|---|
-| Offline regression suite | 318 passed for the 0.2.15 release candidate |
+| Offline regression suite | 350 passed in the full local suite; native CI repeats the suite |
 | Native builds | Windows x64, Apple Silicon, Intel Mac and Linux x64 passed |
 | Packaged backends | Self-checks passed on all four native CI targets |
 | Mac packages | Native signature and DMG checks passed for both architectures |
@@ -19,8 +19,22 @@ recorded checks, not a new vulnerability scan or a certification of security.
 | Apple Silicon device | User-reported launch after the per-app macOS security override; not an exhaustive independent GUI test |
 | Intel Mac / Linux devices | GUI and complete install/update workflows still need device testing |
 
-The current release is [0.2.16 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.16-beta.3). The dated security findings below describe the earlier review; the consistency-check update does not constitute a new comprehensive security audit.
+The current release is [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.1). The dated security findings below describe the earlier review; the usability update does not constitute a new comprehensive security audit.
 The repository documentation can be updated without replacing its installers.
+
+## 10 November upload and review checks
+
+- Same-name document replacement extracts and stages a complete index before
+  switching the file, registry and index pointer. A durable recovery journal
+  preserves the previous version if publication fails or the app stops mid-swap.
+- Per-file results isolate failures; retries and deterministic kept-copy names
+  avoid duplicating successful uploads. Types and syllabus flags are preserved.
+- Mistake retries enforce ownership, current evidence/check versions and quarantine
+  eligibility without exposing keys. Deliberate review is excluded from mastery.
+- Desktop browser verification covers upload choices, planning, grouped search,
+  source bookmarks and check details at 900/1440 pixels in both themes.
+- Sidebar coordinates remain stable during repeated workspace scrolling in the
+  Windows browser test. Native Linux scrolling still needs device confirmation.
 
 ## Reviewed safeguards
 

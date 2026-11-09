@@ -417,7 +417,7 @@ def _append_document(user, chunks, manifest):
         raise
     return len(rows)
 
-def _publish_chunks(user_id, chunks, manifests, *, full=False, replacements=None):
+def _publish_chunks(user_id, chunks, manifests, *, full=False, replacements=None, publish=None):
     """Stage a complete snapshot; readers retain the prior version on failure.
 
     Old snapshots remain available to in-flight readers and for recovery. Never
@@ -458,7 +458,10 @@ def _publish_chunks(user_id, chunks, manifests, *, full=False, replacements=None
         if staged.count() != len(pending):
             raise ValueError('Replacement index failed its record-count check')
         index_cache.notify(stage='publication', pages_done=0, pages_total=0)
-        db.publish_index(user_id, name, manifests, full=full)
+        if publish is None:
+            db.publish_index(user_id, name, manifests, full=full)
+        else:
+            publish(name, manifests)
     except Exception:
         client.delete_collection(name)
         raise

@@ -7,7 +7,7 @@ This guide is for maintainers. Installer users need only the README and
 
 ## Current platform status
 
-Release: [0.2.16 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.16-beta.3).
+Release: [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.1).
 
 | Target | Package | Verification |
 |---|---|---|
@@ -68,8 +68,8 @@ use verbose diagnostics so tool/network failures are distinguishable from app fa
 
    ```text
    git push origin main
-   git tag -a v0.2.16-beta.3 -m "Study Desk 0.2.16 beta"
-   git push origin v0.2.16-beta.3
+   git tag -a v0.2.17-beta.1 -m "Study Desk 0.2.17 beta"
+   git push origin v0.2.17-beta.1
    ```
 
 4. **Build desktop installers** runs Windows, both Mac architectures and Linux.

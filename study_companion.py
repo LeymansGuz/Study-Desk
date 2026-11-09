@@ -76,10 +76,10 @@ def install(app,services):
     async def today(user=Depends(user_dep)):
         pref=store.get('study_plan',user['id'],user['id']) or {'minutes':15,'exam_date':None}
         queue=[]
-        from study_library import schedule_view
+        from study_library import schedule_view,effective_plan
         for saved_plan in store.listing('syllabus_plan',user['id'],20):
             if not db.get_course(user['id'],saved_plan['course_id']) or saved_plan['version']!=curriculum.scope_version(user['id'],[saved_plan['course_id']]):continue
-            pending=schedule_view(saved_plan)['upcoming']
+            pending=schedule_view(effective_plan(saved_plan,user['id']))['upcoming']
             if pending:
                 task=pending[0]
                 queue.append({'kind':'planned_topic','id':task['id'],'course_id':saved_plan['course_id'],'topic':task['title'],'title':'Your next planned topic','detail':task['title'],'minutes':15});break
@@ -106,6 +106,14 @@ def install(app,services):
         for item in sheets:
             if not services['_course_access_lost'](user['id'],item['course_ids']) and item['version']==curriculum.scope_version(user['id'],item['course_ids']):
                 queue.append({'kind':'sheet','id':item['id'],'title':'Review a recent concept','detail':item['topic'],'minutes':3});break
+        if not queue and courses:
+            from study_library import recommendations_for
+            selected_course=courses[0]
+            units=[r for r in (await asyncio.to_thread(curriculum.course_map,user['id'],[selected_course['id']]))['sections'] if not r.get('excluded')][:80]
+            suggestions=recommendations_for(user['id'],selected_course['id'],units)['items']
+            if suggestions:
+                suggestion=suggestions[0]
+                queue.append({'kind':'planned_topic','id':suggestion['skill_id'],'course_id':selected_course['id'],'topic':suggestion['topic'],'difficulty':suggestion['difficulty'],'title':'Your next practice topic','detail':suggestion['reason']+' · '+suggestion['topic'],'minutes':5})
         if not queue:
             queue.append({'kind':'practice' if courses else 'workspace','id':courses[0]['id'] if courses else '', 'title':'Start a topic' if courses else 'Add your course material','detail':'Choose a covered topic. AI generation starts only when you request a question.' if courses else 'Upload notes or past papers to begin your study workspace.','minutes':5})
         selected=[];used=0

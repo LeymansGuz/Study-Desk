@@ -47,9 +47,10 @@
     let batch;
     if(pending?.id){try{batch=await retry(()=>json(`/workspace/uploads/${pending.id}`));}catch(error){if(error.status!==404)throw error;pending=null;}}
     if(!pending?.id){
+      const metadata=await window.reviewCourseFiles(courseId,files);
       pending ||= {courseId,docType,files:[...files],requestKey:crypto.randomUUID().replaceAll('-','')};
       report('Preparing secure upload…');
-      batch=await retry(()=>json('/workspace/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({course_id:courseId,doc_type:docType,files:files.map(file=>({name:file.name,size:file.size})),request_key:pending.requestKey})}));
+      batch=await retry(()=>json('/workspace/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({course_id:courseId,doc_type:docType,files:files.map((file,i)=>({name:file.name,size:file.size,...metadata[i]})),request_key:pending.requestKey})}));
       pending.id=batch.id;
     }
     const base=`/workspace/uploads/${batch.id}`;
@@ -73,7 +74,7 @@
       batch=await retry(()=>json(base+'/complete',{method:'POST'}),message=>report(message,total));
     }
     report('Transfer complete. Verifying and saving files in the background…',total,'verify');
-    // Each poll is short. Large PDF validation never holds a Cloudflare request open.
+    // Short polls keep the desktop UI responsive during extraction and indexing.
     const deadline=Date.now()+30*60*1000;
     let recoveries=0;
     while(['processing','receiving'].includes(batch.status)&&Date.now()<deadline){
@@ -82,12 +83,13 @@
         report('Reconnecting to saved upload after a server restart…',total,'verify');
         batch=await retry(()=>json(base+'/complete',{method:'POST'}));
       }
-      await pause(1500);batch=await retry(()=>json(base),message=>report(message,total,'verify'));
+      await pause(1500);batch=await retry(()=>json(base),message=>report(message,total,'verify'));if(batch.result?.outcomes)report(batch.result.outcomes.map(o=>o.filename+': '+o.status).join(' · ')+(batch.status==='processing'?' · Processing next file…':''),total,'verify');
     }
     if(batch.status==='failed'){
       pending=null;const error=new Error(batch.error||'File validation failed.');error.status=batch.error_status;throw error;
     }
     if(batch.status!=='complete')throw new Error('Verification is still pending. Keep these files selected and click Upload and index to reconnect.');
+    if(batch.result?.outcomes){pending=null;report('Upload review complete.',total,'complete');return batch.result;}
     if(!batch.result||batch.result.uploaded?.length!==files.length||files.some(file=>
       !batch.result.uploaded.some(saved=>saved.size===file.size&&saved.course_id===courseId))){
       throw new Error('The server has not confirmed every saved document. Refresh Workspace before retrying.');

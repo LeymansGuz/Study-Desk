@@ -21,8 +21,10 @@ sheets before closing the application.
 
 1. In **Workspace**, choose or create a course and add its files.
 2. Use the file picker, drag/drop, or paste a screenshot into the attachment area.
-3. Wait for the background index to finish; indexing progress appears in Workspace.
-4. Set document types individually or select visible files and use
+3. Choose each selected file’s document type before upload, or apply the shared type to all selected files.
+4. For existing filenames, choose **Replace**, **Keep both** or **Skip** in one review. Identical files are skipped. A replacement keeps the existing document type, syllabus choice and bookmarks; the old PDF and index remain available until the new index is ready.
+5. Wait for indexing to finish; per-file upload results and background jobs appear in Workspace. Failed files stay selected for retry; successful files are not uploaded again.
+6. You can also set document types individually or select visible files and use
    **Set document type → Apply to selected**. Editing keeps their order and page.
 
 | Document type | How it is used |
@@ -104,17 +106,28 @@ If **Paste screenshot** is unavailable, focus the attachment area and use
 
 ## Review, plans and the study library
 
+**Continue studying** shows your three latest sessions first; expand to see all ten.
+Each card identifies its course, activity and status. One course selection applies
+to document search, the checked guide, bookmarks and bank exams. Imports, exports,
+Anki and card management are grouped under one expandable utility panel.
+
+In **Progress**, first-attempt accuracy and eventual completion are separate.
+**Try again** on a mistake reuses the same currently eligible verified question.
+If it is stale or quarantined, prepare fresh practice or explain the concept.
+This review makes no generation call; answer feedback can use AI. Bank exams and
+deliberate retries do not increase independent-practice or mastery totals.
+
 | Tool | How to use it |
 |---|---|
 | Today's study queue | In Progress, choose **Start next** for due cards, unfinished work, mistakes or a revision activity. |
 | Time and exam date | Set a daily budget of 5–180 minutes and an optional countdown. Dates use **dd/mm/yyyy**. |
-| Course study plan | Choose a course, exam date and daily minutes. Missed topics roll forward; mark reviewed topics yourself. |
-| Next-topic suggestions | Use current outcomes and source evidence; repeated same-question attempts do not establish retention. |
+| Course study plan | Choose a course and exam date. Uses your daily study time by default; a course-specific override and custom topics are tucked under optional settings. Missed topics roll forward; mark reviewed topics yourself. |
+| Next-topic suggestions | Appear automatically with the reason for each suggestion. Uses local outcomes and source evidence; repeated same-question attempts do not establish retention. |
 | Revision sheets | Edit Markdown with a preview, add personal notes, export or prepare practice. Edits are labelled unverified. |
-| Course revision guide | Combine checked explanation sections and citations. Refresh affected sections when sources change. |
-| Search document text | Search locally extracted document text and open its original page; diagrams without extracted text are not searchable. |
-| Page bookmarks and notes | Keep personal notes on original document pages without altering PDFs or OCR. |
-| Verified bank mock exam | Select 1–10 existing checked questions; optionally filter topic, difficulty, type or unseen items. No questions are generated to fill a shortage. |
+| Checked course guide | Open to read collected checked explanations and source sections still to explain. Creating or refreshing a section uses AI. Editable revision sheets remain separate personal copies. |
+| Find your study work | One search shows saved work and extracted text from the selected course in separate groups. Open a result’s original page. Diagrams without extracted text are not searchable. |
+| Page bookmarks and notes | In an original document or source preview, expand **Bookmark this page**. The referenced page is prefilled; if you navigate inside the PDF, enter that page manually. Changed sources and missing pages are flagged. |
+| Verified bank mock exam | Uses the library’s shared course selector. Select 1–10 existing checked questions; optionally filter topic, difficulty, type or unseen items. No questions are generated to fill a shortage. |
 | Paper summary | Review solved questions, first-attempt results, attempts and revisit items; export Markdown. Its percentage is practice completion, not a predicted exam mark. |
 | FSRS cards | Review due cards using the rating controls. Export existing cards to Anki as UTF-8 TSV with HTML enabled. |
 | Personal imports | Import up to 200 plain-text TSV card pairs, at most 2 MB. HTML/cloze directives are not interpreted. |

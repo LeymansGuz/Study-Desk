@@ -59,3 +59,25 @@ button[disabled] { cursor:not-allowed; }
 [aria-busy=true] button[disabled] { cursor:wait; }
 
 .local-card .file-select-label{display:flex;flex-direction:row;align-items:center;gap:.75rem;margin:0 0 .5rem}#file-type-tools{gap:.75rem}#file-type-tools[hidden]{display:none}
+
+/* Fixed desktop navigation and a stable main scrollbar prevent scroll-time sidebar drift. */
+body { height:100vh; overflow:hidden; }
+.app-shell { height:100vh; min-height:0; }
+.app-sidebar { position:relative; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.app-main { height:100vh; overflow-y:auto; overflow-x:hidden; scrollbar-gutter:stable; overscroll-behavior:contain; }
+.upload-review-dialog { width:min(680px,90vw); max-height:85vh; overflow:auto; margin:auto; padding:24px; border:1px solid var(--line-strong); border-radius:12px; background:var(--surface); color:var(--ink); }
+.upload-review-dialog::backdrop { background:#0008; }
+.upload-review-dialog [data-conflicts] { max-height:45vh; overflow:auto; padding:12px; margin:16px 0; border:1px solid var(--line); border-radius:8px; }
+.attachment-row > div { flex:1; min-width:0; }
+.attachment-row label { margin:12px 0 4px; }
+#saved-sessions { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+#saved-sessions .local-item { padding:16px; border:1px solid var(--line); border-radius:8px; }
+.check-details { font-size:.85rem; color:var(--muted); padding:10px 0; }
+.check-details summary { cursor:pointer; }
+#unified-search #study-search-results { display:block; }
+#unified-search #study-search-results button { margin:6px 8px 6px 0; }
+#source-bookmark { margin-top:16px; }
+#source-bookmark label { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+#source-bookmark input,#source-bookmark textarea { width:100%; }
+
+.local-card { scroll-margin-top:80px; }

@@ -162,7 +162,7 @@ Desktop installers do not read the source checkout's `.env`.
 | Specific-topic practice, paths and follow-ups | Change the defining inference, not only numbers/names. Reindexing does not reset retained avoidance. |
 | Explain / checked guides | Stable representative evidence and checked reuse for the same topic, depth and current course/check version. |
 | Ask | Preserve the task; return a consistent checked answer rather than inventing a variant. |
-| Bank exams / FSRS | Deliberate review can repeat; bank exams prefer less-practised items and offer an unseen-only filter. |
+| Bank exams / mistake retries / FSRS | Deliberate review can repeat; bank exams prefer less-practised items and offer an unseen-only filter. |
 | Marking / hints | Judge the actual answer consistently, preserve correct parts and adapt hints to the current error/attempt. |
 | Plans / search / source reading | Stable results are useful while the underlying evidence and progress are unchanged. |
 
@@ -176,3 +176,8 @@ of useful new tasks; known repeats are withheld rather than served silently.
 Checked explanation caches and bank items require current validation/evidence
 versions before reuse as trusted study/marking references. Historical saved text
 remains readable. Personal imports do not inherit external verification claims.
+
+Mistake retries reuse only current, non-quarantined verified bank entries with
+matching question/options. They do not generate replacements silently or
+contribute to independent-practice/mastery totals. Grading and answer-disclosure
+policies remain in force.

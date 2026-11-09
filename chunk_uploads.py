@@ -1,7 +1,8 @@
 """Authenticated, bounded resumable transport; original upload validation remains authoritative."""
 from __future__ import annotations
-import asyncio, hashlib, json, logging, os, re, shutil, time, uuid
+import asyncio, hashlib, io, json, logging, os, re, shutil, time, uuid
 from pathlib import Path
+from typing import Literal
 from fastapi import Depends, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 import db
@@ -22,12 +23,18 @@ _services = None
 class FileSpec(BaseModel):
     name: str = Field(min_length=1, max_length=240)
     size: int = Field(gt=0)
+    doc_type: DocumentType | None = None
+    conflict: Literal['replace', 'keep', 'skip'] | None = None
+    expected_sha: str = Field(default='', max_length=64)
 
 class BatchSpec(BaseModel):
     course_id: str = Field(min_length=1, max_length=100)
     doc_type: DocumentType = 'notes'
     request_key: str = Field(default_factory=lambda: uuid.uuid4().hex, pattern='^[0-9a-f]{32}$')
     files: list[FileSpec] = Field(min_length=1, max_length=WORKSPACE_FILES)
+
+def manifest_item(name, item):
+    return {'name':name, 'size':item.size, **item.model_dump(exclude={'name','size'}, exclude_none=True, exclude_defaults=True)}
 
 def root():
     return db.DB_PATH.parent / 'upload-staging'
@@ -75,6 +82,8 @@ async def start():
     _gate = asyncio.Lock()
     _worker_gate = asyncio.Semaphore(1)
     _chunk_slots = asyncio.Semaphore(4)
+    import document_replacement
+    await asyncio.to_thread(document_replacement.recover)
     with db.connect() as c:
         c.execute("CREATE TABLE IF NOT EXISTS upload_batches(\n            id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n            course_id TEXT NOT NULL,doc_type TEXT NOT NULL,manifest TEXT NOT NULL,offsets TEXT NOT NULL,\n            total INTEGER NOT NULL,status TEXT NOT NULL,result TEXT,error TEXT NOT NULL DEFAULT '',\n            error_status INTEGER NOT NULL DEFAULT 0,updated REAL NOT NULL,request_key TEXT)")
         if 'request_key' not in {r['name'] for r in c.execute('PRAGMA table_info(upload_batches)')}:
@@ -140,14 +149,20 @@ async def commit(identifier, user, request):
         async with _worker_gate:
             row = read(identifier, user['id'])
             for index, item in enumerate(json.loads(row['manifest'])):
+                if item.get('conflict') == 'skip':
+                    handles.append(io.BytesIO())
+                    continue
                 path = folder(identifier) / f'{index}.part'
                 if path.stat().st_size != item['size']:
                     raise HTTPException(422, 'A staged file is incomplete. Please upload it again.')
                 handle = path.open('rb')
                 handles.append(handle)
             files = [UploadFile(file=handle, filename=item['name']) for handle, item in zip(handles, json.loads(row['manifest']))]
-            result = await _services['upload_workspace_files'](request, course_id=row['course_id'], doc_type=row['doc_type'], files=files, user=user)
             manifest = json.loads(row['manifest'])
+            if any('conflict' in item or 'doc_type' in item for item in manifest):
+                await commit_reviewed(identifier, user, request, row, manifest, files)
+                return
+            result = await _services['upload_workspace_files'](request, course_id=row['course_id'], doc_type=row['doc_type'], files=files, user=user)
             saved = {doc['filename']: doc for doc in db.list_documents(user['id'], [row['course_id']])}
             returned = {doc.filename: doc for doc in result.uploaded}
             for item in manifest:
@@ -183,6 +198,66 @@ async def commit(identifier, user, request):
             await asyncio.to_thread(remove_files, identifier)
         _tasks.pop(identifier, None)
 
+
+async def commit_reviewed(identifier, user, request, row, manifest, files):
+    """Checkpoint each file, so retries/restarts never repeat successful work."""
+    import document_replacement
+    course = db.get_course(user['id'], row['course_id'])
+    if not course:raise HTTPException(404, 'This course is unavailable.')
+    _services['_assert_course_editable'](user, course)
+    previous = json.loads(row['result']) if row['result'] else {}
+    outcomes = previous.get('outcomes', [])
+    successful = {item['index'] for item in outcomes if item['status'] != 'failed'}
+    outcomes = [item for item in outcomes if item['status'] != 'failed']
+    ordered=sorted(enumerate(zip(manifest,files)),key=lambda pair:pair[1][0].get('conflict')!='replace')
+    for index, (item, file) in ordered:
+        if index in successful:continue
+        outcome = {'index':index, 'filename':item['name']}
+        try:
+            original = db.get_document_by_name(user['id'], course['id'], item['name'])
+            data = await file.read() if item.get('conflict') != 'skip' else b''
+            digest = hashlib.sha256(data).hexdigest()
+            if item.get('conflict') == 'skip':
+                outcome['status'] = 'skipped'
+            elif original and digest == original['sha256']:
+                outcome.update(status='unchanged', document_id=original['id'])
+            elif original and item.get('conflict') == 'replace':
+                await asyncio.to_thread(_services['validate_upload'], item['name'], data, corpus=True, max_bytes=_services['MAX_UPLOAD_BYTES'])
+                async with _services['WORKSPACE_LOCK']:
+                    worker=asyncio.create_task(asyncio.to_thread(document_replacement.replace, user['id'], course, item['name'], data, item.get('expected_sha'), original['doc_type']))
+                    try:document = await asyncio.shield(worker)
+                    except asyncio.CancelledError:
+                        # Keep the lock and worker reservation until filesystem publication finishes.
+                        await worker
+                        raise
+                outcome.update(status='ready', document_id=document['id'])
+            else:
+                if original and item.get('conflict') != 'keep':
+                    raise HTTPException(409, 'A document with this name already exists. Choose Replace, Keep both or Skip.')
+                name = item['name']
+                if original:
+                    # Deterministic name makes a restarted upload idempotent.
+                    path = Path(name)
+                    name = f'{path.stem[:190]} ({digest[:12]}){path.suffix}'
+                    copy = db.get_document_by_name(user['id'], course['id'], name)
+                    if copy and copy['sha256'] != digest:raise HTTPException(409, 'The kept-copy filename is already used by another document.')
+                file.filename = name
+                await file.seek(0)
+                result = await _services['upload_workspace_files'](request, course_id=course['id'], doc_type=item.get('doc_type') or row['doc_type'], files=[file], user=user)
+                outcome.update(status='indexing' if result.job_id else 'unchanged', document_id=result.uploaded[0].id, saved_filename=name)
+        except Exception as exc:
+            outcome.update(status='failed', error=str(exc.detail) if isinstance(exc,HTTPException) else 'Document processing failed. The previous version is kept; retry this file.')
+            if not isinstance(exc, HTTPException):log.exception('Reviewed upload failed for file %s', index)
+        outcomes.append(outcome)
+        outcomes.sort(key=lambda value:value['index'])
+        with db.connect() as connection:
+            connection.execute('UPDATE upload_batches SET result=?,updated=? WHERE id=?', (json.dumps({'outcomes':outcomes}), time.time(), identifier))
+    documents = {d['id']:d for d in db.list_documents(user['id'], [course['id']])}
+    indexed = {(d['course_id'],d['source_file']):d for d in _services['corpus_documents'](user['id'],[course['id']])}
+    uploaded = [_services['_user_file_row'](user['id'], documents[o['document_id']], indexed).model_dump() for o in outcomes if o.get('document_id') in documents]
+    with db.connect() as connection:
+        connection.execute("UPDATE upload_batches SET status='complete',result=?,updated=? WHERE id=?", (json.dumps({'uploaded':uploaded,'outcomes':outcomes}), time.time(), identifier))
+
 def install(app, services):
     global _services
     _services = services
@@ -200,7 +275,7 @@ def install(app, services):
         names = [sanitize_filename(item.name, ALLOWED_CORPUS_EXTENSIONS) for item in spec.files]
         if len(set(names)) != len(names):
             raise HTTPException(400, 'The batch contains the same filename twice.')
-        total = sum((item.size for item in spec.files))
+        total = sum(item.size for item in spec.files if item.conflict != 'skip')
         if total > services['MAX_BATCH_BYTES'] or any((item.size > services['MAX_UPLOAD_BYTES'] for item in spec.files)):
             raise HTTPException(413, 'Keep uploads within 50 files and 500 MB total, with at most 200 MB per document.')
         if any(Path(item.name).suffix.lower() in IMAGE_EXTENSIONS and item.size>IMAGE_BYTES for item in spec.files):
@@ -212,7 +287,7 @@ def install(app, services):
                 c.execute('BEGIN IMMEDIATE')
                 prior = c.execute('SELECT * FROM upload_batches WHERE user_id=? AND request_key=?', (user['id'], spec.request_key)).fetchone()
                 if prior:
-                    expected = [{'name': name, 'size': item.size} for name, item in zip(names, spec.files)]
+                    expected = [manifest_item(name, item) for name, item in zip(names, spec.files)]
                     if prior['course_id'] != spec.course_id or prior['doc_type'] != spec.doc_type or json.loads(prior['manifest']) != expected:
                         raise HTTPException(409, 'Upload request identifier was reused for different files.')
                     return public(dict(prior))
@@ -226,8 +301,9 @@ def install(app, services):
                 for old in stale:
                     c.execute('DELETE FROM upload_batches WHERE id=?', (old['id'],))
                 identifier = uuid.uuid4().hex
-                manifest = [{'name': name, 'size': item.size} for name, item in zip(names, spec.files)]
-                c.execute('INSERT INTO upload_batches(id,user_id,course_id,doc_type,manifest,offsets,total,status,updated,request_key) VALUES(?,?,?,?,?,?,?,?,?,?)', (identifier, user['id'], spec.course_id, spec.doc_type, json.dumps(manifest), json.dumps([0] * len(manifest)), total, 'receiving', time.time(), spec.request_key))
+                manifest = [manifest_item(name, item) for name, item in zip(names, spec.files)]
+                offsets=[item.size if item.conflict=='skip' else 0 for item in spec.files]
+                c.execute('INSERT INTO upload_batches(id,user_id,course_id,doc_type,manifest,offsets,total,status,updated,request_key) VALUES(?,?,?,?,?,?,?,?,?,?)', (identifier, user['id'], spec.course_id, spec.doc_type, json.dumps(manifest), json.dumps(offsets), total, 'receiving', time.time(), spec.request_key))
             folder(identifier).mkdir(parents=True, exist_ok=False)
         return public(read(identifier, user['id']))
 

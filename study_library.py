@@ -14,7 +14,7 @@ class Strict(BaseModel):
 class Schedule(Strict):
     course_id:str=Field(min_length=1,max_length=64)
     exam_date:date
-    minutes:int=Field(default=30,ge=5,le=180)
+    minutes:int|None=Field(default=None,ge=5,le=180)
     topics:list[str]=Field(default_factory=list,max_length=80)
 
 class Completion(Strict):
@@ -52,6 +52,12 @@ def schedule_view(value,today=None):
         rows.append({**item,'date':when.isoformat(),'over_capacity':when>end});used+=15
     return {**value,'upcoming':rows,'total_minutes':len(remaining)*15,'available_minutes':capacity,'over_capacity':len(remaining)*15>capacity,'exam_passed':end<today,'note':'15-minute estimates per topic. Reviewed is self-reported, not a mastery grade. Missed topics move forward automatically.'}
 
+def effective_plan(value,owner):
+    if value.get('uses_daily_time'):
+        pref=store.get('study_plan',owner,owner) or {'minutes':15}
+        return {**value,'minutes':pref['minutes']}
+    return value
+
 def identifier(*items):return hashlib.sha256('|'.join(items).encode()).hexdigest()[:32]
 
 def purge_course(owner,course):
@@ -81,6 +87,16 @@ def save_checked_section(owner,payload):
         guide={'course_id':cid,'version':payload['version'],'sections':entries[-20:]}
         c.execute('INSERT INTO learning_objects VALUES(?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET payload=excluded.payload,updated=excluded.updated',('course_guide',cid,owner,json.dumps(guide,ensure_ascii=False),time.time()))
 
+def recommendations_for(owner,cid,units):
+    scores=store.mastery(owner);key=curriculum.scope_key([cid],curriculum.scope_version(owner,[cid]));exposures=db.skill_exposure_counts(owner,key)
+    units.sort(key=lambda x:(-store.priority(x['id'],scores),exposures.get(x['id'],0),x['id']))
+    result=[]
+    for unit in units[:5]:
+        score=scores.get(unit['id']);level='easy' if score and score['score']<.45 else 'hard' if score and score['score']>.85 and score.get('successes',0)>=3 and score.get('independent_questions',0)>=3 and score.get('delayed_success') else 'medium'
+        result.append({'topic':unit['title'],'difficulty':level,'reason':'Revisit an assessed gap' if score and score['score']<.65 else 'Course-covered topic with limited practice' if not score else 'Extend a previously practised concept','skill_id':unit['id']})
+    return {'items':result,'note':'Suggestions use local outcomes and exposure. They do not certify mastery or infer prerequisites.'}
+
+
 def install(app,services):
     require=services['require_user']
     def course(owner,cid):
@@ -104,7 +120,8 @@ def install(app,services):
         if any(len(t)>200 for t in topics):raise HTTPException(422,'Keep each topic under 200 characters.')
         if not topics:topics=[r['title'] for r in await asyncio.to_thread(sections,user['id'],body.course_id)]
         if not topics:raise HTTPException(409,'Index course documents or enter one topic per line.')
-        value={'id':body.course_id,'course_id':body.course_id,'exam_date':body.exam_date.isoformat(),'minutes':body.minutes,'version':curriculum.scope_version(user['id'],[body.course_id]),'topics':[{'id':identifier(body.course_id,t),'title':t} for t in topics],'done':[]}
+        pref=store.get('study_plan',user['id'],user['id']) or {'minutes':15}
+        value={'id':body.course_id,'course_id':body.course_id,'exam_date':body.exam_date.isoformat(),'minutes':body.minutes or pref['minutes'],'uses_daily_time':body.minutes is None,'version':curriculum.scope_version(user['id'],[body.course_id]),'topics':[{'id':identifier(body.course_id,t),'title':t} for t in topics],'done':[]}
         previous=store.get('syllabus_plan',body.course_id,user['id'])
         if previous:value['done']=[x for x in previous['done'] if x in {t['id'] for t in value['topics']}]
         store.put('syllabus_plan',body.course_id,user['id'],value);return schedule_view(value)
@@ -112,7 +129,7 @@ def install(app,services):
     @app.get('/library/schedule/{course_id}')
     async def get_schedule(course_id:str,user=Depends(require)):
         course(user['id'],course_id);value=store.get('syllabus_plan',course_id,user['id'])
-        return {'plan':schedule_view(value) if value else None,'historical':bool(value and value['version']!=curriculum.scope_version(user['id'],[course_id]))}
+        return {'plan':schedule_view(effective_plan(value,user['id'])) if value else None,'preferences':store.get('study_plan',user['id'],user['id']) or {'minutes':15,'exam_date':None},'historical':bool(value and value['version']!=curriculum.scope_version(user['id'],[course_id]))}
 
     @app.patch('/library/schedule/{course_id}')
     async def complete(course_id:str,body:Completion,user=Depends(require)):
@@ -124,18 +141,12 @@ def install(app,services):
             if not value or body.topic_id not in {t['id'] for t in value['topics']}:raise HTTPException(404,'Unknown planned topic.')
             done=set(value['done']);done.add(body.topic_id) if body.done else done.discard(body.topic_id);value['done']=sorted(done)
             c.execute("UPDATE learning_objects SET payload=?,updated=? WHERE kind='syllabus_plan' AND id=? AND user_id=?",(json.dumps(value),time.time(),course_id,user['id']))
-        return schedule_view(value)
+        return schedule_view(effective_plan(value,user['id']))
 
     @app.get('/library/recommend/{course_id}')
     async def recommend(course_id:str,user=Depends(require)):
         course(user['id'],course_id);units=await asyncio.to_thread(sections,user['id'],course_id)
-        scores=store.mastery(user['id']);key=curriculum.scope_key([course_id],curriculum.scope_version(user['id'],[course_id]));exposures=db.skill_exposure_counts(user['id'],key)
-        units.sort(key=lambda x:(-store.priority(x['id'],scores),exposures.get(x['id'],0),x['id']))
-        result=[]
-        for unit in units[:5]:
-            score=scores.get(unit['id']);level='easy' if score and score['score']<.45 else 'hard' if score and score['score']>.85 and score.get('successes',0)>=3 and score.get('independent_questions',0)>=3 and score.get('delayed_success') else 'medium'
-            result.append({'topic':unit['title'],'difficulty':level,'reason':'Revisit an assessed gap' if score and score['score']<.65 else 'Course-covered topic with limited practice' if not score else 'Extend a previously practised concept','skill_id':unit['id']})
-        return {'items':result,'note':'Suggestions use local outcomes and exposure. They do not certify mastery or infer prerequisites.'}
+        return recommendations_for(user['id'],course_id,units)
 
     @app.get('/library/guide/{course_id}')
     async def guide(course_id:str,download:bool=False,user=Depends(require)):
@@ -188,7 +199,12 @@ def install(app,services):
     @app.get('/library/annotations')
     async def annotations(course_id:str,user=Depends(require)):
         course(user['id'],course_id)
-        return {'items':[x for x in store.listing('annotation',user['id'],200) if x['course_id']==course_id and db.get_document(user['id'],x['document_id'])]}
+        items=[]
+        for x in store.listing('annotation',user['id'],200):
+            if x['course_id']!=course_id:continue
+            document=db.get_document(user['id'],x['document_id'])
+            if document:items.append({**x,'source_changed':bool(x.get('source_sha') and x['source_sha']!=document['sha256']),'page_available':x['page']<=max(1,document['page_count'])})
+        return {'items':items}
 
     @app.get('/library/review-context/{record_id}')
     async def review_context(record_id:str,user=Depends(require)):
@@ -209,7 +225,7 @@ def install(app,services):
         document=db.get_document(user['id'],body.document_id)
         if not document:raise HTTPException(404,'Unknown document.')
         if body.page>max(1,document['page_count']):raise HTTPException(422,'Choose a page within this document.')
-        value={**body.model_dump(),'id':identifier(body.document_id,str(body.page)),'course_id':document['course_id'],'filename':document['filename']}
+        value={**body.model_dump(),'id':identifier(body.document_id,str(body.page)),'course_id':document['course_id'],'filename':document['filename'],'source_sha':document['sha256']}
         store.put('annotation',value['id'],user['id'],value);return value
 
     @app.delete('/library/annotations/{annotation_id}')
