@@ -97,15 +97,17 @@ def test_target_blind_review_catches_a_conflict_despite_positive_first_review(mo
     seen=[]
     async def invoke(prompt,temperature,schema):
         seen.append(prompt)
-        assert schema is checks.IndependentSetup
         assert 'Compute the easy local target' not in prompt
         assert 'Inflow is 3 plus 2; outflow is 6.' in prompt
+        if schema is tools.PremiseChallenge:
+            return tools.PremiseChallenge(verdict='confirmed_defect',reason='Steady state requires inflow 5 to equal outflow, but outflow is 6.')
+        assert schema is checks.IndependentSetup
         return checks.IndependentSetup(witness_or_conflict='Steady state with no storage requires outflow 5, not 6.',status='inconsistent')
     monkeypatch.setattr(tools,'_invoke_json',invoke)
     checks._JOINT_CACHE.clear()
     with pytest.raises(tools.CandidateError,match='cannot all hold'):
         asyncio.run(checks.ensure_joint_setup(assessment,question))
-    assert len(seen)==1
+    assert len(seen)==2
 
 
 def test_no_scenario_does_not_add_a_call_and_source_rules_are_not_public_data(monkeypatch):
@@ -140,8 +142,27 @@ def test_cached_joint_witness_cannot_erase_an_original_conflict(monkeypatch):
         assert schema is tools.PremiseChallenge
         return tools.PremiseChallenge(verdict='confirmed_defect',reason='The proposed witness does not meet both constraints.')
     monkeypatch.setattr(tools,'_invoke_json',invoke)
-    with pytest.raises(tools.CandidateError,match='could not be established'):
+    with pytest.raises(tools.CandidateError,match='cannot all hold'):
         asyncio.run(checks.ensure_joint_setup(assessment,question))
+
+
+def test_negative_reviewer_cannot_confuse_a_free_parameter_with_a_contradiction(monkeypatch):
+    import premise_checks as checks
+    question='A parameter n is any positive integer. Both accounts grow by the same factor.'
+    assessment=certificate().model_copy(update={'background_facts':[question]})
+    calls=[]
+    async def invoke(prompt,temperature,schema):
+        calls.append(schema)
+        if schema is checks.IndependentSetup:
+            return checks.IndependentSetup(status='inconsistent',witness_or_conflict='The numerical balances depend on n.')
+        assert schema is tools.PremiseChallenge
+        return tools.PremiseChallenge(verdict='withdrawn',reason='Any positive n is a valid assignment; dependence on n is not a contradiction.')
+    monkeypatch.setattr(tools,'_invoke_json',invoke)
+    checks._JOINT_CACHE.clear()
+    first=asyncio.run(checks.ensure_joint_setup(assessment,question))
+    second=asyncio.run(checks.ensure_joint_setup(first,question))
+    assert first.status==second.status=='feasible'
+    assert calls==[checks.IndependentSetup,tools.PremiseChallenge]
 
 
 def test_inconsistency_has_a_safe_specific_user_message():

@@ -10,6 +10,7 @@ Local, document-grounded study using your own AI key.
 - Explicit evaluation/no-solution tasks remain supported; uncertain findings are withheld.
 - Per-target source comparisons are aggregated locally; new companion claims and student-claim wrappers do not excuse copied tasks.
 - Private setup findings in diagnostics and a **Setup: Checked** receipt; older bank items require current validation.
+- Clean worked solutions and bounded, symmetric handling of conflicting premise reviews, including parameter-dependent tasks.
 
 ## Included
 

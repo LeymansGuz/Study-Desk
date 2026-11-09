@@ -63,6 +63,10 @@ class IndependentSetup(BaseModel):
         'does not assert X is true; a temporary proof-by-contradiction assumption need not '
         'be realizable. Report the consistency of the claim/proof scenario, not truth of '
         'the quoted proposition. A redundant or already-given answer is NOT a contradiction. '
+        'Feasible means at least one joint assignment exists, not that every parameter '
+        'assignment yields the same answer. Do NOT assess answer uniqueness here. '
+        'A free parameter or conditional answer is not an inconsistent setup. Preserve '
+        'all stated units, rate periods and conventions literally. '
         'Uncertainty is not approval. Output only the final finding, no abandoned objections.')
     witness_or_conflict: str = Field(min_length=10, max_length=900)
     status: Literal['feasible', 'inconsistent', 'uncertain']
@@ -117,21 +121,24 @@ async def ensure_joint_setup(assessment, question):
         if len(_JOINT_CACHE)>=256:_JOINT_CACHE.pop(next(iter(_JOINT_CACHE)))
         _JOINT_CACHE[key]=result
     result=_JOINT_CACHE[key]
-    if assessment.status == 'inconsistent' and result.status == 'feasible':
+    if {assessment.status,result.status} == {'inconsistent','feasible'}:
         # Do not lose an earlier concrete objection just because a second model
         # found a witness. Challenge it with the same target-free facts.
         objection=(wrap_untrusted('asserted_background_conditions',facts,
                    max_chars=MAX_ASSIGNMENT_CHARS*2)+'\n'+
-                   wrap_untrusted('alleged_conflict',assessment.witness_or_conflict,max_chars=900)+
+                   wrap_untrusted('alleged_conflict',assessment.witness_or_conflict if assessment.status=='inconsistent' else result.witness_or_conflict,max_chars=900)+
                    '\nIndependently check this alleged conflict against ALL these conditions. '
                    'A redundant requested answer is not a contradiction. Confirm only a real '
                    'conflict; withdraw a mistaken allegation. Uncertainty is not approval.')
         challenge=await tools._invoke_json(objection,0,tools.PremiseChallenge)
-        if challenge.verdict != 'withdrawn':
+        if challenge.verdict == 'uncertain':
             error=tools.CandidateError('The question setup could not be established as consistent.',
                 feedback=challenge.reason)
             error.pipeline_stage='premise'
             raise error
+        result=result.model_copy(update={'status':'inconsistent' if challenge.verdict=='confirmed_defect' else 'feasible',
+            'witness_or_conflict':challenge.reason})
+        _JOINT_CACHE[key]=result
     checked=assessment.model_copy(update={'status':result.status,
         'witness_or_conflict':result.witness_or_conflict})
     validate_setup(checked,question)

@@ -35,6 +35,17 @@ def test_final_working_rejects_abandoned_computation_without_blocking_error_anal
     solved=tools.SolverAnswer.model_validate({'answer':'4','worked_solution':'Adding two to two gives four directly.','parts':[]})
     assert solved.reasoning=='Adding two to two gives four directly.'
 
+
+def test_recalculation_transcript_is_not_a_clean_solution_but_independent_confirmation_is():
+    from working_checks import has_draft_working
+    failed='The sum is 9/2, which contradicts 3/2. Rechecking the bounds: the reversed region is wrong. Correcting the limits now gives 3/2.'
+    assert has_draft_working('Compute the mass using both integration orders.',failed)
+    assert not has_draft_working('Identify the error in the proposed bounds.',failed)
+    assert not has_draft_working('Compute the mass using both integration orders.',
+        'Recomputing with horizontal slices confirms the same mass, 3/2.')
+    assert not has_draft_working('Assess the proposed scientific model.',
+        'The measurements do not match the predicted pattern, so the model is rejected.')
+
 def test_reviewer_options_are_validated_before_mutating_a_public_candidate():
     draft=tools.QuestionDraft(question='What is two plus two?',question_type='mcq',options=['4','3','2','1'],
         canonical_answer='A. 4',solution='Two plus two is four by addition.')

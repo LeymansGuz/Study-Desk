@@ -90,7 +90,10 @@ receives the compact conditions, not another copy of the course passages.
 
 Missing or unresolved findings are not approvals. An initial defect objection is retained
 through its independent challenge; withdrawing one objection does not establish
-validity. Every final or rewritten public task passes the same gate, including
+validity. Opposing feasible/inconsistent findings receive a bounded independent
+challenge in either direction; a free parameter is not a contradiction, and an
+unresolved challenge never approves the task. Resolved checks are cached.
+Every final or rewritten public task passes the same gate, including
 Medium MCQs. Explicit error-diagnosis, existence tests and equations with no
 solution remain valid exercises. The private finding is logged locally; only a
 boolean **Setup: Checked** receipt is shown. It is a model check, not a proof of
@@ -137,6 +140,9 @@ A metadata row count or word count does not establish reasoning depth.
 - Syntax repair changes only the broken calculator string. Re-run its evaluator
   and independent syntax Solver before accepting it.
 - Parameter formulas are symbolic; do not invent scalar values for them.
+- Abandoned recalculation transcripts are repaired or withheld even when their
+  eventual final number is correct. Clean independent confirmation and explicit
+  error-analysis tasks remain valid. Explain and Ask reuse the checked working.
 - Public-question changes require a fresh independent solution and full checks.
 - Ordinary processing uses 60 seconds; complex proof/extended/deep work uses
   90 seconds. One feedback-guided practice repair may have 15 seconds of grace.

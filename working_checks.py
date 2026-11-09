@@ -11,6 +11,13 @@ def has_draft_working(question,solution):
     """Reject abandoned computation transcripts, not legitimate error-analysis tasks."""
     if re.search(r'\b(?:find|identify|explain|correct|diagnose)\b.{0,55}\b(?:error|mistake|flaw|incorrect)\b|\bcritique\b',question,re.I):
         return False
+    # A failed derivation followed by recalculation is a draft transcript, even
+    # when it eventually lands on the right key. Independent verification that
+    # agrees, and ordinary scientific model rejection, do not meet both tests.
+    recalculation=re.search(r'\b(?:rechecking|recomputing|recalculating|correcting)\b',solution,re.I)
+    abandoned=re.search(r'\b(?:does not match|discrepancy|the error is|is wrong|cannot both be|contradicts)\b',solution,re.I)
+    if recalculation and abandoned:
+        return True
     return bool(re.search(r'\b(?:a cleaner (?:route|approach)|this is not yet (?:the|a) clean|so this (?:expansion|calculation|solution) is wrong|recompute:|correct candidate is|let me (?:recalculate|recompute|correct)|oops\b|wait[,:;!])|\bactually\b[^.\n]{0,100}\?|\bthis does not (?:break|show|establish|prove)\b',solution,re.I))
 
 
