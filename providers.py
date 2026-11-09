@@ -120,7 +120,7 @@ class ConnectionBoundary:
         # inherit the same snapshot for this HTTP workflow.
         ai_request=scope['type']=='http' and scope.get('method')=='POST' and any(scope['path']==p or scope['path'].startswith(p+'/') for p in ('/ask','/answer','/explain','/study/recall','/practice/follow-up'))
         token = ACTIVE.set(snapshot() if ai_request else None)
-        budget_token=WORKFLOW.set({'checked':False,'calls':0,'minimum':8 if scope.get('path')=='/ask' else 3 if scope.get('path')=='/explain' else 1} if ai_request else None)
+        budget_token=WORKFLOW.set({'checked':False,'calls':0,'minimum':8 if scope.get('path')=='/ask' else 5 if scope.get('path')=='/explain' else 1} if ai_request else None)
         try:
             if ai_request and limited(ACTIVE.get()):
                 from starlette.responses import JSONResponse

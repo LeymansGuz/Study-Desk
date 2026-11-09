@@ -19,7 +19,7 @@ recorded checks, not a new vulnerability scan or a certification of security.
 | Apple Silicon device | User-reported launch after the per-app macOS security override; not an exhaustive independent GUI test |
 | Intel Mac / Linux devices | GUI and complete install/update workflows still need device testing |
 
-The published app is [0.2.15 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.15-beta.3).
+The current release is [0.2.16 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.16-beta.1). The dated security findings below describe the earlier review; the consistency-check update does not constitute a new comprehensive security audit.
 The repository documentation can be updated without replacing its installers.
 
 ## Reviewed safeguards

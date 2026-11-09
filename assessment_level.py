@@ -5,7 +5,7 @@ subparts or equations. Workload ceilings prevent an artificial mini-examination.
 """
 import re
 
-POLICY_VERSION = 22
+POLICY_VERSION = 23
 
 DIFFICULTY_GUIDE = {
     'easy': 'Easy: one familiar concept and one direct reasoning step; a concise revision warm-up.',

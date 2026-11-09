@@ -55,24 +55,27 @@ def test_false_premise_allegation_is_challenged_but_not_auto_approved(monkeypatc
     calls=[]
     async def invoke(prompt,temperature,schema):
         calls.append(schema)
-        if schema is tools.PublicValidity:return tools.PublicValidity(reason='Alleged impossible identity.',verdict='defect')
+        if schema is tools.PublicValidity:return tools.PublicValidity(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='The identity t=t holds for every real t.'),reason='Alleged impossible identity.' if calls.count(schema)==1 else 'Identity verified.',verdict='defect' if calls.count(schema)==1 else 'valid')
+        from premise_checks import IndependentSetup
+        if schema is IndependentSetup:return IndependentSetup(status='feasible',witness_or_conflict='The identity has a joint interpretation.')
         assert schema is tools.PremiseChallenge
         return tools.PremiseChallenge(reason='The claimed contradiction is not valid under the stated givens.',verdict='withdrawn')
     monkeypatch.setattr(tools,'_invoke_json',invoke)
     value=asyncio.run(tools.ensure_public_validity('Prove the identity t=t under the stated real domain.'))
-    assert value.verdict=='uncertain'  # full solving/reviews remain mandatory
-    assert calls==[tools.PublicValidity,tools.PremiseChallenge]
+    assert value.verdict=='valid'  # withdrawal alone is insufficient; fresh approval is required
+    from premise_checks import IndependentSetup
+    assert calls==[tools.PublicValidity,tools.PremiseChallenge,tools.PublicValidity]
 
 def test_confirmed_false_claim_is_still_withheld(monkeypatch):
     async def invoke(prompt,temperature,schema):
-        if schema is tools.PublicValidity:return tools.PublicValidity(reason='Two is prime and even.',verdict='defect')
+        if schema is tools.PublicValidity:return tools.PublicValidity(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='Consistent test fixture conditions.'),reason='Two is prime and even.',verdict='defect')
         return tools.PremiseChallenge(reason='The prime 2 satisfies the hypothesis but is not odd.',verdict='confirmed_defect')
     monkeypatch.setattr(tools,'_invoke_json',invoke)
     with pytest.raises(tools.CandidateError,match='conflicting'):
         asyncio.run(tools.ensure_public_validity('Prove every prime integer is odd (negative control).'))
 
 def test_overlong_diagnostics_are_bounded_without_changing_semantic_payloads():
-    payload={'reason':'x'*2500,'verdict':'uncertain'}
+    payload={'reason':'x'*2500,'verdict':'uncertain','setup':{'evaluation_request':'','background_facts':[],'status':'uncertain','witness_or_conflict':'Unresolved fixture conditions.'}}
     bounded=tools.normalize_diagnostics(payload,tools.PublicValidity)
     review=tools.PublicValidity.model_validate(bounded)
     assert review.verdict=='uncertain' and len(review.reason)==700
@@ -158,7 +161,7 @@ def test_too_easy_feedback_increases_depth_without_adding_unrelated_parts():
 
 
 def test_diagnostic_aliases_preserve_a_negative_verdict():
-    value=tools.PublicValidity.model_validate({'is_valid':False,'explanation':'The observations conflict under the stated controlled conditions.'})
+    value=tools.PublicValidity.model_validate({'is_valid':False,'explanation':'The observations conflict under the stated controlled conditions.','setup':{'evaluation_request':'','background_facts':[],'status':'inconsistent','witness_or_conflict':'The observed values conflict.'}})
     assert value.verdict=='defect'
     with pytest.raises(ValidationError):tools.PublicValidity.model_validate({'is_valid':'false','explanation':'Untrusted string flag.'})
     topic=tools.TopicAlignment(is_on_topic=False,tested_concept='x'*200,reason='y'*600)
@@ -185,7 +188,7 @@ def test_required_schema_is_in_the_high_priority_system_message(monkeypatch):
     class FakeModel:
         async def ainvoke(self,messages,**kwargs):
             captured.extend(messages)
-            return SimpleNamespace(content='{"verdict":"valid","reason":"The stated conditions are compatible."}',usage_metadata={},response_metadata={})
+            return SimpleNamespace(content='{"verdict":"valid","reason":"The stated conditions are compatible.","setup":{"evaluation_request":"","background_facts":[],"status":"feasible","witness_or_conflict":"All stated conditions coexist."}}',usage_metadata={},response_metadata={})
     monkeypatch.setattr(tools,'_get_llm',lambda *args:FakeModel())
     monkeypatch.setattr(tools,'get_settings',lambda:SimpleNamespace(base_url='https://api.deepseek.com/v1'))
     result=asyncio.run(tools._invoke_json('Check this public task.',0,tools.PublicValidity))
@@ -220,6 +223,7 @@ def test_invalid_public_claim_is_screened_before_expensive_solving(monkeypatch):
     monkeypatch.setattr(math_format,'check',no_op)
     monkeypatch.setattr(tools,'ensure_public_validity',reject)
     monkeypatch.setattr(question_preflight,'check',reject)
+    monkeypatch.setattr(question_preflight,'_assess',reject)
     monkeypatch.setattr(tools,'solve_independently',must_not_solve)
     seed=tools.QuestionSeed(question='Prove every prime integer is odd.',question_type='proof')
     with pytest.raises(tools.CandidateError,match='Confirmed impossible'):
@@ -303,6 +307,8 @@ def test_complex_timeout_extends_once_from_slot_acquisition(monkeypatch):
 
 
 def test_mcq_solver_verifier_disagreement_is_withheld(monkeypatch):
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     async def check(*a):pass
     async def audit(*a,**k):return review(correct_option_index=1)
     import math_format
@@ -322,7 +328,7 @@ def test_false_proof_is_rejected_without_waiting_for_a_rewritten_claim(monkeypat
     async def confirm(*a):
         return tools.PremiseChallenge(reason='The prime two is an admissible counterexample.',verdict='confirmed_defect')
     async def validity(*a):
-        return tools.PublicValidity(verdict='defect',reason='The prime two is an admissible counterexample.')
+        return tools.PublicValidity(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='Consistent test fixture conditions.'),verdict='defect',reason='The prime two is an admissible counterexample.')
     monkeypatch.setattr(tools,'ensure_public_validity',validity)
     monkeypatch.setattr(question_preflight,'challenge_defect',confirm)
     monkeypatch.setattr(math_format,'check',check)
@@ -333,6 +339,8 @@ def test_false_proof_is_rejected_without_waiting_for_a_rewritten_claim(monkeypat
         asyncio.run(tools._verify_draft(draft,independent=SimpleNamespace(missing_givens=[])))
 
 def test_valid_question_gets_fresh_blind_solve_without_reviewer_providing_a_solution(monkeypatch):
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     calls=[]
     async def check(*a):pass
     async def audit(*a,**k):

@@ -20,6 +20,7 @@ PUBLIC_REASONS |= frozenset({
     'Keep one focused task; extended answers may have at most two connected parts. Do not add unrelated or hidden subparts.',
     *(f'Keep the public question within {limit} words and its focused workload ceiling. Supply helpful intermediate values instead of repetitive requests.' for limit in (180,300,400)),
 })
+PUBLIC_REASONS |= frozenset({'The question setup was not independently checked.','The question setup could not be established as consistent.','The question states conditions that cannot all hold together.'})
 LABELS['adversarial_review'] = 'Additional answer verification'
 
 class StageFailure(RuntimeError):

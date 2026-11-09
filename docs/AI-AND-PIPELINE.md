@@ -71,7 +71,7 @@ no plaintext desktop fallback.
 1. **Plan and retrieve:** respect course scope, source roles, exclusions and retained exposure history.
 2. **Abstract evidence:** give the Writer reusable covered principles and prohibited source-task patterns, not tempting exercise stems.
 3. **Write:** design a new public problem with a compact private feasibility witness.
-4. **Preflight:** check topic, public premises, supported methods, source cloning and nearby previous inferences.
+4. **Preflight:** independently check that all asserted background facts can hold together, then check topic, supported methods, source cloning and nearby previous inferences. A correct local answer never excuses an impossible scenario.
 5. **Blind solve:** the Solver sees the public question/options, not the Writer's answer.
 6. **Local checks:** evaluate arithmetic and supported symbolic checks; check formatting, option uniqueness, key agreement and requested parts.
 7. **Review:** check correctness, grounding, originality, difficulty, workload and assumptions. Higher-complexity work receives additional review.
@@ -81,6 +81,24 @@ no plaintext desktop fallback.
 OPA is a policy engine, not a mathematical proof checker. Agreement between
 same-provider reviewers is not independent ground truth.
 
+The setup check extracts the stated conditions, preserving claim/conditional
+qualifiers. A separate answer-blind reviewer checks their joint feasibility without
+the key or answer options. For generated tasks, it runs alongside the blind Solver
+after source/topic screening; both must succeed. Empty-scenario tasks skip this
+extra call, and unchanged fact ledgers reuse bounded cached checks. The reviewer
+receives the compact conditions, not another copy of the course passages.
+
+Missing or unresolved findings are not approvals. An initial defect objection is retained
+through its independent challenge; withdrawing one objection does not establish
+validity. Every final or rewritten public task passes the same gate, including
+Medium MCQs. Explicit error-diagnosis, existence tests and equations with no
+solution remain valid exercises. The private finding is logged locally; only a
+boolean **Setup: Checked** receipt is shown. It is a model check, not a proof of
+correctness. Older bank items must meet the current checking policy before reuse.
+Originality is checked for every assessed subpart: appending a new claim does not
+make a reproduced source exercise original. Using covered principles to solve a
+different task remains allowed.
+
 ### Explain and Ask use the relevant stages
 
 - **Explain:** draft from covered principles; independently solve the original
@@ -88,7 +106,8 @@ same-provider reviewers is not independent ground truth.
   source originality. Reuse the checked solution only when the example is unchanged.
 - **Ask:** preserve the supplied question and option order. Repair faulty private
   calculation plans, not public givens. Missing essential diagram facts stay missing;
-  OCR cannot infer them.
+  OCR cannot infer them. Contradictory background facts are withheld rather than
+  silently ignored to obtain an answer.
 - **Recall:** grade against a current checked explanation and its course evidence,
   never personal revision-sheet edits; independently review the feedback.
 

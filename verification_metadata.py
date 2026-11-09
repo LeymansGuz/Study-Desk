@@ -1,7 +1,7 @@
 """Public verification receipts never contain a key, index or private review."""
 import math
 
-FLAGS = frozenset({'solver_passed','source_passed','verifier_passed',
+FLAGS = frozenset({'premise_passed','solver_passed','source_passed','verifier_passed',
                    'math_format_passed','originality_passed','opa_passed'})
 
 

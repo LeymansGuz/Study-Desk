@@ -103,6 +103,9 @@ def test_solver_receives_the_public_type_without_seeing_a_proposed_key(monkeypat
 
 @pytest.mark.parametrize('verdict,final_valid,accepted', [('withdrawn',True,True),('withdrawn',False,False),('confirmed_defect',True,False),('uncertain',True,False)])
 def test_false_premise_objections_require_fresh_solving_and_verification(monkeypatch,verdict,final_valid,accepted):
+    import tools
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     import asyncio
     import tools,math_format,question_preflight
     audits=[]

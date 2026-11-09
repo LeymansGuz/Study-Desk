@@ -7,6 +7,8 @@ from answer_parts import SolvedPart
 
 
 def test_parameter_plan_is_resolved_without_changing_the_public_question(monkeypatch):
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     calls=[]
     async def solve(question,options=None,**kwargs):
         calls.append((question,kwargs))
@@ -23,6 +25,8 @@ def test_parameter_plan_is_resolved_without_changing_the_public_question(monkeyp
 
 
 def test_unresolved_plan_is_withheld_after_one_private_retry(monkeypatch):
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     calls=[]
     async def solve(*args,**kwargs):
         calls.append(1)

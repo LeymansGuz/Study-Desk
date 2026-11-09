@@ -102,11 +102,14 @@ def test_metadocuments_cannot_be_primary_whole_course_topics(client,monkeypatch)
 
 def test_independent_preflight_checks_prior_inference_and_does_not_reuse_old_approval(monkeypatch):
     import question_preflight as preflight
+    async def joint(assessment,*a):return assessment
+    monkeypatch.setattr(preflight,"ensure_joint_setup",joint)
+    import question_preflight as preflight
     import tools
     token=uuid.uuid4().hex;calls=[];source='Multiplication computes a product from its explicitly given factors.'
     async def invoke(prompt,temperature,schema):
         calls.append(prompt)
-        return preflight.QuestionPreflight(reason='The domain method is covered.',verdict='valid',is_on_topic=True,
+        return preflight.QuestionPreflight(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='Consistent test fixture conditions.'),reason='The domain method is covered.',verdict='valid',is_on_topic=True,
             tested_concept='Multiplication',is_grounded=True,source_clone=False,
             repeats_recent_task='previously seen multiplication' in prompt,
             originality_reason='Same multiplication inference.' if 'previously seen multiplication' in prompt else 'No prior task.',

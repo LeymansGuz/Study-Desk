@@ -7,7 +7,7 @@ This guide is for maintainers. Installer users need only the README and
 
 ## Current platform status
 
-Release: [0.2.15 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.15-beta.3).
+Release: [0.2.16 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.16-beta.1).
 
 | Target | Package | Verification |
 |---|---|---|

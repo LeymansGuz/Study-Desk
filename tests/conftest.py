@@ -14,6 +14,17 @@ def no_paid_calls(monkeypatch):
     from langchain_openai import ChatOpenAI,OpenAIEmbeddings
     def blocked(*a,**k): raise AssertionError('Provider calls are disabled in offline tests.')
     async def async_blocked(*a,**k): return blocked()
+    import httpx
+    original_async=httpx.AsyncHTTPTransport.handle_async_request
+    original_sync=httpx.HTTPTransport.handle_request
+    async def guarded_async(self,request):
+        if request.url.host not in {'localhost','127.0.0.1','::1'}:return blocked()
+        return await original_async(self,request)
+    def guarded_sync(self,request):
+        if request.url.host not in {'localhost','127.0.0.1','::1'}:return blocked()
+        return original_sync(self,request)
+    monkeypatch.setattr(httpx.AsyncHTTPTransport,'handle_async_request',guarded_async)
+    monkeypatch.setattr(httpx.HTTPTransport,'handle_request',guarded_sync)
     monkeypatch.setattr(ChatOpenAI,'ainvoke',async_blocked)
     monkeypatch.setattr(ChatOpenAI,'invoke',blocked)
     for name in ['embed_documents','embed_query']: monkeypatch.setattr(OpenAIEmbeddings,name,blocked)

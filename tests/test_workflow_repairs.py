@@ -68,6 +68,8 @@ def test_mcq_cannot_silently_rewrite_an_option_into_a_true_statement():
     with pytest.raises(tools.CandidateError,match='rewrote'):tools._use_solution(draft,solved)
 
 def test_supplied_question_cannot_be_returned_with_repaired_public_options(monkeypatch):
+    async def premise(*a,**k):pass
+    monkeypatch.setattr(tools,"ensure_public_validity",premise)
     import db,providers,supplied_questions,math_format
     db.init_db();monkeypatch.setattr(providers,'snapshot',lambda:None)
     options=['4','5','6','7']

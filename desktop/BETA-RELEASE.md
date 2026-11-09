@@ -1,6 +1,14 @@
-# Study Desk 0.2.15 beta
+# Study Desk 0.2.16 beta
 
 Local, document-grounded study using your own AI key.
+
+## Changed in this release
+
+- Joint scenario validation across subjects: a locally correct answer cannot excuse impossible givens.
+- Separate compact fact-ledger review, parallel with the blind Solver after source/topic screening.
+- Explicit evaluation/no-solution tasks remain supported; uncertain findings are withheld.
+- Source originality checked per assessed subpart, including copied tasks with a new claim appended.
+- Private setup findings in diagnostics and a **Setup: Checked** receipt; older bank items require current validation.
 
 ## Included
 
