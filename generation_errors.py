@@ -21,6 +21,7 @@ PUBLIC_REASONS |= frozenset({
     *(f'Keep the public question within {limit} words and its focused workload ceiling. Supply helpful intermediate values instead of repetitive requests.' for limit in (180,300,400)),
 })
 PUBLIC_REASONS |= frozenset({'The question setup was not independently checked.','The question setup could not be established as consistent.','The question states conditions that cannot all hold together.'})
+PUBLIC_REASONS |= frozenset({'The source-task comparison could not be confirmed.'})
 LABELS['adversarial_review'] = 'Additional answer verification'
 
 class StageFailure(RuntimeError):

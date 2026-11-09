@@ -109,7 +109,7 @@ def test_independent_preflight_checks_prior_inference_and_does_not_reuse_old_app
     token=uuid.uuid4().hex;calls=[];source='Multiplication computes a product from its explicitly given factors.'
     async def invoke(prompt,temperature,schema):
         calls.append(prompt)
-        return preflight.QuestionPreflight(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='Consistent test fixture conditions.'),reason='The domain method is covered.',verdict='valid',is_on_topic=True,
+        return preflight.QuestionPreflight(source_comparisons=[],setup=tools.SetupAssessment(evaluation_request='',background_facts=[],status='feasible',witness_or_conflict='Consistent test fixture conditions.'),reason='The domain method is covered.',verdict='valid',is_on_topic=True,
             tested_concept='Multiplication',is_grounded=True,source_clone=False,
             repeats_recent_task='previously seen multiplication' in prompt,
             originality_reason='Same multiplication inference.' if 'previously seen multiplication' in prompt else 'No prior task.',
@@ -142,3 +142,22 @@ def test_unpublished_explanation_example_rolls_back(client):
         raise ValueError('Synthetic publication failure')
     with pytest.raises(ValueError):asyncio.run(atomic_generation(fail))
     assert not any(row['question']==question for row in history(auth.OWNER_ID))
+
+
+def test_a_new_companion_claim_cannot_cancel_a_copied_source_target(monkeypatch):
+    import tools,question_preflight as preflight
+    source='Exercise: prove that the stated regular bipartite graph has a perfect matching.'
+    target='Claim A: the stated regular bipartite graph has a perfect matching.'
+    calls=[]
+    async def invoke(*args):
+        calls.append(1)
+        return preflight.QuestionPreflight(setup=tools.SetupAssessment(evaluation_request='',background_facts=[],
+            status='feasible',witness_or_conflict='The graph hypotheses are consistent.'),verdict='valid',
+            reason='A new second claim is added.',is_on_topic=True,tested_concept='Matching',is_grounded=True,
+            source_clone=False,repeats_recent_task=False,originality_reason='The combined task has a new claim.',
+            source_comparisons=[preflight.SourceTaskComparison(public_target=target,source_ref='S1',
+                source_task=source,is_source_task=True,same_setup=True,same_inference=True)])
+    monkeypatch.setattr(tools,'_invoke_json',invoke)
+    with pytest.raises(tools.CandidateError,match='clones a source'):
+        asyncio.run(preflight.check('A covered concept from: matching',target+' Claim B: a new unrelated property holds.',[],[{'ref':'S1','text':source,'source_title':'Notes','kind':'notes','page':1}]))
+    assert calls == [1]

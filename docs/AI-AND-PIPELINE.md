@@ -97,7 +97,15 @@ boolean **Setup: Checked** receipt is shown. It is a model check, not a proof of
 correctness. Older bank items must meet the current checking policy before reuse.
 Originality is checked for every assessed subpart: appending a new claim does not
 make a reproduced source exercise original. Using covered principles to solve a
-different task remains allowed.
+different task remains allowed. The preflight supplies separate component
+comparisons; the backend rejects any matching required source task even if the
+model's overall originality flag incorrectly calls the combined question new.
+The existing public-task and Solver reviews also test answer sufficiency: two
+admissible interpretations must not yield different answers unless the task asks
+for a conditional/general result. An observed event is not a guaranteed selection
+or experimental protocol. Familiar examples and source-only assumptions cannot
+fill omitted public givens. A student-claim wrapper does not make the same solved
+source example a new exercise.
 
 ### Explain and Ask use the relevant stages
 

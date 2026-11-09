@@ -20,7 +20,7 @@ from security import wrap_untrusted
 from answer_parts import SolvedPart, evaluate_parts, calculator_evidence
 from math_checks import verify_claims
 logger = logging.getLogger(__name__)
-CHECK_VERSION = 2
+CHECK_VERSION = 3
 
 def current(payload,user_id):
     return payload.get('check_version')==CHECK_VERSION and payload['version']==curriculum.scope_version(user_id,payload['course_ids'])

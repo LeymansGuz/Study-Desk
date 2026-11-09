@@ -43,7 +43,7 @@ def test_valid_target_verdict_does_not_override_impossible_setup(monkeypatch):
 
 def test_preflight_rejects_impossible_setup_before_solver_or_source_approval(monkeypatch):
     async def invoke(*args):
-        return preflight.QuestionPreflight(setup=certificate('inconsistent'), verdict='valid',
+        return preflight.QuestionPreflight(source_comparisons=[],setup=certificate('inconsistent'), verdict='valid',
             reason='The requested value can still be computed.', is_on_topic=True, tested_concept='Inheritance',
             is_grounded=True, repeats_recent_task=False, source_clone=False, originality_reason='Original task.')
     monkeypatch.setattr(tools, '_invoke_json', invoke)

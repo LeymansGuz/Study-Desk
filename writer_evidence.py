@@ -22,6 +22,7 @@ class EvidenceBrief(BaseModel):
                       'Return topic_supported=false when only administrative content supports the '
                       'requested topic. The exception is a course whose primary learning material '
                       'actually teaches assessment/educational-measurement methods themselves.')
+    SYSTEM_PROMPT += ' Do not pass a worked example and its fixed answer as a reusable principle. Abstract the underlying method; list that concrete scenario/result among avoid_task_patterns. Classic named examples are not exempt. A student-error wrapper or MCQ format alone does not create a new inference.'
     topic_supported: bool
     principles: list[Principle] = Field(min_length=0, max_length=8)
     constraints: str = Field(default='', max_length=1800)

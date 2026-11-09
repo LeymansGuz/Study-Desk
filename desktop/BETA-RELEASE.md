@@ -5,9 +5,10 @@ Local, document-grounded study using your own AI key.
 ## Changed in this release
 
 - Joint scenario validation across subjects: a locally correct answer cannot excuse impossible givens.
+- Answer-sufficiency checks distinguish observed events from guaranteed model/selection rules.
 - Separate compact fact-ledger review, parallel with the blind Solver after source/topic screening.
 - Explicit evaluation/no-solution tasks remain supported; uncertain findings are withheld.
-- Source originality checked per assessed subpart, including copied tasks with a new claim appended.
+- Per-target source comparisons are aggregated locally; new companion claims and student-claim wrappers do not excuse copied tasks.
 - Private setup findings in diagnostics and a **Setup: Checked** receipt; older bank items require current validation.
 
 ## Included
