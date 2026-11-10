@@ -9,7 +9,7 @@ recorded checks, not a new vulnerability scan or a certification of security.
 
 | Check | Recorded result |
 |---|---|
-| Offline regression suite | 371 passed in the full local suite, plus the added sheet-transfer test passed in the 22-test workflow suite; native CI repeats the suite |
+| Offline regression suite | 372 passed on each of the four native CI targets; 22 focused workflow checks also passed locally |
 | Native builds | Windows x64, Apple Silicon, Intel Mac and Linux x64 passed |
 | Packaged backends | Self-checks passed on all four native CI targets |
 | Mac packages | Native signature and DMG checks passed for both architectures |
