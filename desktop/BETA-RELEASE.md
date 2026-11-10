@@ -1,4 +1,4 @@
-# Study Desk 0.2.20 beta
+# Study Desk 0.2.21 beta
 
 - Consistent desktop header/theme spacing across every view and a clear gap before expanding saved sessions.
 - Native Save dialogs for exports, saved-location confirmations, cancellation feedback and readable empty-export errors. Failed downloads keep the app open.
@@ -15,3 +15,5 @@ and Windows publisher signing are not included. Automated AI checks can miss mis
 - Added Ctrl+K / Command+K jump palette, scroll-aware Library tabs, a Progress-to-Today shortcut, and actionable empty states.
 
 - Restored missing apostrophes in workspace copy so Today’s queue renders correctly.
+
+- Consistent custom file pickers and empty-state actions placed below their explanatory text.
