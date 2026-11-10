@@ -6,12 +6,11 @@
 
 | View | Use it for |
 |---|---|
-| Practice a topic | New checked questions from one course, a specific topic or any eligible syllabus topic. |
-| Explain a concept | A brief overview or deep explanation with formulas, an example and source references. |
-| Ask a question | Your own problem, typed or read from attachments. |
+| Today | The active course, next actions, exam countdown and quick starts. |
+| Study | Practice, Explain and Ask in one place; switch modes without losing your course. |
 | Workspace | Course files, document types, previews, indexing and course scope. |
-| Progress | Today's queue, exam countdown, course plans and practice suggestions. |
-| Learning tools | Saved work, revision guides, bank exams, flashcards and imports/exports. |
+| Progress | Review totals, mistakes, exam planning and practice suggestions. |
+| Library | Saved sessions, unified search, checked guides, sheets, mock exams and transfers. |
 | Settings | AI connection, usage statistics, backups and application updates. |
 
 Switching views preserves the current inputs and work. Save changes to revision
@@ -194,7 +193,7 @@ the project folder, which also contains their study data.
 - In **Progress**, choose **Create a short recall card**. Write one idea: prompt
   up to 25 words, answer up to 50 words. Keep essential conditions. Personal cards
   are not independently checked.
-- In **Learning tools → Import, export and manage personal study work → Manage
+- In **Library → Import, export and manage personal study work → Manage
   review cards**, full practice questions offer **Propose short cards (AI)**.
   The original must be completed, have a disclosed solution and remain eligible
   in the verified bank. A suitable paid model drafts and separately reviews

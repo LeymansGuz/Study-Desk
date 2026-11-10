@@ -66,6 +66,7 @@ native CI checks; Intel Mac and Linux device testing is still pending.
 
 ## Features
 
+- **Today:** daily study queue, active course, exam countdown, next actions and quick starts.
 - **Practice a topic:** course-grounded questions, four difficulty levels,
   automatic checked maths figures and a three-stage concept mastery path.
 - **Seven question types:** multiple choice, short answer, calculation,
@@ -78,8 +79,8 @@ native CI checks; Intel Mac and Linux device testing is still pending.
   original-file previews, per-file/bulk document types, safe replacement and course scope controls.
 - **Review:** verified question bank, bank-only mock exams with paper summaries,
   verified mistake retries, FSRS review, concise recall cards and Anki export.
-- **Progress:** daily study queue, exam countdown, course plans and next-topic suggestions.
-- **Study library:** revision sheets, checked course guides, combined saved-work/document search,
+- **Progress:** review totals, mistakes, course plans and next-topic suggestions.
+- **Library:** revision sheets, checked course guides, combined saved-work/document search,
   page notes, bookmarks and course/personal-study import/export.
 - **Local controls:** light/dark themes, separate saved provider keys,
   token/cost statistics, backups, encrypted exports and signed in-app updates.

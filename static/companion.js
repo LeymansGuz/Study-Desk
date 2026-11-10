@@ -73,6 +73,7 @@
   document.addEventListener('study-view',event=>{
     if(!ready)return;
     if(event.detail==='learning')loadSheets().catch(fail);
+    if(event.detail==='today')today().catch(fail);
   });
   document.addEventListener('study-progress-updated',()=>{if(ready)today().catch(e=>status('#today-status',e.message,true));});
   document.addEventListener('study-ready',()=>{
@@ -95,6 +96,6 @@
       host.querySelectorAll('[data-search-result]').forEach(b=>b.onclick=async()=>{const item=data.items[Number(b.dataset.searchResult)];if(item.kind==='revision_sheet')await openSheet(item.id);else await resume(item.kind,item.id);});
     });};
     window.addEventListener('beforeunload',event=>{if(dirty()){event.preventDefault();event.returnValue='';}});
-    if(local.view==='progress')today().catch(fail);if(local.view==='learning')loadSheets().catch(fail);
+    if(['progress','today'].includes(local.view))today().catch(fail);if(local.view==='learning')loadSheets().catch(fail);
   });
 })();

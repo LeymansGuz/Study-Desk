@@ -5,6 +5,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const rich=s=>window.studyRich(String(s??''));
 const fileSize=bytes=>bytes<1024?`${bytes} B`:bytes<1048576?`${(bytes/1024).toFixed(1)} KB`:`${(bytes/1048576).toFixed(1)} MB`;
 const local={view:'practice',courses:[],files:[],filePage:0,jobs:[],rebuildPending:false,practice:null,ask:null,path:null,settings:{},busy:new Set()};
+window.studyLocal=local;
+window.studyView=view;
+window.studyApi=api;
 const types={};
 // Text dates avoid operating-system locale placeholders such as dd/月/yyyy.
 const studyDates={
@@ -47,7 +50,8 @@ function view(name){
   if(name!=='workspace')clearTimeout(local.jobsTimer);
   local.view=name;$$('.local-view').forEach(el=>el.hidden=el.id!=='view-'+name);
   $$('[data-view]').forEach(el=>el.classList.toggle('is-active',el.dataset.view===name));
-  $('#page-label').textContent=$(`[data-view="${name}"]`).textContent.replace(/^\d+\s*/,'').trim();
+  const navLabel=$(`[data-view="${name}"]`);
+  $('#page-label').textContent=navLabel?navLabel.textContent.replace(/^\d+\s*/,'').trim():({explain:'Study · Explain',ask:'Study · Ask'}[name]||name);
   history.replaceState(null,'','#'+name);$('#global-error').hidden=true;
   if(name==='workspace')workspace().catch(fail);
   if(name==='progress')progress().catch(fail);
@@ -245,7 +249,7 @@ async function init(){
   $('#verify-backup').onclick=async()=>{try{await api('/local/backup/verify');status('#maintenance-status','Latest backup verified: archive and SQLite integrity checks passed.');}catch(e){status('#maintenance-status',e.message,true);}};
   $('#statistics-refresh').onclick=()=>statistics().catch(fail);
   await courses();local.settings=await api('/settings');$('#attempt-limit').value=local.settings.attempts_before_reveal||3;theme(local.settings.theme||'light');
-  view(location.hash.slice(1)||'practice');
+  view(location.hash.slice(1)||'today');
   document.dispatchEvent(new Event('study-ready'));
 }
 document.addEventListener('DOMContentLoaded',()=>init().catch(fail));
