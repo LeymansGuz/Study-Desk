@@ -135,7 +135,20 @@
     const queue=by('today-queue');const slot=by('today-primary-slot');
     if(queue&&slot)slot.append(queue);
     today.querySelectorAll('[data-today-go]').forEach(button=>button.onclick=()=>window.studyView(button.dataset.todayGo));
+    renderSetup();
     loadToday();
+  }
+
+  function renderSetup(){
+    const today=by('view-today');if(!today)return;
+    let host=by('today-setup');
+    if(!host){
+      host=document.createElement('section');host.id='today-setup';host.className='card local-card';
+      today.querySelector('.today-grid')?.before(host);
+    }
+    if((window.studyLocal?.courses||[]).length){host.hidden=true;host.innerHTML='';return;}
+    host.hidden=false;
+    host.innerHTML='<p class="today-kicker">First run</p><h2>Set up your study desk</h2><p class="hint">Three short steps. Nothing is sent to an AI provider until you request a study action.</p><div class="setup-steps"><div><strong>1. Add a course</strong><span>Create the course you are studying.</span><button type="button" class="quiet-button" data-empty-go="workspace">Add course</button></div><div><strong>2. Add material</strong><span>Upload notes, slides or past papers. Indexing is local.</span><button type="button" class="quiet-button" data-empty-go="workspace">Upload material</button></div><div><strong>3. Connect a provider</strong><span>Add your own API key in Settings when you are ready.</span><button type="button" class="quiet-button" data-empty-go="settings">Open Settings</button></div></div><button type="button" class="primary-button" data-empty-go="practice">Start studying</button>';
   }
 
   async function loadToday(){
@@ -176,6 +189,23 @@
     document.querySelectorAll('.study-mode-tabs [data-study-mode]').forEach(button=>button.classList.toggle('is-active',button.dataset.studyMode===name));
   }
 
+  let lastStudyMode=null;
+  function syncStudyContext(target){
+    const source=lastStudyMode;if(!source||source===target)return;
+    if(source==='practice'&&target==='explain'){
+      const topic=by('topic')?.value.trim();
+      if(topic&&!by('explain-topic')?.value.trim())by('explain-topic').value=topic;
+    }
+    if(source==='explain'&&target==='practice'){
+      const topic=by('explain-topic')?.value.trim();
+      if(topic&&!by('topic')?.value.trim()){
+        by('topic').value=topic;by('scope').value='topic';by('topic-field').hidden=false;by('topic').required=true;
+      }
+    }
+  }
+
+  document.addEventListener('study-courses-updated',()=>renderSetup());
+
   document.addEventListener('study-ready',()=>{
     wrapFeedback();
     setupCourseContext();
@@ -183,11 +213,13 @@
     buildLibraryTabs();
     buildProgressShortcut();
     buildToday();
+    lastStudyMode=['practice','explain','ask'].includes(window.studyLocal?.view)?window.studyLocal.view:null;
     setLabels(window.studyLocal?.view||'today');
   });
 
   document.addEventListener('study-view',event=>{
     setLabels(event.detail);
+    if(['practice','explain','ask'].includes(event.detail)){syncStudyContext(event.detail);lastStudyMode=event.detail;}
     if(event.detail==='today')loadToday();
     if(event.detail==='learning')renderCourseContext();
   });

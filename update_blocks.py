@@ -56,12 +56,18 @@ def official(url,version):
     return parsed.scheme=='https' and parsed.hostname=='github.com' and not parsed.username and not parsed.password and not parsed.query and not parsed.fragment and rest.startswith(('/','-')) and version in rest.rsplit('/',1)[-1]
 
 def limited_get(client,url,limit,headers=None):
-    with client.stream('GET',url,headers=headers or {}) as response:
-        response.raise_for_status();data=bytearray()
-        for chunk in response.iter_bytes():
-            if len(data)+len(chunk)>limit:raise ValueError('Download exceeds its permitted size')
-            data.extend(chunk)
-        return response,bytes(data)
+    transient=(__import__('httpx').TransportError,)
+    for attempt in range(3):
+        try:
+            with client.stream('GET',url,headers=headers or {}) as response:
+                response.raise_for_status();data=bytearray()
+                for chunk in response.iter_bytes():
+                    if len(data)+len(chunk)>limit:raise ValueError('Download exceeds its permitted size')
+                    data.extend(chunk)
+                return response,bytes(data)
+        except transient:
+            if attempt==2:raise
+            time.sleep(1.5*(attempt+1))
 
 def reconstruct(manifest,old,output,fetch,progress=lambda **_:None,index=None):
     """Range callback returns exact bytes. Re-check cached and resumed blocks."""
@@ -106,7 +112,7 @@ def prepare(request,client=None,progress=lambda **_:None):
     cache=Path(request['cache']).resolve();cache.mkdir(parents=True,exist_ok=True)
     old=cache/'previous.package';partial=cache/'download.part';mapfile=cache/'blocks.json'
     owned=client is None
-    if owned:client=httpx.Client(follow_redirects=True,trust_env=False,timeout=httpx.Timeout(60,connect=20))
+    if owned:client=httpx.Client(follow_redirects=True,trust_env=False,timeout=httpx.Timeout(180,connect=30))
     started=time.monotonic()
     try:
         manifest=None
@@ -136,20 +142,27 @@ def prepare(request,client=None,progress=lambda **_:None):
             except (httpx.HTTPError,ValueError):
                 progress(received=0,reused=0,total=0,fallback=True)
         if stats is None:
-            received=0
-            with client.stream('GET',url) as response:
-                response.raise_for_status()
-                total=int(response.headers.get('content-length','0'))
-                if not 0<=total<=MAX_PACKAGE:raise ValueError('Invalid update size')
-                if shutil.disk_usage(cache).free<(total or MAX_PACKAGE)+100_000_000:raise ValueError('Not enough free space to stage the update')
-                with partial.open('wb') as stream:
-                    for chunk in response.iter_bytes(1024*1024):
-                        received+=len(chunk)
-                        if received>MAX_PACKAGE or time.monotonic()-started>850:raise ValueError('Update download exceeded its limit')
-                        stream.write(chunk);progress(received=received,reused=0,total=total)
-                    stream.flush();os.fsync(stream.fileno())
-            if total and received!=total:raise ValueError('Incomplete package')
-            stats={'received':received,'reused':0,'total':received}
+            for attempt in range(3):
+                received=0
+                try:
+                    with client.stream('GET',url) as response:
+                        response.raise_for_status()
+                        total=int(response.headers.get('content-length','0'))
+                        if not 0<=total<=MAX_PACKAGE:raise ValueError('Invalid update size')
+                        if shutil.disk_usage(cache).free<(total or MAX_PACKAGE)+100_000_000:raise ValueError('Not enough free space to stage the update')
+                        with partial.open('wb') as stream:
+                            for chunk in response.iter_bytes(1024*1024):
+                                received+=len(chunk)
+                                if received>MAX_PACKAGE or time.monotonic()-started>850:raise ValueError('Update download exceeded its limit')
+                                stream.write(chunk);progress(received=received,reused=0,total=total)
+                            stream.flush();os.fsync(stream.fileno())
+                    if total and received!=total:raise ValueError('Incomplete package')
+                    stats={'received':received,'reused':0,'total':received}
+                    break
+                except httpx.TransportError:
+                    if attempt==2:raise
+                    partial.unlink(missing_ok=True)
+                    time.sleep(2*(attempt+1))
         verify(partial,request['signature'],request['public_key'],version)
         if manifest and (digest(partial)!=manifest['sha256'] or partial.stat().st_size!=manifest['size']):raise ValueError('Package does not match its signed block map')
         # Only a complete signed package replaces the reusable cache. Keep at most

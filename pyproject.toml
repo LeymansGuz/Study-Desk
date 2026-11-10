@@ -1,6 +1,6 @@
 [project]
 name = "study-desk-local"
-version = "0.2.19"
+version = "0.2.20"
 description = "Local document-grounded study tutor"
 readme = "README.md"
 requires-python = ">=3.12"
