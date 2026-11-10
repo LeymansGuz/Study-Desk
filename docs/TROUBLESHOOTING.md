@@ -17,7 +17,7 @@ Re-download and compare against the release's `SHA256SUMS.txt` before proceeding
 For example, from the download folder:
 
 ```bash
-shasum -a 256 Study-Desk_0.2.17_aarch64.dmg
+shasum -a 256 Study-Desk_0.2.18_aarch64.dmg
 ```
 
 Use the x64 filename for an Intel DMG. If the verified official app remains blocked
@@ -47,7 +47,7 @@ through your package manager. Other distributions may need compatible
 For a missing-FUSE AppImage error, install `libfuse2` where available, or run:
 
 ```bash
-./Study-Desk_0.2.17_amd64.AppImage --appimage-extract-and-run
+./Study-Desk_0.2.18_amd64.AppImage --appimage-extract-and-run
 ```
 
 Saving an API key needs an unlocked Secret Service or KWallet credential backend.

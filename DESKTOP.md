@@ -7,7 +7,7 @@ This guide is for maintainers. Installer users need only the README and
 
 ## Current platform status
 
-Release: [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.3).
+Release: [0.2.18 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.18-beta.1).
 
 | Target | Package | Verification |
 |---|---|---|
@@ -68,8 +68,8 @@ use verbose diagnostics so tool/network failures are distinguishable from app fa
 
    ```text
    git push origin main
-   git tag -a v0.2.17-beta.3 -m "Study Desk 0.2.17 beta"
-   git push origin v0.2.17-beta.3
+   git tag -a v0.2.18-beta.1 -m "Study Desk 0.2.18 beta"
+   git push origin v0.2.18-beta.1
    ```
 
 4. **Build desktop installers** runs Windows, both Mac architectures and Linux.
@@ -134,3 +134,8 @@ indexing, AI workflows, shutdown, update/restart and data preservation on actual
 devices. Current evidence and unresolved dependency risk are in the
 [security review](SECURITY-AUDIT.md); AI measurements are in
 [reliability and cost](docs/RELIABILITY-AND-COST.md).
+
+Desktop exports use a native Save dialog and an authenticated, fixed-route bridge.
+The interface cannot choose arbitrary local paths. Downloads are written to a
+temporary file and published after completion; cancellations and server errors
+remain inside the app. The feedback form opens in the system browser.

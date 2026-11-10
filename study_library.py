@@ -253,8 +253,9 @@ def install(app,services):
 
     @app.get('/library/cards')
     async def cards(user=Depends(require)):
-        with db.connect() as c:rows=c.execute('SELECT id,front,status FROM flashcards WHERE user_id=? ORDER BY created_at DESC LIMIT 200',(user['id'],)).fetchall()
-        return {'items':[dict(r) for r in rows]}
+        with db.connect() as c:rows=c.execute('SELECT id,front,back,status FROM flashcards WHERE user_id=? ORDER BY created_at DESC LIMIT 200',(user['id'],)).fetchall()
+        from recall_cards import concise
+        return {'items':[{**dict(r),'concise':concise(r['front'],r['back'])} for r in rows]}
 
     @app.delete('/library/cards/{card_id}')
     async def delete_card(card_id:str,user=Depends(require)):
@@ -269,6 +270,7 @@ def install(app,services):
     async def export_personal(course_id:str,user=Depends(require)):
         course(user['id'],course_id)
         items=[{k:x[k] for k in ['topic','markdown','notes']} for x in store.listing('revision_sheet',user['id'],20) if x.get('course_ids')==[course_id]]
+        if not items:raise HTTPException(409,'No revision sheets in this course. Save an explanation as a revision sheet first.')
         return Response(json.dumps({'format':'study-desk-personal-v1','sheets':items},ensure_ascii=False),media_type='application/json',headers={'Content-Disposition':'attachment; filename="personal-study-sheets.json"'})
 
     @app.post('/library/personal/import')

@@ -3,11 +3,12 @@ use std::{fs, io::{Read, Write}, net::{TcpListener, TcpStream}, process::{Child,
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 mod updates;
+mod downloads;
 
 struct Backend { child: Mutex<Option<Child>>, port: u16, secret: String }
 fn official_page(url: &reqwest::Url) -> bool {
     url.scheme()=="https" && url.username().is_empty() && url.password().is_none() &&
-      (matches!(url.host_str(),Some("cdn.deepseek.com"|"platform.deepseek.com"|"api-docs.deepseek.com"|"openrouter.ai"|"platform.openai.com"|"platform.claude.com")) ||
+      ((url.host_str()==Some("docs.google.com") && url.path()=="/forms/d/e/1FAIpQLScGCrX26Cj0xNcq-b4Sg2AChKjY0WzoVaIGsdN6jpFWehpatw/viewform") || matches!(url.host_str(),Some("cdn.deepseek.com"|"platform.deepseek.com"|"api-docs.deepseek.com"|"openrouter.ai"|"platform.openai.com"|"platform.claude.com")) ||
       (url.host_str()==Some("github.com") && (url.path()=="/LeymansGuz/Study-Desk" || url.path().starts_with("/LeymansGuz/Study-Desk/"))))
 }
 impl Backend {
@@ -40,6 +41,7 @@ fn main() {
     let app=tauri::Builder::default()
       .plugin(tauri_plugin_updater::Builder::new().build())
       .plugin(tauri_plugin_opener::init())
+      .plugin(tauri_plugin_dialog::init())
       .plugin(tauri_plugin_single_instance::init(|app,_,_| {
           if let Some(window)=app.get_webview_window("main") { let _=window.show();let _=window.set_focus(); }
       }))
@@ -61,6 +63,7 @@ fn main() {
         let state=Arc::new(Backend {child:Mutex::new(Some(child)),port,secret});
         *setup_engine.lock().unwrap()=Some(state.clone());
         updates::start(app.handle().clone(), state.clone());
+        downloads::start(app.handle().clone(), state.clone());
         let external=app.handle().clone();
         let window=tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::App("index.html".into()))
           .disable_drag_drop_handler()
@@ -99,7 +102,7 @@ mod link_tests {
     use super::*;
     #[test]
     fn provider_key_links_open_only_on_official_hosts() {
-        for url in ["https://platform.deepseek.com/api_keys","https://platform.openai.com/api-keys","https://platform.claude.com/settings/keys","https://openrouter.ai/keys"] {assert!(official_page(&url.parse().unwrap()));}
-        for url in ["https://platform.deepseek.com.evil.test/api_keys","https://secret@platform.deepseek.com/api_keys","http://platform.deepseek.com/api_keys","https://github.com/another/project"] {assert!(!official_page(&url.parse().unwrap()));}
+        for url in ["https://platform.deepseek.com/api_keys","https://platform.openai.com/api-keys","https://platform.claude.com/settings/keys","https://openrouter.ai/keys","https://docs.google.com/forms/d/e/1FAIpQLScGCrX26Cj0xNcq-b4Sg2AChKjY0WzoVaIGsdN6jpFWehpatw/viewform"] {assert!(official_page(&url.parse().unwrap()));}
+        for url in ["https://platform.deepseek.com.evil.test/api_keys","https://secret@platform.deepseek.com/api_keys","http://platform.deepseek.com/api_keys","https://github.com/another/project","https://docs.google.com/forms/d/another/edit"] {assert!(!official_page(&url.parse().unwrap()));}
     }
 }

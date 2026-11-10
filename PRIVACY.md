@@ -22,6 +22,21 @@ Review [OpenRouter terms](https://openrouter.ai/terms) and [privacy](https://ope
 
 Initial local embedding-model downloads contact model hosts. Explicit update checks/downloads contact GitHub and its download infrastructure, which receive connection information such as your IP address. Update checks disclose the installed version/platform through the selected update request; they do not send course content or your API key. There is no automatic upload of your study diagnostics to the maintainer. Optional automatic update checks are off by default.
 
+### Optional beta feedback (updated 10 November 2026)
+
+**Send feedback** opens a Google Form in your browser. Nothing is submitted
+until you choose to send it. The form requires Google sign-in for screenshot
+uploads, but automatic email-address collection is disabled. The maintainer
+receives your answers, optional contact details and uploaded screenshots through
+Google Forms, Drive and a private response sheet. Google handles sign-in and
+connection/account data under its own policies; this is not a promise of anonymous
+submission. Google warns that the name, email address and photo associated with
+the uploading account are recorded when files are submitted; disabling the email
+question does not remove that upload-account association. Screenshots may reveal personal information: redact keys,
+private course material and identifiers. Copying technical information is optional
+and includes only the app version, operating system, provider and model. The app
+does not automatically attach logs, keys, documents or session history.
+
 ## Your controls
 
 You can use Workspace without accepting AI data use. In Settings you can review or withdraw your acknowledgement; withdrawal blocks future AI requests but cannot recall content already sent. An AI request already in progress may finish. Delete individual documents/courses and sessions using the app. To erase all local data, close the app and delete its application data directory and any backups/exports you made. Uninstalling the app preserves study data. See the [user guide](https://github.com/LeymansGuz/Study-Desk/blob/main/docs/USER-GUIDE.md#backups-and-data) for platform paths and backup/restore instructions.

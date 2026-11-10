@@ -1501,3 +1501,5 @@ study_library.install(app,globals())
 backup_tools.install(app,globals())
 import course_bundle
 course_bundle.install(app,globals())
+import recall_cards
+recall_cards.install(app,globals())

@@ -1,15 +1,12 @@
-# Study Desk 0.2.17 beta
+# Study Desk 0.2.18 beta
 
-- Simpler Progress and Learning tools: daily queue, automatic next-topic suggestions, shared daily time, compact Continue studying, one grouped search and shared course selection.
-- Per-file document types before upload; one review for Replace / Keep both / Skip. Replacements preserve the previous file and index until ready, with rollback/restart recovery.
-- Per-file upload outcomes retain failed selections for retry; successful and identical files are not processed again.
-- Source-preview bookmarks with prefilled page numbers and changed-source warnings.
-- Verified mistake retries, separate first-attempt/eventual-success statistics, and compact expandable automated-check details.
-- Stable desktop sidebar/main scrolling and consistent spacing in light/dark themes.
+- Consistent desktop header/theme spacing across every view and a clear gap before expanding saved sessions.
+- Native Save dialogs for exports, saved-location confirmations, cancellation feedback and readable empty-export errors. Failed downloads keep the app open.
+- Short personal recall cards and explicit, independently checked AI proposals from completed verified questions. Original practice questions and FSRS history are preserved; Anki exports concise cards.
+- Clear course bundles versus revision-sheet transfer, plus cleaner saved-session previews and a first-run course-material shortcut.
+- Sidebar feedback form with optional screenshot file uploads (five images, 10 MB each). Google sign-in is required for uploads; automatic email collection is off, but Google associates uploads with the signed-in account. No logs or keys are attached automatically.
 
 Builds cover Windows x64, Apple Silicon, Intel Mac and Linux x64. Native CI checks
-are required for publication; complete Mac/Linux GUI testing remains pending.
-Apple-notarization and Windows publisher signing are not included.
-
-Automated checks reduce errors but do not guarantee AI correctness. This release
-does not change generation prompts or publish a new paid-model reliability rate.
+are required for publication. Windows Save/cancel workflows have local GUI testing;
+complete Mac/Linux GUI testing still needs device confirmation. Apple notarization
+and Windows publisher signing are not included. Automated AI checks can miss mistakes.

@@ -41,10 +41,18 @@ def prune_sessions():
         for owner in owners:
             _prune_sessions(conn, owner)
 
+def session_preview(text):
+    lines=[line for line in str(text or '').splitlines() if not re.match(r'^\s*(?:---|#{1,6}\s*(?:Screenshot|Attached)|Attached question material)',line,re.I)]
+    value=' '.join(lines)
+    value=re.sub(r'(?<!\\)\$(.+?)(?<!\\)\$',r'\1',value)
+    value=value.replace('\\(','').replace('\\)','').replace('**','').replace('###','')
+    return re.sub(r'\s+',' ',value).strip()[:180] or 'Saved question'
+
+
 def session_summaries(user_id):
     with db.connect() as conn:
         rows = conn.execute("SELECT id,kind,updated,json_extract(payload,'$.current_question') AS question, json_extract(payload,'$.topic') AS topic,json_extract(payload,'$.status') AS status,json_extract(payload,'$.course_ids') AS course_ids FROM learning_objects WHERE user_id=? AND kind IN ('tutor','exam','explain','path') AND (kind<>'exam' OR json_extract(payload,'$.source')='verified_bank') AND COALESCE(json_extract(payload,'$.prepared'),0)=0 ORDER BY updated DESC,rowid DESC LIMIT 10", (user_id,)).fetchall()
-    return [{'id': r['id'], 'kind': r['kind'], 'updated': r['updated'], 'question': (r['question'] or r['topic'] or 'Paper')[:180], 'status': r['status'] or 'saved', 'course_ids':json.loads(r['course_ids'] or '[]')} for r in rows]
+    return [{'id': r['id'], 'kind': r['kind'], 'updated': r['updated'], 'question': session_preview(r['question'] or r['topic'] or 'Paper'), 'status': r['status'] or 'saved', 'course_ids':json.loads(r['course_ids'] or '[]')} for r in rows]
 
 def get(kind, identifier, user_id=None):
     from generation_control import CURRENT

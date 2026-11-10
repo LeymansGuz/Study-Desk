@@ -81,3 +81,11 @@ body { height:100vh; overflow:hidden; }
 #source-bookmark input,#source-bookmark textarea { width:100%; }
 
 .local-card { scroll-margin-top:80px; }
+
+/* Shared desktop chrome must not shrink when a view becomes tall. */
+.topbar { flex:0 0 auto; height:auto; min-height:64px; padding:14px 32px; gap:16px; }
+#saved-history-toggle { margin-top:16px; }
+.local-main { flex:0 0 auto; }
+.export-status { margin:18px 0 8px; overflow-wrap:anywhere; white-space:pre-wrap; }
+
+#feedback-dialog {margin:auto;}

@@ -5,15 +5,15 @@ provider key; your files and study history stay on your computer.
 
 ## Install the desktop application
 
-Current release: [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.3).
+Current release: [0.2.18 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.18-beta.1).
 No Python, Node.js or `.env` setup is needed for the installers.
 
 | Computer | Download |
 |---|---|
-| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/Study-Desk_0.2.17_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/Study-Desk_0.2.17_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/Study-Desk_0.2.17_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/Study-Desk_0.2.17_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/Study-Desk_0.2.17_amd64.AppImage) |
+| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_amd64.AppImage) |
 
 **Windows:** run the installer, then open **Study Desk** from the Start menu.
 
@@ -26,19 +26,19 @@ See [Mac troubleshooting](docs/TROUBLESHOOTING.md#macos-blocks-the-app) if it st
 **Linux DEB:** open the file with your package manager, or run:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.17_amd64.deb
+sudo apt install ./Study-Desk_0.2.18_amd64.deb
 ```
 
 **Linux AppImage:** make it executable in file properties, or run:
 
 ```bash
-chmod +x ./Study-Desk_0.2.17_amd64.AppImage
-./Study-Desk_0.2.17_amd64.AppImage
+chmod +x ./Study-Desk_0.2.18_amd64.AppImage
+./Study-Desk_0.2.18_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need WebKitGTK,
 Secret Service/KWallet or FUSE setup; see [Linux troubleshooting](docs/TROUBLESHOOTING.md#linux-dependencies-or-fuse).
-[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.17-beta.3/SHA256SUMS.txt)
+[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/SHA256SUMS.txt)
 and build manifests accompany the release.
 
 ### First launch
@@ -77,7 +77,7 @@ native CI checks; Intel Mac and Linux device testing is still pending.
 - **Workspace:** drag/drop and screenshot paste, background indexing,
   original-file previews, per-file/bulk document types, safe replacement and course scope controls.
 - **Review:** verified question bank, bank-only mock exams with paper summaries,
-  verified mistake retries, FSRS flashcards and Anki export.
+  verified mistake retries, FSRS review, concise recall cards and Anki export.
 - **Progress:** daily study queue, exam countdown, course plans and next-topic suggestions.
 - **Study library:** revision sheets, checked course guides, combined saved-work/document search,
   page notes, bookmarks and course/personal-study import/export.
@@ -128,3 +128,10 @@ AI requests send relevant study content to your selected provider. API charges
 come from your provider account; Study Desk has no application subscription.
 Report problems through [GitHub Issues](https://github.com/LeymansGuz/Study-Desk/issues),
 without including keys, private notes or personal information.
+
+## Beta feedback
+
+Use **Send feedback** in the sidebar or [open the feedback form](https://docs.google.com/forms/d/e/1FAIpQLScGCrX26Cj0xNcq-b4Sg2AChKjY0WzoVaIGsdN6jpFWehpatw/viewform).
+Optional screenshots are uploaded as files (up to five images, 10 MB each). Google
+sign-in is required for uploads; the form does not automatically collect email
+addresses; Google still associates file uploads with your signed-in account. Hide keys and private information before submitting.

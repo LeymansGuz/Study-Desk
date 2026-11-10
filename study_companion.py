@@ -228,6 +228,10 @@ def install(app,services):
     @app.get('/study/cards/export')
     async def export_cards(user=Depends(user_dep)):
         with db.connect() as c:rows=c.execute('SELECT front,back FROM flashcards WHERE user_id=? ORDER BY created_at DESC LIMIT 200',(user['id'],)).fetchall()
+        if not rows:raise HTTPException(409,'No review cards are available. Create a short recall card first.')
+        from recall_cards import concise
+        rows=[row for row in rows if concise(row['front'],row['back'])]
+        if not rows:raise HTTPException(409,'These are full practice-question reviews. Create a short recall card using Manage review cards before exporting to Anki.')
         lines=['#separator:tab','#html:true']
         for row in rows:lines.append('\t'.join(anki_field(row[k]) for k in ['front','back']))
         return Response('\n'.join(lines),media_type='text/tab-separated-values',headers={'Content-Disposition':'attachment; filename="study-cards.tsv"'})

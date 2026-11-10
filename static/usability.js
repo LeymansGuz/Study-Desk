@@ -44,6 +44,8 @@
     const recommendations=by('adaptive-items').closest('details');recommendations.open=true;
     const plan=by('schedule-form'),time=plan.elements.minutes.parentElement;
     const advanced=document.createElement('details');advanced.className='library-panel';advanced.innerHTML='<summary>Adjust time for this course (optional)</summary><p class="hint">Uses your daily study time from Today’s study queue unless you set an override.</p>';advanced.append(time);plan.querySelector('.local-grid').after(advanced);
+    const start=document.createElement('section');start.className='card local-card';start.id='first-study-step';start.innerHTML='<h2>Start with your course material</h2><p>Add a course and upload your notes or past papers. Local indexing does not use your AI tokens. Then choose an AI connection in Settings to start studying.</p><button type="button" class="primary-button">Add course material</button>';by('view-practice').querySelector('h1').after(start);start.querySelector('button').onclick=()=>view('workspace');
+    const firstStep=()=>{start.hidden=local.courses.length>0;};document.addEventListener('study-courses-updated',firstStep);firstStep();
     // Do not recreate the sidebar during workspace polling. Keep a reserved scrollbar
     // and preserve each view's scroll position when navigating between activities.
   });

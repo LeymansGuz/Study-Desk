@@ -1,6 +1,6 @@
 # Security review and verification status
 
-Usability and upload integrity reviewed **10 November 2026** for **0.2.17**. This is a summary of
+Usability and upload integrity reviewed **10 November 2026** for **0.2.18**. This is a summary of
 recorded checks, not a new vulnerability scan or a certification of security.
 
 [Security boundary and reporting](SECURITY.md) · [Historical audit records](docs/SECURITY-AUDIT-HISTORY.md) · [AI reliability](docs/RELIABILITY-AND-COST.md)
@@ -9,7 +9,7 @@ recorded checks, not a new vulnerability scan or a certification of security.
 
 | Check | Recorded result |
 |---|---|
-| Offline regression suite | 350 passed in the full local suite; native CI repeats the suite |
+| Offline regression suite | 371 passed in the full local suite, plus the added sheet-transfer test passed in the 22-test workflow suite; native CI repeats the suite |
 | Native builds | Windows x64, Apple Silicon, Intel Mac and Linux x64 passed |
 | Packaged backends | Self-checks passed on all four native CI targets |
 | Mac packages | Native signature and DMG checks passed for both architectures |
@@ -19,7 +19,7 @@ recorded checks, not a new vulnerability scan or a certification of security.
 | Apple Silicon device | User-reported launch after the per-app macOS security override; not an exhaustive independent GUI test |
 | Intel Mac / Linux devices | GUI and complete install/update workflows still need device testing |
 
-The current release is [0.2.17 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.17-beta.3). The dated security findings below describe the earlier review; the usability update does not constitute a new comprehensive security audit.
+The current release is [0.2.18 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.18-beta.1). The dated security findings below describe the earlier review; the usability update does not constitute a new comprehensive security audit.
 The repository documentation can be updated without replacing its installers.
 
 ## 10 November upload and review checks
@@ -81,3 +81,20 @@ policy gates reduce risk but cannot guarantee truth, originality or difficulty.
 Read [dated evaluation results](docs/RELIABILITY-AND-COST.md), not a single test
 percentage as a universal reliability claim. Legal/licensing scope is covered
 separately in [Compliance](COMPLIANCE.md) and [Third-party notices](THIRD-PARTY-NOTICES.md).
+
+## Export and recall-card review, 10 November 2026
+
+- Native exports accept a fixed set of local routes; the interface cannot choose
+  arbitrary filesystem paths. Host commands require the per-launch desktop secret.
+  Backup passphrases are excluded from status responses and cleared from the queue
+  after delivery. Native writes use temporary files, size bounds and atomic publication.
+- Windows GUI checks covered the Save dialog, chosen-location confirmation,
+  cancellation and an empty-course error without leaving the app.
+- AI recall proposals require a completed, disclosed, currently eligible verified
+  question, separate draft/review, formatting checks and a current unchanged preview.
+  Quarantined originals are blocked. Manual cards remain personal material.
+- Feedback opens one configured Google Form; no keys, logs or documents are attached
+  automatically. Google sign-in is required for uploads and associates them with the
+  account; automatic email collection is off.
+- Four approved provider calls checked recall-card draft/review on two subjects.
+  This does not establish a new question-generation correctness percentage.

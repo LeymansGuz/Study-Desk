@@ -181,3 +181,14 @@ Mistake retries reuse only current, non-quarantined verified bank entries with
 matching question/options. They do not generate replacements silently or
 contribute to independent-practice/mastery totals. Grading and answer-disclosure
 policies remain in force.
+
+## Concise recall-card proposals
+
+Explicit paid-model proposals use a completed, disclosed question/solution that
+still qualifies for the current verified bank. A writer proposes up to three
+atomic cards; a separate reviewer checks support, conditions, clarity and
+correctness. Formatting and size checks run locally. Only an unchanged,
+non-expired preview with current source scope can be saved as the checked proposal;
+quarantined originals are blocked. Manual personal cards remain unverified.
+No automatic conversion or extra call is added to question generation. Full
+practice problems and existing review schedules are retained separately.

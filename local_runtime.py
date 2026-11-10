@@ -58,7 +58,7 @@ def install_local(app):
 
     @app.get('/local/profile')
     async def profile(user=Depends(auth.current_user)):
-        return {'name': 'Local workspace', 'is_admin': True, 'desktop':os.getenv('STUDY_DESKTOP')=='true'}
+        return {'name': 'Local workspace', 'is_admin': True, 'desktop':os.getenv('STUDY_DESKTOP')=='true','version':os.getenv('STUDY_DESKTOP_VERSION','0.2.18')}
 
     @app.get('/local/statistics')
     async def statistics(user=Depends(auth.current_user)):

@@ -129,9 +129,9 @@ deliberate retries do not increase independent-practice or mastery totals.
 | Page bookmarks and notes | In an original document or source preview, expand **Bookmark this page**. The referenced page is prefilled; if you navigate inside the PDF, enter that page manually. Changed sources and missing pages are flagged. |
 | Verified bank mock exam | Uses the library’s shared course selector. Select 1–10 existing checked questions; optionally filter topic, difficulty, type or unseen items. No questions are generated to fill a shortage. |
 | Paper summary | Review solved questions, first-attempt results, attempts and revisit items; export Markdown. Its percentage is practice completion, not a predicted exam mark. |
-| FSRS cards | Review due cards using the rating controls. Export existing cards to Anki as UTF-8 TSV with HTML enabled. |
+| FSRS cards | Review due cards using the rating controls. Full practice questions keep their review history. Export concise cards to Anki as UTF-8 TSV with HTML enabled. |
 | Personal imports | Import up to 200 plain-text TSV card pairs, at most 2 MB. HTML/cloze directives are not interpreted. |
-| Course transfer | Import/export course ZIPs with original files, document types and syllabus choices. Imported sheets/cards do not inherit verification. |
+| Course transfer | Import/export course ZIPs with original files, document types, syllabus choices and personal revision sheets. Imported sheets/cards do not inherit verification. |
 
 Bank selection, local planning, search, personal editing and export make no AI
 inference calls. New explanations, tutoring, grading and hints can use your provider.
@@ -188,3 +188,37 @@ Uninstalling preserves desktop study data and saved credentials. To erase them,
 remove the data directory, backups/exports and provider credentials separately;
 see [Privacy](../PRIVACY.md). Source users should stop services before deleting
 the project folder, which also contains their study data.
+
+## Recall cards and exports
+
+- In **Progress**, choose **Create a short recall card**. Write one idea: prompt
+  up to 25 words, answer up to 50 words. Keep essential conditions. Personal cards
+  are not independently checked.
+- In **Learning tools → Import, export and manage personal study work → Manage
+  review cards**, full practice questions offer **Propose short cards (AI)**.
+  The original must be completed, have a disclosed solution and remain eligible
+  in the verified bank. A suitable paid model drafts and separately reviews
+  1–3 cards. Preview them, then save. This uses AI only when requested.
+- The original question and its FSRS history stay intact. New recall cards have
+  separate schedules. Anki export includes concise cards only; a full problem is
+  kept for practice rather than cut down arbitrarily.
+- Exports open a native **Save** dialog in the desktop app. Choose the folder;
+  the app reports the saved path, cancellation or a readable error beside the
+  action. Source/browser users should check their browser's Downloads list.
+- A **portable course bundle** includes documents, roles, syllabus choices and
+  personal revision sheets. **Export revision sheets** is a smaller JSON transfer
+  for sheets only, not a readable study document. Use a sheet's Markdown export
+  for reading or printing. Select the course before exporting its sheets.
+- Empty exports show an explanation and keep the app open. Anki cards export
+  across courses; revision sheets and course bundles use the selected course.
+
+## Send beta feedback
+
+Choose **Send feedback** in the sidebar. Optionally copy the previewed app version,
+operating system, provider and model into the form. Keys, documents and diagnostic
+logs are not attached automatically. Describe what happened and what you expected.
+Screenshots are optional file uploads: up to five images, 10 MB each. Google sign-in
+is required; automatic email collection is off, but Google associates uploads
+with your account and warns that account identity is recorded. Only enter contact details if you
+want a reply, and hide private content in screenshots. Submissions go to the
+maintainer through Google Forms/Drive; see [Privacy](../PRIVACY.md).

@@ -8,7 +8,7 @@ import db
 
 VERSION = '2026-11-04-providers'
 DOCUMENTS = {'privacy': 'PRIVACY.md', 'terms': 'TERMS.md', 'licenses': 'THIRD-PARTY-NOTICES.md'}
-AI_PREFIXES = ('/ask', '/answer', '/explain', '/study/recall', '/practice/follow-up')
+AI_PREFIXES = ('/ask', '/answer', '/explain', '/study/recall', '/practice/follow-up','/study/cards/propose')
 
 class Acknowledgement(BaseModel):
     version: str

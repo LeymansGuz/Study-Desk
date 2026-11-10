@@ -43,7 +43,9 @@ class DesktopSession:
         # Host process readiness/shutdown uses a header; browser requests use an
         # HttpOnly cookie. Neither mechanism ever contains the provider API key.
         control=hmac.compare_digest(request.headers.get('x-study-desktop','').encode(),self.secret.encode())
-        if not authenticated and not (control and request.url.path in {'/desktop/ready','/desktop/stop','/desktop/update/command','/desktop/update/result'}):
+        from desktop_downloads import allowed_path
+        host_control=request.url.path in {'/desktop/ready','/desktop/stop','/desktop/update/command','/desktop/update/result','/desktop/files/command','/desktop/files/result'} or (request.method=='GET' and allowed_path(request.url.path+('?' + request.url.query if request.url.query else ''))) or (request.method=='POST' and request.url.path=='/library/backups/encrypted')
+        if not authenticated and not (control and host_control):
             return await JSONResponse({'detail':'Open this workspace from the Study Desk application.'},status_code=403)(scope,receive,send)
         return await self.app(scope,receive,send)
 
@@ -51,6 +53,8 @@ class ProviderKey(BaseModel):
     api_key: str = Field(min_length=8,max_length=256)
 
 def install(app):
+    import desktop_downloads
+    desktop_downloads.install(app)
     import desktop_updates
     desktop_updates.install(app)
     @app.get('/desktop/provider')
