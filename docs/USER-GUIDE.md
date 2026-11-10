@@ -13,6 +13,8 @@
 | Library | Saved sessions, unified search, checked guides, sheets, mock exams and transfers. |
 | Settings | AI connection, usage statistics, backups and application updates. |
 
+Press **Ctrl+K** (or **Command+K** on macOS) anywhere to jump to a view, course or Library section. In **Progress**, use **Open Today** to return to the next-action queue.
+
 Switching views preserves the current inputs and work. Save changes to revision
 sheets before closing the application.
 
@@ -118,7 +120,7 @@ deliberate retries do not increase independent-practice or mastery totals.
 
 | Tool | How to use it |
 |---|---|
-| Today's study queue | In Progress, choose **Start next** for due cards, unfinished work, mistakes or a revision activity. |
+| Today's study queue | On Today, choose **Start next** for due cards, unfinished work, mistakes or a revision activity. |
 | Time and exam date | Set a daily budget of 5–180 minutes and an optional countdown. Dates use **dd/mm/yyyy**. |
 | Course study plan | Choose a course and exam date. Uses your daily study time by default; a course-specific override and custom topics are tucked under optional settings. Missed topics roll forward; mark reviewed topics yourself. |
 | Next-topic suggestions | Appear automatically with the reason for each suggestion. Uses local outcomes and source evidence; repeated same-question attempts do not establish retention. |

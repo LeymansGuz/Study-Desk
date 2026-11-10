@@ -1,4 +1,4 @@
-# Study Desk 0.2.18 beta
+# Study Desk 0.2.19 beta
 
 - Consistent desktop header/theme spacing across every view and a clear gap before expanding saved sessions.
 - Native Save dialogs for exports, saved-location confirmations, cancellation feedback and readable empty-export errors. Failed downloads keep the app open.
@@ -10,3 +10,6 @@ Builds cover Windows x64, Apple Silicon, Intel Mac and Linux x64. Native CI chec
 are required for publication. Windows Save/cancel workflows have local GUI testing;
 complete Mac/Linux GUI testing still needs device confirmation. Apple notarization
 and Windows publisher signing are not included. Automated AI checks can miss mistakes.
+
+- Redesigned the shell around Today, Study modes and Library sections.
+- Added Ctrl+K / Command+K jump palette, scroll-aware Library tabs, a Progress-to-Today shortcut, and actionable empty states.

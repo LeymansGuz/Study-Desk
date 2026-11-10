@@ -75,6 +75,9 @@
 
   function buildLibraryTabs(){
     const view=by('view-learning');if(!view)return;
+    const utilities=by('cards-import')?.closest('details');
+    const examGroup=by('exam-form')?.closest('details')||by('exam-form')?.closest('section');
+    if(utilities&&examGroup&&utilities!==examGroup)examGroup.after(utilities);
     const saved=by('saved-sessions')?.closest('section');
     const search=by('unified-search');
     const guide=by('course-library');
@@ -86,15 +89,46 @@
     const tabs=document.createElement('nav');tabs.className='library-tabs';tabs.setAttribute('aria-label','Library sections');
     tabs.innerHTML=targets.map(([label],index)=>`<button type="button" data-library-tab="${index}" ${index===0?'class="is-active"':''}>${label}</button>`).join('');
     view.querySelector('h1')?.after(tabs);
+    const setActive=index=>tabs.querySelectorAll('button').forEach((item,itemIndex)=>item.classList.toggle('is-active',itemIndex===index));
     tabs.querySelectorAll('[data-library-tab]').forEach((button,index)=>{
       button.onclick=()=>{
-        tabs.querySelectorAll('button').forEach(item=>item.classList.toggle('is-active',item===button));
+        setActive(index);
         const target=targets[index][1];
         if(target.tagName==='DETAILS')target.open=true;
         target.scrollIntoView({block:'start',behavior:'smooth'});
       };
     });
+    const main=document.querySelector('.app-main');
+    if(main){
+      let scheduled=false;
+      const update=()=>{
+        scheduled=false;
+        if(!by('view-learning')||by('view-learning').hidden)return;
+        let current=0;const threshold=Math.min(360,window.innerHeight*0.5);
+        targets.forEach(([,target],index)=>{if(target.getBoundingClientRect().top<=threshold)current=index;});
+        setActive(current);
+      };
+      let settle;
+      main.addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(update);}clearTimeout(settle);settle=setTimeout(update,120);},{passive:true});
+      if('IntersectionObserver' in window){
+        const observer=new IntersectionObserver(()=>{clearTimeout(settle);settle=setTimeout(update,120);},{root:main,rootMargin:'-100px 0px -55% 0px',threshold:0});
+        targets.forEach(([,target])=>observer.observe(target));
+      }
+      update();
+    }
   }
+
+  function buildProgressShortcut(){
+    const view=by('view-progress');if(!view||by('progress-today'))return;
+    const row=document.createElement('div');row.id='progress-today';row.className='progress-today';
+    row.innerHTML='<p>Your next action lives on Today.</p><button type="button" class="quiet-button" data-empty-go="today">Open Today</button>';
+    view.querySelector('h1')?.after(row);
+  }
+
+  document.addEventListener('click',event=>{
+    const button=event.target.closest('[data-empty-go]');
+    if(button)window.studyView(button.dataset.emptyGo);
+  });
 
   function buildToday(){
     const today=by('view-today');if(!today)return;
@@ -147,6 +181,7 @@
     setupCourseContext();
     buildStudyTabs();
     buildLibraryTabs();
+    buildProgressShortcut();
     buildToday();
     setLabels(window.studyLocal?.view||'today');
   });

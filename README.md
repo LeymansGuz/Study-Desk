@@ -5,15 +5,15 @@ provider key; your files and study history stay on your computer.
 
 ## Install the desktop application
 
-Current release: [0.2.18 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.18-beta.1).
+Current release: [0.2.19 beta](https://github.com/LeymansGuz/Study-Desk/releases/tag/v0.2.19-beta.1).
 No Python, Node.js or `.env` setup is needed for the installers.
 
 | Computer | Download |
 |---|---|
-| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_x64-setup.exe) |
-| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_aarch64.dmg) |
-| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_x64.dmg) |
-| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/Study-Desk_0.2.18_amd64.AppImage) |
+| Windows 10/11 x64 | [Setup executable](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/Study-Desk_0.2.19_x64-setup.exe) |
+| Apple Silicon Mac, macOS 14+ | [Apple Silicon DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/Study-Desk_0.2.19_aarch64.dmg) |
+| Intel Mac, macOS 14+ | [Intel DMG](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/Study-Desk_0.2.19_x64.dmg) |
+| Linux x64 | [DEB](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/Study-Desk_0.2.19_amd64.deb) · [AppImage](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/Study-Desk_0.2.19_amd64.AppImage) |
 
 **Windows:** run the installer, then open **Study Desk** from the Start menu.
 
@@ -26,19 +26,19 @@ See [Mac troubleshooting](docs/TROUBLESHOOTING.md#macos-blocks-the-app) if it st
 **Linux DEB:** open the file with your package manager, or run:
 
 ```bash
-sudo apt install ./Study-Desk_0.2.18_amd64.deb
+sudo apt install ./Study-Desk_0.2.19_amd64.deb
 ```
 
 **Linux AppImage:** make it executable in file properties, or run:
 
 ```bash
-chmod +x ./Study-Desk_0.2.18_amd64.AppImage
-./Study-Desk_0.2.18_amd64.AppImage
+chmod +x ./Study-Desk_0.2.19_amd64.AppImage
+./Study-Desk_0.2.19_amd64.AppImage
 ```
 
 Linux builds target Ubuntu 22.04. Other distributions may need WebKitGTK,
 Secret Service/KWallet or FUSE setup; see [Linux troubleshooting](docs/TROUBLESHOOTING.md#linux-dependencies-or-fuse).
-[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.18-beta.1/SHA256SUMS.txt)
+[Checksums](https://github.com/LeymansGuz/Study-Desk/releases/download/v0.2.19-beta.1/SHA256SUMS.txt)
 and build manifests accompany the release.
 
 ### First launch
@@ -84,6 +84,7 @@ native CI checks; Intel Mac and Linux device testing is still pending.
   page notes, bookmarks and course/personal-study import/export.
 - **Local controls:** light/dark themes, separate saved provider keys,
   token/cost statistics, backups, encrypted exports and signed in-app updates.
+  Press **Ctrl+K** to jump to a view, course or Library section.
 
 ## How the study pipeline works
 
