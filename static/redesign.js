@@ -4,7 +4,7 @@
   const by=id=>document.getElementById(id);
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const modes=[['practice','Practice'],['explain','Explain'],['ask','Ask']];
-  const labels={today:'Today',practice:'Study 蝜?Practice',explain:'Study 蝜?Explain',ask:'Study 蝜?Ask',workspace:'Workspace',progress:'Progress',learning:'Library',settings:'Settings'};
+  const labels={today:'Today',practice:'Study - Practice',explain:'Study - Explain',ask:'Study - Ask',workspace:'Workspace',progress:'Progress',learning:'Library',settings:'Settings'};
 
   function wrapFeedback(){
     const button=by('send-feedback');
@@ -113,9 +113,22 @@
       const sessions=Number(dashboard?.sessions?.length||0);
       const days=data.days_to_exam;
       summary.innerHTML=`<div class="today-summary-line"><div><strong>${data.items?.length||0}</strong><span>next steps</span><small>${data.planned_minutes||0} min suggested</small></div><div><strong>${days===null||days===undefined?'No date':Math.max(0,days)}</strong><span>${days===null||days===undefined?'exam date not set':'days to exam'}</span></div><div><strong>${sessions}</strong><span>recent sessions</span></div></div><p class="today-note">${course?`Active course: ${esc(course.name)}. `:''}${due?`${due} review activity is waiting. `:''}Suggestions use existing work and make no AI calls.</p>`;
+      const recent=by('today-recent');
+      if(recent){
+        const rows=(dashboard?.sessions||[]).slice(0,3);
+        recent.innerHTML=rows.map((item,index)=>{
+          const kind={tutor:'Session',explain:'Explanation',path:'Mastery path',exam:'Bank exam'}[item.kind]||'Study work';
+          const status={awaiting_answer:'In progress',correct:'Completed',revealed:'Reviewed'}[item.status]||item.status||'Saved';
+          return `<article class="study-queue-row"><div><strong>${esc(item.question||item.topic||kind)}</strong><p class="hint">${esc(kind)} · ${esc(status)}</p></div><button type="button" class="quiet-button" data-today-resume="${index}">Resume</button></article>`;
+        }).join('')||'<p class="today-empty">Your latest study sessions will appear here after you start one.</p>';
+        recent.querySelectorAll('[data-today-resume]').forEach(button=>button.onclick=()=>{
+          const item=rows[Number(button.dataset.todayResume)];
+          if(item)window.studyResume(item.kind,item.id);
+        });
+      }
       updateTodayCourse();
     }catch(error){
-      summary.innerHTML='<p class="today-empty">Today?謒?summary is unavailable. You can still open Study, Library or Workspace.</p>';
+      summary.innerHTML='<p class="today-empty">Today’s summary is unavailable. You can still open Study, Library or Workspace.</p>';
     }
   }
 

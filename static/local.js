@@ -8,6 +8,7 @@ const local={view:'practice',courses:[],files:[],filePage:0,jobs:[],rebuildPendi
 window.studyLocal=local;
 window.studyView=view;
 window.studyApi=api;
+window.studyResume=resume;
 const types={};
 // Text dates avoid operating-system locale placeholders such as dd/月/yyyy.
 const studyDates={
@@ -51,7 +52,7 @@ function view(name){
   local.view=name;$$('.local-view').forEach(el=>el.hidden=el.id!=='view-'+name);
   $$('[data-view]').forEach(el=>el.classList.toggle('is-active',el.dataset.view===name));
   const navLabel=$(`[data-view="${name}"]`);
-  $('#page-label').textContent=navLabel?navLabel.textContent.replace(/^\d+\s*/,'').trim():({explain:'Study · Explain',ask:'Study · Ask'}[name]||name);
+  $('#page-label').textContent=navLabel?navLabel.textContent.replace(/^\d+\s*/,'').trim():({explain:'Study - Explain',ask:'Study - Ask'}[name]||name);
   history.replaceState(null,'','#'+name);$('#global-error').hidden=true;
   if(name==='workspace')workspace().catch(fail);
   if(name==='progress')progress().catch(fail);
