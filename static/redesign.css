@@ -29,9 +29,10 @@
 .today-summary-line>div{display:flex;flex-direction:column;gap:2px;min-width:88px}
 .today-summary-line strong{color:var(--ink);font-size:16px;display:block;line-height:1.2}
 .file-native{position:absolute!important;width:1px!important;max-width:1px!important;height:1px!important;padding:0!important;border:0!important;clip-path:inset(50%);overflow:hidden!important}
-.file-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:2px}
-.file-picker .quiet-button{flex:none}
-.file-picker-name{min-width:0;color:var(--muted);font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.file-picker{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;width:100%;min-width:0;min-height:42px;margin-top:2px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--surface)}
+.file-picker:focus-within{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:1px}
+.file-picker .quiet-button{flex:none;margin:0}
+.file-picker-name{flex:1;min-width:0;color:var(--muted);font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 .local-card .hint > .quiet-button,.local-card .hint > .primary-button,.local-dialog .hint > .quiet-button,.local-dialog .hint > .primary-button{display:block;margin-top:10px;max-width:100%}
 .today-empty{padding:18px;border:1px dashed var(--line-strong);border-radius:9px;background:var(--surface-soft)}
 #today-setup{margin:0 0 18px}
